@@ -68,6 +68,7 @@ set (SAMPLE_SOURCE_FILES
 	tests/tiles.cpp
 	tests/time_of_impact.cpp
 	tests/tumbler.cpp
+	tests/wave_machine.cpp
 )
 
 set (SAMPLE_RESOURCE_FILES

@@ -53,7 +53,23 @@ set(BOX2D_SOURCE_FILES
 	dynamics/b2_wheel_joint.cpp
 	dynamics/b2_world.cpp
 	dynamics/b2_world_callbacks.cpp
-	rope/b2_rope.cpp)
+	rope/b2_rope.cpp
+	particle/b2Particle.cpp
+	particle/b2ParticleGroup.cpp
+	particle/b2VoronoiDiagram.cpp
+	particle/b2ParticleSystem.cpp
+	particle/b2ParticleGroup.h
+	particle/b2Particle.h
+	particle/b2ParticleSystem.h
+	particle/b2StackQueue.h
+	particle/b2VoronoiDiagram.h
+	particle/b2GrowableBuffer.h
+	particle/b2IntrusiveList.h
+	particle/b2SlabAllocator.h
+	particle/b2FreeList.cpp
+	particle/b2FreeList.h
+	particle/b2TrackedBlock.cpp
+	particle/b2TrackedBlock.h)
 
 set(BOX2D_HEADER_FILES
 	../include/box2d/b2_block_allocator.h
