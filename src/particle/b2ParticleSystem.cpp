@@ -18,7 +18,6 @@
 #include "b2ParticleSystem.h"
 #include "b2ParticleGroup.h"
 #include "b2VoronoiDiagram.h"
-#include "b2ParticleAssembly.h"
 #include "box2d/b2_block_allocator.h"
 #include "box2d/b2_world.h"
 #include "box2d/b2_world_callbacks.h"
@@ -28,17 +27,6 @@
 #include "box2d/b2_edge_shape.h"
 #include "box2d/b2_chain_shape.h"
 #include <algorithm>
-
-// Define LIQUIDFUN_SIMD_TEST_VS_REFERENCE to run both SIMD and reference
-// versions, and assert that the results are identical. This is useful when
-// modifying one of the functions, to help verify correctness.
-// #define LIQUIDFUN_SIMD_TEST_VS_REFERENCE
-
-// For ease of debugging, remove 'inline'. Then, when an assert hits in the
-// test-vs-reference functions, you can easily jump the instruction pointer
-// to the top of the function to re-run the test.
-#define LIQUIDFUN_SIMD_INLINE inline
-
 
 static const uint32 xTruncBits = 12;
 static const uint32 yTruncBits = 12;
@@ -1824,7 +1812,7 @@ inline void b2ParticleSystem::AddContact(int32 a, int32 b,
 	}
 }
 
-void b2ParticleSystem::FindContacts_Reference(
+void b2ParticleSystem::FindContacts(
 	b2GrowableBuffer<b2ParticleContact>& contacts) const
 {
 	const Proxy* beginProxy = m_proxyBuffer.Begin();
@@ -1853,157 +1841,6 @@ void b2ParticleSystem::FindContacts_Reference(
 	}
 }
 
-// Put the positions and indices in proxy-order. This allows us to process
-// particles with SIMD, since adjacent particles are adjacent in memory.
-void b2ParticleSystem::ReorderForFindContact(FindContactInput* reordered,
-	                                         int alignedCount) const
-{
-	int i = 0;
-	for (; i < m_count; ++i)
-	{
-		const int proxyIndex = m_proxyBuffer[i].index;
-		FindContactInput& r = reordered[i];
-		r.proxyIndex = proxyIndex;
-		r.position = m_positionBuffer.data[proxyIndex];
-	}
-
-	// We process multiple elements at a time, so we may read off the end of
-	// the array. Pad the array with a few elements, so we don't end up
-	// outputing spurious contacts.
-	for (; i < alignedCount; ++i)
-	{
-		FindContactInput& r = reordered[i];
-		r.proxyIndex = 0;
-		r.position = b2Vec2(b2_maxFloat, b2_maxFloat);
-	}
-}
-
-// Check particles to the right of 'startIndex', outputing FindContactChecks
-// until we find an index that is greater than 'bound'. We skip over the
-// indices NUM_V32_SLOTS at a time, because they are processed in groups
-// in the SIMD function.
-inline void b2ParticleSystem::GatherChecksOneParticle(
-	const uint32 bound,
-	const int startIndex,
-	const int particleIndex,
-	int* nextUncheckedIndex,
-	b2GrowableBuffer<FindContactCheck>& checks) const
-{
-	// The particles have to be heavily packed together in order for this
-	// loop to iterate more than once. In almost all situations, it will
-	// iterate less than twice.
-	for (int comparatorIndex = startIndex;
-		 comparatorIndex < m_count;
-	     comparatorIndex += NUM_V32_SLOTS)
-	{
-		if (m_proxyBuffer[comparatorIndex].tag > bound)
-			break;
-
-		FindContactCheck& out = checks.Append();
-		out.particleIndex = (uint16)particleIndex;
-		out.comparatorIndex = (uint16)comparatorIndex;
-
-		// This is faster inside the 'for' since there are so few iterations.
-		if (nextUncheckedIndex != NULL)
-		{
-			*nextUncheckedIndex = comparatorIndex + NUM_V32_SLOTS;
-		}
-	}
-}
-
-void b2ParticleSystem::GatherChecks(
-	b2GrowableBuffer<FindContactCheck>& checks) const
-{
-	int bottomLeftIndex = 0;
-	for (int particleIndex = 0; particleIndex < m_count; ++particleIndex)
-	{
-		const uint32 particleTag = m_proxyBuffer[particleIndex].tag;
-
-		// Add checks for particles to the right.
-		const uint32 rightBound = particleTag + relativeTagRight;
-		int nextUncheckedIndex = particleIndex + 1;
-		GatherChecksOneParticle(rightBound,
-								particleIndex + 1,
-								particleIndex,
-								&nextUncheckedIndex,
-								checks);
-
-		// Find comparator index below and to left of particle.
-		const uint32 bottomLeftTag = particleTag + relativeTagBottomLeft;
-		for (; bottomLeftIndex < m_count; ++bottomLeftIndex)
-		{
-			if (bottomLeftTag <= m_proxyBuffer[bottomLeftIndex].tag)
-				break;
-		}
-
-		// Add checks for particles below.
-		const uint32 bottomRightBound = particleTag + relativeTagBottomRight;
-		const int bottomStartIndex = b2Max(bottomLeftIndex, nextUncheckedIndex);
-		GatherChecksOneParticle(bottomRightBound,
-								bottomStartIndex,
-								particleIndex,
-								NULL,
-								checks);
-	}
-}
-
-#if defined(LIQUIDFUN_SIMD_NEON)
-void b2ParticleSystem::FindContacts_Simd(
-	b2GrowableBuffer<b2ParticleContact>& contacts) const
-{
-	contacts.SetCount(0);
-
-	const int alignedCount = m_count + NUM_V32_SLOTS;
-	FindContactInput* reordered = (FindContactInput*)
-		m_world->m_stackAllocator.Allocate(
-			sizeof(FindContactInput) * alignedCount);
-
-	// Put positions and indices into proxy-order.
-	// This allows us to efficiently check for contacts using SIMD.
-	ReorderForFindContact(reordered, alignedCount);
-
-	// Perform broad-band contact check using tags to approximate
-	// positions. This reduces the number of narrow-band contact checks
-	// that use actual positions.
-	static const int MAX_EXPECTED_CHECKS_PER_PARTICLE = 3;
-	b2GrowableBuffer<FindContactCheck> checks(m_world->m_blockAllocator);
-	checks.Reserve(MAX_EXPECTED_CHECKS_PER_PARTICLE * m_count);
-	GatherChecks(checks);
-
-	// Perform narrow-band contact checks using actual positions.
-	// Any particles whose centers are within one diameter of each other are
-	// considered contacting.
-	FindContactsFromChecks_Simd(reordered, checks.Data(), checks.GetCount(),
-								m_squaredDiameter, m_inverseDiameter,
-								m_flagsBuffer.data, contacts);
-
-	m_world->m_stackAllocator.Free(reordered);
-}
-#endif // defined(LIQUIDFUN_SIMD_NEON)
-
-LIQUIDFUN_SIMD_INLINE
-void b2ParticleSystem::FindContacts(
-	b2GrowableBuffer<b2ParticleContact>& contacts) const
-{
-	#if defined(LIQUIDFUN_SIMD_NEON)
-		FindContacts_Simd(contacts);
-	#else
-		FindContacts_Reference(contacts);
-	#endif
-
-	#if defined(LIQUIDFUN_SIMD_TEST_VS_REFERENCE)
-		b2GrowableBuffer<b2ParticleContact>
-			reference(m_world->m_blockAllocator);
-		FindContacts_Reference(reference);
-
-		b2Assert(contacts.GetCount() == reference.GetCount());
-		for (int32 i = 0; i < contacts.GetCount(); ++i)
-		{
-			b2Assert(contacts[i].ApproximatelyEqual(reference[i]));
-		}
-	#endif // defined(LIQUIDFUN_SIMD_TEST_VS_REFERENCE)
-}
-
 static inline bool b2ParticleContactIsZombie(const b2ParticleContact& contact)
 {
 	return (contact.GetFlags() & b2_zombieParticle) == b2_zombieParticle;
@@ -2027,7 +1864,7 @@ inline b2ContactListener* b2ParticleSystem::GetParticleContactListener() const
 
 // Recalculate 'tag' in proxies using m_positionBuffer.
 // The 'tag' is an approximation of position, in left-right, top-bottom order.
-void b2ParticleSystem::UpdateProxies_Reference(
+void b2ParticleSystem::UpdateProxies(
 	b2GrowableBuffer<Proxy>& proxies) const
 {
 	const Proxy* const endProxy = proxies.End();
@@ -2039,37 +1876,6 @@ void b2ParticleSystem::UpdateProxies_Reference(
 								m_inverseDiameter * p.y);
 	}
 }
-
-#if defined(LIQUIDFUN_SIMD_NEON)
-// static
-void b2ParticleSystem::UpdateProxyTags(
-	const uint32* const tags,
-	b2GrowableBuffer<Proxy>& proxies)
-{
-	const Proxy* const endProxy = proxies.End();
-	for (Proxy* proxy = proxies.Begin(); proxy < endProxy; ++proxy)
-	{
-		proxy->tag = tags[proxy->index];
-	}
-}
-
-void b2ParticleSystem::UpdateProxies_Simd(
-	b2GrowableBuffer<Proxy>& proxies) const
-{
-	uint32* tags = (uint32*)
-		m_world->m_stackAllocator.Allocate(m_count * sizeof(uint32));
-
-	// Calculate tag for every position.
-	// 'tags' array is in position-order.
-	CalculateTags_Simd(m_positionBuffer.data, m_count,
-					   m_inverseDiameter, tags);
-
-	// Update 'tag' element in the 'proxies' array to the new values.
-	UpdateProxyTags(tags, proxies);
-
-	m_world->m_stackAllocator.Free(tags);
-}
-#endif // defined(LIQUIDFUN_SIMD_NEON)
 
 // static
 bool b2ParticleSystem::ProxyBufferHasIndex(
@@ -2126,27 +1932,6 @@ bool b2ParticleSystem::AreProxyBuffersTheSame(const b2GrowableBuffer<Proxy>& a,
 	}
 	return true;
 }
-
-LIQUIDFUN_SIMD_INLINE
-void b2ParticleSystem::UpdateProxies(
-	b2GrowableBuffer<Proxy>& proxies) const
-{
-	#if defined(LIQUIDFUN_SIMD_TEST_VS_REFERENCE)
-		b2GrowableBuffer<Proxy> reference(proxies);
-	#endif
-
-	#if defined(LIQUIDFUN_SIMD_NEON)
-		UpdateProxies_Simd(proxies);
-	#else
-		UpdateProxies_Reference(proxies);
-	#endif
-
-	#if defined(LIQUIDFUN_SIMD_TEST_VS_REFERENCE)
-		UpdateProxies_Reference(reference);
-		b2Assert(AreProxyBuffersTheSame(proxies, reference));
-	#endif
-}
-
 
 // Sort the proxy array by 'tag'. This orders the particles into rows that
 // run left-to-right, top-to-bottom. The rows are spaced m_particleDiameter

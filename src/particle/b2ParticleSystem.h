@@ -53,17 +53,8 @@ struct FindContactCheck;
 struct b2ParticleContact
 {
 private:
-	// 16-bit particle indices consume less memory and thus improve
-	// performance. We iterate through m_contactBuffer many times during
-	// b2ParticleSystem::Solve, so reducing the amount of data we churn
-	// through speeds things up. Also, FindContactsFromChecks_Simd takes
-	// advantage of the reduced size for specific optimizations.
-	#ifdef B2_USE_16_BIT_PARTICLE_INDICES
-		typedef int16 b2ParticleIndex;
-	#else
-		typedef int32 b2ParticleIndex;
-	#endif
-
+	typedef int32 b2ParticleIndex;
+	
 	/// Indices of the respective particles making contact.
 	b2ParticleIndex indexA, indexB;
 
@@ -933,32 +924,14 @@ private:
 	void UpdateAllGroupFlags();
 	void AddContact(int32 a, int32 b,
 		b2GrowableBuffer<b2ParticleContact>& contacts) const;
-	void FindContacts_Reference(
-		b2GrowableBuffer<b2ParticleContact>& contacts) const;
-	void ReorderForFindContact(FindContactInput* reordered,
-		                       int alignedCount) const;
-	void GatherChecksOneParticle(
-		const uint32 bound,
-		const int startIndex,
-		const int particleIndex,
-		int* nextUncheckedIndex,
-		b2GrowableBuffer<FindContactCheck>& checks) const;
-	void GatherChecks(b2GrowableBuffer<FindContactCheck>& checks) const;
-	void FindContacts_Simd(
-		b2GrowableBuffer<b2ParticleContact>& contacts) const;
 	void FindContacts(
 		b2GrowableBuffer<b2ParticleContact>& contacts) const;
-	static void UpdateProxyTags(
-		const uint32* const tags,
-		b2GrowableBuffer<Proxy>& proxies);
 	static bool ProxyBufferHasIndex(
 		int32 index, const Proxy* const a, int count);
 	static int NumProxiesWithSameTag(
 		const Proxy* const a, const Proxy* const b, int count);
 	static bool AreProxyBuffersTheSame(const b2GrowableBuffer<Proxy>& a,
 								   	   const b2GrowableBuffer<Proxy>& b);
-	void UpdateProxies_Reference(b2GrowableBuffer<Proxy>& proxies) const;
-	void UpdateProxies_Simd(b2GrowableBuffer<Proxy>& proxies) const;
 	void UpdateProxies(b2GrowableBuffer<Proxy>& proxies) const;
 	void SortProxies(b2GrowableBuffer<Proxy>& proxies) const;
 	void FilterContacts(b2GrowableBuffer<b2ParticleContact>& contacts);
