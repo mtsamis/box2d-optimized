@@ -30,6 +30,8 @@
 #include "b2_time_step.h"
 #include "b2_world_callbacks.h"
 
+#include "../../src/particle/b2ParticleSystem.h"
+
 struct b2AABB;
 struct b2BodyDef;
 struct b2Color;
@@ -38,6 +40,8 @@ class b2Body;
 class b2Draw;
 class b2Fixture;
 class b2Joint;
+
+class b2ParticleGroup;
 
 /// The world class manages all physics entities, dynamic simulation,
 /// and asynchronous queries. The world also contains efficient memory
@@ -90,6 +94,32 @@ public:
 	/// @warning This function is locked during callbacks.
 	void DestroyJoint(b2Joint* joint);
 
+	/// Create a particle system given a definition. No reference to the
+	/// definition is retained.
+	/// @warning This function is locked during callbacks.
+	b2ParticleSystem* CreateParticleSystem(const b2ParticleSystemDef* def);
+
+	/// Destroy a particle system.
+	/// @warning This function is locked during callbacks.
+	void DestroyParticleSystem(b2ParticleSystem* p);
+
+	/// Take a time step. This performs collision detection, integration,
+	/// and constraint solution.
+	/// For the numerical stability of particles, minimize the following
+	/// dimensionless gravity acceleration:
+	///     gravity / particleRadius * (timeStep / particleIterations)^2
+	/// b2CalculateParticleIterations() or
+	/// CalculateReasonableParticleIterations() help to determine the optimal
+	/// particleIterations.
+	/// @param timeStep the amount of time to simulate, this should not vary.
+	/// @param velocityIterations for the velocity constraint solver.
+	/// @param positionIterations for the position constraint solver.
+	/// @param particleIterations for the particle simulation.
+	void Step(	float32 timeStep,
+				int32 velocityIterations,
+				int32 positionIterations,
+				int32 particleIterations);
+	
 	/// Take a time step. This performs collision detection, integration,
 	/// and constraint solution.
 	/// @param timeStep the amount of time to simulate, this should not vary.
@@ -97,8 +127,11 @@ public:
 	/// @param positionIterations for the position constraint solver.
 	void Step(	float timeStep,
 				int32 velocityIterations,
-				int32 positionIterations);
-
+				int32 positionIterations)
+	{
+		Step(timeStep, velocityIterations, positionIterations, 1);
+	}
+	
 	/// Manually clear the force buffer on all bodies. By default, forces are cleared automatically
 	/// after each call to Step. The default behavior is modified by calling SetAutoClearForces.
 	/// The purpose of this function is to support sub-stepping. Sub-stepping is often used to maintain
@@ -136,6 +169,13 @@ public:
 	/// @return the head of the world joint list.
 	b2Joint* GetJointList();
 	const b2Joint* GetJointList() const;
+
+	/// Get the world particle-system list. With the returned body, use
+	/// b2ParticleSystem::GetNext to get the next particle-system in the world
+	/// list. A NULL particle-system indicates the end of the list.
+	/// @return the head of the world particle-system list.
+	b2ParticleSystem* GetParticleSystemList();
+	const b2ParticleSystem* GetParticleSystemList() const;
 
 	/// Get the world contact list. With the returned contact, use b2Contact::GetNext to get
 	/// the next contact in the world list. A nullptr contact indicates the end of the list.
@@ -227,12 +267,16 @@ private:
 	friend class b2Fixture;
 	friend class b2ContactManager;
 	friend class b2Controller;
+	
+	friend class b2ParticleSystem;
 
 	void Solve(const b2TimeStep& step);
 	void SolveTOI(const b2TimeStep& step);
 
 	void DrawJoint(b2Joint* joint);
 	void DrawShape(b2Fixture* shape, const b2Transform& xf, const b2Color& color);
+
+	void DrawParticleSystem(const b2ParticleSystem& system);
 
 	b2BlockAllocator m_blockAllocator;
 	b2StackAllocator m_stackAllocator;
@@ -243,7 +287,8 @@ private:
 
 	b2Body* m_bodyList;
 	b2Joint* m_jointList;
-
+	b2ParticleSystem* m_particleSystemList;
+	
 	int32 m_bodyCount;
 	int32 m_jointCount;
 
@@ -295,6 +340,16 @@ inline b2Contact* b2World::GetContactList()
 inline const b2Contact* b2World::GetContactList() const
 {
 	return m_contactManager.m_contactList;
+}
+
+inline b2ParticleSystem* b2World::GetParticleSystemList()
+{
+	return m_particleSystemList;
+}
+
+inline const b2ParticleSystem* b2World::GetParticleSystemList() const
+{
+	return m_particleSystemList;
 }
 
 inline int32 b2World::GetBodyCount() const

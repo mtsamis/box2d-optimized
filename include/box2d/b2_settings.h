@@ -41,6 +41,55 @@ typedef unsigned char uint8;
 typedef unsigned short uint16;
 typedef unsigned int uint32;
 
+/********** LIQUID ************/
+
+typedef float float32;
+
+#ifdef WIN32
+typedef __int64   int64;
+typedef unsigned __int64   uint64;
+#else // !WIN32
+typedef long long int64;
+typedef unsigned long long uint64;
+#endif
+
+#if !defined(b2Inline)
+#if defined(__GNUC__)
+#define b2Inline __attribute__((always_inline))
+#else
+#define b2Inline inline
+#endif // defined(__GNUC__)
+#endif // !defined(b2Inline)
+
+#define b2_invalidParticleIndex		(-1)
+
+#define b2_maxParticleIndex			0x7FFFFFFF
+
+/// The default distance between particles, multiplied by the particle diameter.
+#define b2_particleStride			0.75f
+
+/// The minimum particle weight that produces pressure.
+#define b2_minParticleWeight			1.0f
+
+/// The upper limit for particle pressure.
+#define b2_maxParticlePressure		0.25f
+
+/// The upper limit for force between particles.
+#define b2_maxParticleForce		0.5f
+
+/// The maximum distance between particles in a triad, multiplied by the
+/// particle diameter.
+#define b2_maxTriadDistance			2
+#define b2_maxTriadDistanceSquared		(b2_maxTriadDistance * b2_maxTriadDistance)
+
+/// The initial size of particle data buffers.
+#define b2_minParticleSystemBufferCapacity	256
+
+/// The time into the future that collisions against barrier particles will be detected.
+#define b2_barrierCollisionTime 2.5f
+
+/********** LIQUID_END ************/
+
 #define	b2_maxFloat		FLT_MAX
 #define	b2_epsilon		FLT_EPSILON
 #define b2_pi			3.14159265359f
