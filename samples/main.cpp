@@ -359,6 +359,7 @@ static void UpdateUI()
 
 				ImGui::Checkbox("Shapes", &s_settings.m_drawShapes);
 				ImGui::Checkbox("Joints", &s_settings.m_drawJoints);
+				ImGui::Checkbox("Particles", &s_settings.m_drawParticles);
 				ImGui::Checkbox("AABBs", &s_settings.m_drawAABBs);
 				ImGui::Checkbox("Contact Points", &s_settings.m_drawContactPoints);
 				ImGui::Checkbox("Contact Normals", &s_settings.m_drawContactNormals);

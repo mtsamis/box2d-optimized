@@ -26,6 +26,9 @@
 #include "box2d/box2d.h"
 #include "draw.h"
 
+#include "../src/particle/b2Particle.h"
+#include "../src/particle/b2ParticleGroup.h"
+
 #include <stdlib.h>
 
 struct Settings;
@@ -127,6 +130,7 @@ protected:
 	DestructionListener m_destructionListener;
 	int32 m_textLine;
 	b2World* m_world;
+	b2ParticleSystem* m_particleSystem;
 	b2Body* m_bomb;
 	b2MouseJoint* m_mouseJoint;
 	b2Vec2 m_bombSpawnPoint;

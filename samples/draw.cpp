@@ -692,6 +692,16 @@ void DebugDraw::DrawCircle(const b2Vec2& center, float radius, const b2Color& co
 	}
 }
 
+float smoothstep(float x) { return x * x * (3 - 2 * x); }
+
+void DebugDraw::DrawParticles(const b2Vec2 *centers, float32 radius, const b2ParticleColor *colors, int32 count)
+{
+	b2Color c(1, 0, 0);
+	for (int32 i = 0; i < count; i++) {
+		m_points->Vertex(centers[i], c, 3);
+	}
+}
+
 //
 void DebugDraw::DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis, const b2Color& color)
 {

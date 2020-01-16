@@ -37,8 +37,10 @@ struct Settings
 		m_hertz = 60.0f;
 		m_velocityIterations = 8;
 		m_positionIterations = 3;
+		m_particleIterations = 3;
 		m_drawShapes = true;
 		m_drawJoints = true;
+		m_drawParticles = true;
 		m_drawAABBs = false;
 		m_drawContactPoints = false;
 		m_drawContactNormals = false;
@@ -64,8 +66,10 @@ struct Settings
 	float m_hertz;
 	int m_velocityIterations;
 	int m_positionIterations;
+	int m_particleIterations;
 	bool m_drawShapes;
 	bool m_drawJoints;
+	bool m_drawParticles;
 	bool m_drawAABBs;
 	bool m_drawContactPoints;
 	bool m_drawContactNormals;

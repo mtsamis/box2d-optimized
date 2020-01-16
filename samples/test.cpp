@@ -41,6 +41,13 @@ Test::Test()
 	b2Vec2 gravity;
 	gravity.Set(0.0f, -10.0f);
 	m_world = new b2World(gravity);
+	
+	const b2ParticleSystemDef particleSystemDef;
+	m_particleSystem = m_world->CreateParticleSystem(&particleSystemDef);
+	
+	m_particleSystem->SetGravityScale(0.4f);
+	m_particleSystem->SetDensity(1.2f);
+
 	m_bomb = NULL;
 	m_textLine = 30;
 	m_uiScale = 1.0f;
@@ -299,6 +306,7 @@ void Test::Step(Settings& settings)
 	uint32 flags = 0;
 	flags += settings.m_drawShapes			* b2Draw::e_shapeBit;
 	flags += settings.m_drawJoints			* b2Draw::e_jointBit;
+	flags += settings.m_drawParticles			* b2Draw::e_particleBit;
 	flags += settings.m_drawAABBs			* b2Draw::e_aabbBit;
 	flags += settings.m_drawCOMs				* b2Draw::e_centerOfMassBit;
 	g_debugDraw.SetFlags(flags);
@@ -310,7 +318,7 @@ void Test::Step(Settings& settings)
 
 	m_pointCount = 0;
 
-	m_world->Step(timeStep, settings.m_velocityIterations, settings.m_positionIterations);
+	m_world->Step(timeStep, settings.m_velocityIterations, settings.m_positionIterations, settings.m_particleIterations);
 
 	m_world->DrawDebugData();
     g_debugDraw.Flush();
