@@ -1363,7 +1363,7 @@ inline int32 b2ParticleSystem::GetMaxParticleCount() const
 
 inline void b2ParticleSystem::SetMaxParticleCount(int32 count)
 {
-	b2Assert(m_count <= count);
+	b2Assert(m_count <= count || count == 0);
 	m_def.maxCount = count;
 }
 
