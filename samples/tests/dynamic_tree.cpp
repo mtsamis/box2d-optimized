@@ -162,14 +162,15 @@ public:
 
 	bool QueryCallback(int32 proxyId)
 	{
-		Actor* actor = (Actor*)m_tree.GetUserData(proxyId);
-		actor->overlap = b2TestOverlap(m_queryAABB, actor->aabb);
+		//TODO
+		//Actor* actor = (Actor*)m_tree.GetUserData(proxyId);
+		//actor->overlap = b2TestOverlap(m_queryAABB, actor->aabb);
 		return true;
 	}
 
 	float RayCastCallback(const b2RayCastInput& input, int32 proxyId)
 	{
-		Actor* actor = (Actor*)m_tree.GetUserData(proxyId);
+		/*Actor* actor = (Actor*)m_tree.GetUserData(proxyId);
 
 		b2RayCastOutput output;
 		bool hit = actor->aabb.RayCast(&output, input);
@@ -182,7 +183,9 @@ public:
 			return output.fraction;
 		}
 
-		return input.maxFraction;
+		return input.maxFraction;*/
+		//TODO
+		return 0;
 	}
 
 private:
@@ -268,7 +271,8 @@ private:
 			b2AABB aabb0 = actor->aabb;
 			MoveAABB(&actor->aabb);
 			b2Vec2 displacement = actor->aabb.GetCenter() - aabb0.GetCenter();
-			m_tree.MoveProxy(actor->proxyId, actor->aabb, displacement);
+			//TODO
+			//m_tree.MoveProxy(actor->proxyId, actor->aabb, displacement);
 			return;
 		}
 	}
@@ -294,7 +298,8 @@ private:
 
 	void Query()
 	{
-		m_tree.Query(this, m_queryAABB);
+		//TODO
+		//m_tree.Query(this, m_queryAABB);
 
 		for (int32 i = 0; i < e_actorCount; ++i)
 		{

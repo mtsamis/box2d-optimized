@@ -93,7 +93,7 @@ public:
 		b2Body* body = fixture->GetBody();
 		b2Shape* shape = fixture->GetShape();
 
-		bool overlap = b2TestOverlap(shape, 0, &m_circle, 0, body->GetTransform(), m_transform);
+		bool overlap = b2TestOverlap(shape, &m_circle, body->GetTransform(), m_transform);
 
 		if (overlap)
 		{
@@ -273,7 +273,7 @@ public:
 		callback.g_debugDraw = &g_debugDraw;
 
 		b2AABB aabb;
-		callback.m_circle.ComputeAABB(&aabb, callback.m_transform, 0);
+		callback.m_circle.ComputeAABB(&aabb, callback.m_transform);
 
 		m_world->QueryAABB(&callback, aabb);
 

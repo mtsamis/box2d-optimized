@@ -29,7 +29,7 @@ class Tiles : public Test
 public:
 	enum
 	{
-		e_count = 20
+		e_count = 200
 	};
 
 	Tiles()
@@ -100,7 +100,8 @@ public:
 					b2BodyDef bd;
 					bd.type = b2_dynamicBody;
 					bd.position = y;
-
+					bd.position.y = 190 - bd.position.y;
+					
 					//if (i == 0 && j == 0)
 					//{
 					//	bd.allowSleep = false;
@@ -127,7 +128,7 @@ public:
 	{
 		const b2ContactManager& cm = m_world->GetContactManager();
 		int32 height = cm.m_broadPhase.GetTreeHeight();
-		int32 leafCount = cm.m_broadPhase.GetProxyCount();
+		int32 leafCount = cm.m_broadPhase.GetCount();
 		int32 minimumNodeCount = 2 * leafCount - 1;
 		float minimumHeight = ceilf(logf(float(minimumNodeCount)) / logf(2.0f));
 		g_debugDraw.DrawString(5, m_textLine, "dynamic tree height = %d, min = %d", height, int32(minimumHeight));
