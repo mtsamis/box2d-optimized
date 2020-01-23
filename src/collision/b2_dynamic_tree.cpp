@@ -130,7 +130,20 @@ void b2DynamicTree::DestroyProxy(int32 proxyId)
 	FreeNode(proxyId);
 }
 
-bool b2DynamicTree::MoveProxy(int32 proxyId, const b2AABB& aabb, const b2Vec2& displacement)
+void b2DynamicTree::UpdateAll() {
+	// NOTE this is a temporary implementation since there will be a new broadphase tree
+	for (int32 i = 0; i < m_nodeCapacity; i++) {
+		if (m_nodes[i].height < 0 || !m_nodes[i].IsLeaf()) continue;
+		b2Fixture* f = ((b2Fixture*) m_nodes[i].userData);
+		
+		if (f->GetBody()->GetType() != b2_staticBody) {
+			b2AABB aabb = f->GetAABB();
+			MoveProxy(i, aabb);
+		}
+	}
+}
+
+bool b2DynamicTree::MoveProxy(int32 proxyId, const b2AABB& aabb)
 {
 	b2Assert(0 <= proxyId && proxyId < m_nodeCapacity);
 
@@ -145,31 +158,7 @@ bool b2DynamicTree::MoveProxy(int32 proxyId, const b2AABB& aabb, const b2Vec2& d
 
 	// Extend AABB.
 	b2AABB b = aabb;
-	b2Vec2 r(b2_aabbExtension, b2_aabbExtension);
-	b.lowerBound = b.lowerBound - r;
-	b.upperBound = b.upperBound + r;
-
-	// Predict AABB displacement.
-	b2Vec2 d = b2_aabbMultiplier * displacement;
-
-	if (d.x < 0.0f)
-	{
-		b.lowerBound.x += d.x;
-	}
-	else
-	{
-		b.upperBound.x += d.x;
-	}
-
-	if (d.y < 0.0f)
-	{
-		b.lowerBound.y += d.y;
-	}
-	else
-	{
-		b.upperBound.y += d.y;
-	}
-
+	
 	m_nodes[proxyId].aabb = b;
 
 	InsertLeaf(proxyId);

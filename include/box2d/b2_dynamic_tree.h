@@ -24,6 +24,7 @@
 #define B2_DYNAMIC_TREE_H
 
 #include "b2_collision.h"
+#include "b2_fixture.h"
 #include "b2_growable_stack.h"
 
 #define b2_nullNode (-1)
@@ -81,20 +82,28 @@ public:
 	/// then the proxy is removed from the tree and re-inserted. Otherwise
 	/// the function returns immediately.
 	/// @return true if the proxy was re-inserted.
-	bool MoveProxy(int32 proxyId, const b2AABB& aabb1, const b2Vec2& displacement);
+	// bool MoveProxy(int32 proxyId, const b2AABB& aabb1, const b2Vec2& displacement);
 
 	/// Get proxy user data.
 	/// @return the proxy user data or 0 if the id is invalid.
-	void* GetUserData(int32 proxyId) const;
+	// void* GetUserData(int32 proxyId) const;
 
 	/// Get the fat AABB for a proxy.
-	const b2AABB& GetFatAABB(int32 proxyId) const;
+	// const b2AABB& GetFatAABB(int32 proxyId) const;
 
 	/// Query an AABB for overlapping proxies. The callback class
 	/// is called for each proxy that overlaps the supplied AABB.
 	template <typename T>
 	void Query(T* callback, const b2AABB& aabb) const;
-
+	
+	template <typename T>
+	void QueryId(T* callback, b2TreeNode* leaf) const;
+	
+	template <typename T>
+	void QueryAll(T* callback) const;
+	
+	bool MoveProxy(int32 proxyId, const b2AABB& aabb);
+	void UpdateAll();
 	/// Ray-cast against the proxies in the tree. This relies on the callback
 	/// to perform a exact ray-cast in the case were the proxy contains a shape.
 	/// The callback also performs the any collision filtering. This has performance
@@ -156,7 +165,7 @@ private:
 
 	int32 m_insertionCount;
 };
-
+/*
 inline void* b2DynamicTree::GetUserData(int32 proxyId) const
 {
 	b2Assert(0 <= proxyId && proxyId < m_nodeCapacity);
@@ -167,6 +176,52 @@ inline const b2AABB& b2DynamicTree::GetFatAABB(int32 proxyId) const
 {
 	b2Assert(0 <= proxyId && proxyId < m_nodeCapacity);
 	return m_nodes[proxyId].aabb;
+}*/
+
+template <typename T>
+inline void b2DynamicTree::QueryAll(T* callback) const
+{
+	// NOTE this is a temporary implementation since there will be a new broadphase tree
+	for (int32 i = 0; i < m_nodeCapacity; i++) {
+		if (m_nodes[i].height < 0 || !m_nodes[i].IsLeaf()) continue;
+		b2Fixture* f = ((b2Fixture*) m_nodes[i].userData);
+		
+		if (f->GetBody()->GetType() != b2_staticBody) {
+			QueryId(callback, &m_nodes[i]);
+		}
+	}
+}
+
+template <typename T>
+inline void b2DynamicTree::QueryId(T* callback, b2TreeNode* leaf) const
+{
+	// NOTE this is a temporary implementation since there will be a new broadphase tree
+	b2GrowableStack<int32, 256> stack;
+	stack.Push(m_root);
+
+	while (stack.GetCount() > 0)
+	{
+		int32 nodeId = stack.Pop();
+		if (nodeId == b2_nullNode)
+		{
+			continue;
+		}
+
+		const b2TreeNode* node = m_nodes + nodeId;
+
+		if (b2TestOverlap(node->aabb, leaf->aabb))
+		{
+			if (node->IsLeaf())
+			{
+				callback->QueryCallback((b2Fixture*) node->userData, (b2Fixture*) leaf->userData);
+			}
+			else
+			{
+				stack.Push(node->child1);
+				stack.Push(node->child2);
+			}
+		}
+	}
 }
 
 template <typename T>
@@ -189,7 +244,7 @@ inline void b2DynamicTree::Query(T* callback, const b2AABB& aabb) const
 		{
 			if (node->IsLeaf())
 			{
-				bool proceed = callback->QueryCallback(nodeId);
+				bool proceed = callback->QueryCallback((b2Fixture*) node->userData);
 				if (proceed == false)
 				{
 					return;
