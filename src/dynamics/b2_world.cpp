@@ -82,7 +82,7 @@ b2World::~b2World()
 		while (f)
 		{
 			b2Fixture* fNext = f->m_next;
-			f->m_proxyCount = 0;
+			//f->m_proxyCount = 0;
 			f->Destroy(&m_blockAllocator);
 			f = fNext;
 		}
@@ -189,7 +189,10 @@ void b2World::DestroyBody(b2Body* b)
 			m_destructionListener->SayGoodbye(f0);
 		}
 
-		f0->DestroyProxies(&m_contactManager.m_broadPhase);
+		//f0->DestroyProxies(&m_contactManager.m_broadPhase);
+		b2BroadPhase* broadphase = &m_contactManager.m_broadPhase;
+		broadphase->Remove(f0);
+		
 		f0->Destroy(&m_blockAllocator);
 		f0->~b2Fixture();
 		m_blockAllocator.Free(f0, sizeof(b2Fixture));
@@ -620,6 +623,8 @@ void b2World::Solve(const b2TimeStep& step)
 
 	{
 		b2Timer timer;
+		
+		// TODO somehow merge some/all of the loops for broadphase detection? this one below, the updateAll in broadphase and the detect loop
 		// Synchronize fixtures, check for out of range bodies.
 		for (b2Body* b = m_bodyList; b; b = b->GetNext())
 		{
@@ -635,7 +640,8 @@ void b2World::Solve(const b2TimeStep& step)
 			}
 
 			// Update fixtures (for broad-phase).
-			b->SynchronizeFixtures();
+			//b->SynchronizeFixtures();
+			b->UpdateAABBs();
 		}
 
 		// Look for new contacts.
@@ -647,6 +653,7 @@ void b2World::Solve(const b2TimeStep& step)
 // Find TOI contacts and solve them.
 void b2World::SolveTOI(const b2TimeStep& step)
 {
+	/*
 	b2Island island(2 * b2_maxTOIContacts, b2_maxTOIContacts, 0, &m_stackAllocator, m_contactManager.m_contactListener);
 
 	if (m_stepComplete)
@@ -963,7 +970,7 @@ void b2World::SolveTOI(const b2TimeStep& step)
 			m_stepComplete = false;
 			break;
 		}
-	}
+	}*/
 }
 
 void b2World::Step(float dt, int32 velocityIterations, int32 positionIterations, int32 particleIterations)
@@ -1051,10 +1058,9 @@ void b2World::ClearForces()
 
 struct b2WorldQueryWrapper
 {
-	bool QueryCallback(int32 proxyId)
+	bool QueryCallback(b2Fixture* fixture)
 	{
-		b2FixtureProxy* proxy = (b2FixtureProxy*)broadPhase->GetUserData(proxyId);
-		return callback->ReportFixture(proxy->fixture);
+		return callback->ReportFixture(fixture);
 	}
 
 	const b2BroadPhase* broadPhase;
@@ -1079,6 +1085,7 @@ struct b2WorldRayCastWrapper
 {
 	float RayCastCallback(const b2RayCastInput& input, int32 proxyId)
 	{
+	/*
 		void* userData = broadPhase->GetUserData(proxyId);
 		b2FixtureProxy* proxy = (b2FixtureProxy*)userData;
 		b2Fixture* fixture = proxy->fixture;
@@ -1093,7 +1100,9 @@ struct b2WorldRayCastWrapper
 			return callback->ReportFixture(fixture, point, output.normal, fraction);
 		}
 
-		return input.maxFraction;
+		return input.maxFraction;*/
+		//TODO
+		return 0;
 	}
 
 	const b2BroadPhase* broadPhase;
@@ -1353,18 +1362,13 @@ void b2World::DrawDebugData()
 
 			for (b2Fixture* f = b->GetFixtureList(); f; f = f->GetNext())
 			{
-				for (int32 i = 0; i < f->m_proxyCount; ++i)
-				{
-					b2FixtureProxy* proxy = f->m_proxies + i;
-					b2AABB aabb = bp->GetFatAABB(proxy->proxyId);
-					b2Vec2 vs[4];
-					vs[0].Set(aabb.lowerBound.x, aabb.lowerBound.y);
-					vs[1].Set(aabb.upperBound.x, aabb.lowerBound.y);
-					vs[2].Set(aabb.upperBound.x, aabb.upperBound.y);
-					vs[3].Set(aabb.lowerBound.x, aabb.upperBound.y);
-
+				b2AABB aabb = f->GetAABB();
+				b2Vec2 vs[4];
+				vs[0].Set(aabb.lowerBound.x, aabb.lowerBound.y);
+				vs[1].Set(aabb.upperBound.x, aabb.lowerBound.y);
+				vs[2].Set(aabb.upperBound.x, aabb.upperBound.y);
+				vs[3].Set(aabb.lowerBound.x, aabb.upperBound.y);
 					m_debugDraw->DrawPolygon(vs, 4, color);
-				}
 			}
 		}
 	}
@@ -1382,17 +1386,12 @@ void b2World::DrawDebugData()
 
 int32 b2World::GetProxyCount() const
 {
-	return m_contactManager.m_broadPhase.GetProxyCount();
+	return m_contactManager.m_broadPhase.GetCount();
 }
 
 int32 b2World::GetTreeHeight() const
 {
 	return m_contactManager.m_broadPhase.GetTreeHeight();
-}
-
-int32 b2World::GetTreeBalance() const
-{
-	return m_contactManager.m_broadPhase.GetTreeBalance();
 }
 
 float b2World::GetTreeQuality() const

@@ -36,8 +36,6 @@ b2Fixture::b2Fixture()
 	m_userData = nullptr;
 	m_body = nullptr;
 	m_next = nullptr;
-	m_proxies = nullptr;
-	m_proxyCount = 0;
 	m_shape = nullptr;
 	m_density = 0.0f;
 }
@@ -56,30 +54,12 @@ void b2Fixture::Create(b2BlockAllocator* allocator, b2Body* body, const b2Fixtur
 	m_isSensor = def->isSensor;
 
 	m_shape = def->shape->Clone(allocator);
-
-	// Reserve proxy space
-	int32 childCount = m_shape->GetChildCount();
-	m_proxies = (b2FixtureProxy*)allocator->Allocate(childCount * sizeof(b2FixtureProxy));
-	for (int32 i = 0; i < childCount; ++i)
-	{
-		m_proxies[i].fixture = nullptr;
-		m_proxies[i].proxyId = b2BroadPhase::e_nullProxy;
-	}
-	m_proxyCount = 0;
-
+	
 	m_density = def->density;
 }
 
 void b2Fixture::Destroy(b2BlockAllocator* allocator)
 {
-	// The proxies must be destroyed before calling this.
-	b2Assert(m_proxyCount == 0);
-
-	// Free the proxy array.
-	int32 childCount = m_shape->GetChildCount();
-	allocator->Free(m_proxies, childCount * sizeof(b2FixtureProxy));
-	m_proxies = nullptr;
-
 	// Free the child shape.
 	switch (m_shape->m_type)
 	{
@@ -122,7 +102,7 @@ void b2Fixture::Destroy(b2BlockAllocator* allocator)
 
 	m_shape = nullptr;
 }
-
+/*
 void b2Fixture::CreateProxies(b2BroadPhase* broadPhase, const b2Transform& xf)
 {
 	b2Assert(m_proxyCount == 0);
@@ -151,30 +131,10 @@ void b2Fixture::DestroyProxies(b2BroadPhase* broadPhase)
 	}
 
 	m_proxyCount = 0;
-}
+}*/
 
-void b2Fixture::Synchronize(b2BroadPhase* broadPhase, const b2Transform& transform1, const b2Transform& transform2)
-{
-	if (m_proxyCount == 0)
-	{	
-		return;
-	}
-
-	for (int32 i = 0; i < m_proxyCount; ++i)
-	{
-		b2FixtureProxy* proxy = m_proxies + i;
-
-		// Compute an AABB that covers the swept shape (may miss some rotation effect).
-		b2AABB aabb1, aabb2;
-		m_shape->ComputeAABB(&aabb1, transform1, proxy->childIndex);
-		m_shape->ComputeAABB(&aabb2, transform2, proxy->childIndex);
-	
-		proxy->aabb.Combine(aabb1, aabb2);
-
-		b2Vec2 displacement = transform2.p - transform1.p;
-
-		broadPhase->MoveProxy(proxy->proxyId, proxy->aabb, displacement);
-	}
+void b2Fixture::UpdateAABB() {
+	m_shape->ComputeAABB(&m_aabb, m_body->m_xf);
 }
 
 void b2Fixture::SetFilterData(const b2Filter& filter)
@@ -214,11 +174,12 @@ void b2Fixture::Refilter()
 	}
 
 	// Touch each proxy so that new pairs may be created
-	b2BroadPhase* broadPhase = &world->m_contactManager.m_broadPhase;
+	// TODO is this needed? (probably not)
+	/*b2BroadPhase* broadPhase = &world->m_contactManager.m_broadPhase;
 	for (int32 i = 0; i < m_proxyCount; ++i)
 	{
 		broadPhase->TouchProxy(m_proxies[i].proxyId);
-	}
+	}*/
 }
 
 void b2Fixture::SetSensor(bool sensor)

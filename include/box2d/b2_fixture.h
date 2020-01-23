@@ -94,15 +94,6 @@ struct b2FixtureDef
 	b2Filter filter;
 };
 
-/// This proxy is used internally to connect fixtures to the broad-phase.
-struct b2FixtureProxy
-{
-	b2AABB aabb;
-	b2Fixture* fixture;
-	int32 childIndex;
-	int32 proxyId;
-};
-
 /// A fixture is used to attach a shape to a body for collision detection. A fixture
 /// inherits its transform from its parent. Fixtures hold additional non-geometric data
 /// such as friction, collision filters, etc.
@@ -194,7 +185,9 @@ public:
 	/// Set the coefficient of restitution. This will _not_ change the restitution of
 	/// existing contacts.
 	void SetRestitution(float restitution);
-
+	
+	void UpdateAABB();
+	
 	/// Get the fixture's AABB. This AABB may be enlarge and/or stale.
 	/// If you need a more accurate AABB, compute it using the shape and
 	/// the body transform.
@@ -216,26 +209,18 @@ protected:
 	// the destructor cannot access the allocator (no destructor arguments allowed by C++).
 	void Create(b2BlockAllocator* allocator, b2Body* body, const b2FixtureDef* def);
 	void Destroy(b2BlockAllocator* allocator);
-
-	// These support body activation/deactivation.
-	void CreateProxies(b2BroadPhase* broadPhase, const b2Transform& xf);
-	void DestroyProxies(b2BroadPhase* broadPhase);
-
-	void Synchronize(b2BroadPhase* broadPhase, const b2Transform& xf1, const b2Transform& xf2);
-
+	
 	float m_density;
 
 	b2Fixture* m_next;
 	b2Body* m_body;
 
 	b2Shape* m_shape;
-
+	b2AABB m_aabb;
+	
 	float m_friction;
 	float m_restitution;
-
-	b2FixtureProxy* m_proxies;
-	int32 m_proxyCount;
-
+	
 	b2Filter m_filter;
 
 	bool m_isSensor;
@@ -351,7 +336,7 @@ inline void b2Fixture::GetMassData(b2MassData* massData) const
 
 inline const b2AABB& b2Fixture::GetAABB() const
 {
-	return m_proxies[0].aabb; // temp
+	return m_aabb;
 }
 
 #endif

@@ -388,6 +388,8 @@ public:
 	/// Get the parent world of this body.
 	b2World* GetWorld();
 	const b2World* GetWorld() const;
+	
+	void UpdateAABBs();
 
 	/// Dump this body to a log file
 	void Dump();
@@ -399,6 +401,7 @@ private:
 	friend class b2ContactManager;
 	friend class b2ContactSolver;
 	friend class b2Contact;
+	friend class b2Fixture;
 	
 	friend class b2DistanceJoint;
 	friend class b2FrictionJoint;
@@ -429,8 +432,7 @@ private:
 
 	b2Body(const b2BodyDef* bd, b2World* world);
 	~b2Body();
-
-	void SynchronizeFixtures();
+	
 	void SynchronizeTransform();
 
 	// This is used to prevent connected bodies from colliding.

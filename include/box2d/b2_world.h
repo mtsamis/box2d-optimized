@@ -216,9 +216,6 @@ public:
 	/// Get the height of the dynamic tree.
 	int32 GetTreeHeight() const;
 
-	/// Get the balance of the dynamic tree.
-	int32 GetTreeBalance() const;
-
 	/// Get the quality metric of the dynamic tree. The smaller the better.
 	/// The minimum is 1.
 	float GetTreeQuality() const;

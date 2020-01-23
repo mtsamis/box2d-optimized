@@ -138,7 +138,9 @@ void b2Body::SetType(b2BodyType type)
 		m_angularVelocity = 0.0f;
 		m_sweep.a0 = m_sweep.a;
 		m_sweep.c0 = m_sweep.c;
-		SynchronizeFixtures();
+		
+		// TODO is this needed? (probably not?)
+		UpdateAABBs();
 	}
 
 	SetAwake(true);
@@ -157,7 +159,8 @@ void b2Body::SetType(b2BodyType type)
 	m_contactList = nullptr;
 
 	// Touch the proxies so that new contacts will be created (when appropriate)
-	b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
+	//TODO? probably not needed
+	/*b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
 	for (b2Fixture* f = m_fixtureList; f; f = f->m_next)
 	{
 		int32 proxyCount = f->m_proxyCount;
@@ -165,7 +168,7 @@ void b2Body::SetType(b2BodyType type)
 		{
 			broadPhase->TouchProxy(f->m_proxies[i].proxyId);
 		}
-	}
+	}*/
 }
 
 b2Fixture* b2Body::CreateFixture(const b2FixtureDef* def)
@@ -182,12 +185,6 @@ b2Fixture* b2Body::CreateFixture(const b2FixtureDef* def)
 	b2Fixture* fixture = new (memory) b2Fixture;
 	fixture->Create(allocator, this, def);
 
-	if (m_flags & e_activeFlag)
-	{
-		b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
-		fixture->CreateProxies(broadPhase, m_xf);
-	}
-
 	fixture->m_next = m_fixtureList;
 	m_fixtureList = fixture;
 	++m_fixtureCount;
@@ -199,7 +196,15 @@ b2Fixture* b2Body::CreateFixture(const b2FixtureDef* def)
 	{
 		ResetMassData();
 	}
-
+	
+	if (m_flags & e_activeFlag)
+	{
+		b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
+		fixture->UpdateAABB();
+		broadPhase->Add(fixture);
+		//fixture->CreateProxies(broadPhase, m_xf);
+	}
+	
 	// Let the world know we have a new fixture. This will cause new contacts
 	// to be created at the beginning of the next time step.
 	m_world->m_flags |= b2World::e_newFixture;
@@ -273,7 +278,7 @@ void b2Body::DestroyFixture(b2Fixture* fixture)
 	if (m_flags & e_activeFlag)
 	{
 		b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
-		fixture->DestroyProxies(broadPhase);
+		broadPhase->Remove(fixture);
 	}
 
 	fixture->m_body = nullptr;
@@ -442,23 +447,16 @@ void b2Body::SetTransform(const b2Vec2& position, float angle)
 	m_sweep.c0 = m_sweep.c;
 	m_sweep.a0 = angle;
 
-	b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
+	/*b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
 	for (b2Fixture* f = m_fixtureList; f; f = f->m_next)
 	{
 		f->Synchronize(broadPhase, m_xf, m_xf);
-	}
+	}*/
 }
 
-void b2Body::SynchronizeFixtures()
-{
-	b2Transform xf1;
-	xf1.q.Set(m_sweep.a0);
-	xf1.p = m_sweep.c0 - b2Mul(xf1.q, m_sweep.localCenter);
-
-	b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
-	for (b2Fixture* f = m_fixtureList; f; f = f->m_next)
-	{
-		f->Synchronize(broadPhase, xf1, m_xf);
+void b2Body::UpdateAABBs() {
+	for (b2Fixture* f = m_fixtureList; f; f = f->m_next) {
+		f->UpdateAABB();
 	}
 }
 
@@ -476,12 +474,13 @@ void b2Body::SetActive(bool flag)
 		m_flags |= e_activeFlag;
 
 		// Create all proxies.
-		b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
+		// TODO 
+		/*b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
 		for (b2Fixture* f = m_fixtureList; f; f = f->m_next)
 		{
 			f->CreateProxies(broadPhase, m_xf);
 		}
-
+*/
 		// Contacts are created the next time step.
 	}
 	else
@@ -489,7 +488,8 @@ void b2Body::SetActive(bool flag)
 		m_flags &= ~e_activeFlag;
 
 		// Destroy all proxies.
-		b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
+		// TODO
+		/*b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
 		for (b2Fixture* f = m_fixtureList; f; f = f->m_next)
 		{
 			f->DestroyProxies(broadPhase);
@@ -503,7 +503,7 @@ void b2Body::SetActive(bool flag)
 			ce = ce->next;
 			m_world->m_contactManager.Destroy(ce0->contact);
 		}
-		m_contactList = nullptr;
+		m_contactList = nullptr;*/
 	}
 }
 
