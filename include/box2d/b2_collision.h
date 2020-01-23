@@ -249,8 +249,8 @@ int32 b2ClipSegmentToLine(b2ClipVertex vOut[2], const b2ClipVertex vIn[2],
 							const b2Vec2& normal, float offset, int32 vertexIndexA);
 
 /// Determine if two generic shapes overlap.
-bool b2TestOverlap(	const b2Shape* shapeA, int32 indexA,
-					const b2Shape* shapeB, int32 indexB,
+bool b2TestOverlap(	const b2Shape* shapeA,
+					const b2Shape* shapeB,
 					const b2Transform& xfA, const b2Transform& xfB);
 
 // ---------------- Inline Functions ------------------------------------------

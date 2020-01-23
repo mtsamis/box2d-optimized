@@ -70,7 +70,7 @@ void b2Contact::AddType(b2ContactCreateFcn* createFcn, b2ContactDestroyFcn* dest
 	}
 }
 
-b2Contact* b2Contact::Create(b2Fixture* fixtureA, int32 indexA, b2Fixture* fixtureB, int32 indexB, b2BlockAllocator* allocator)
+b2Contact* b2Contact::Create(b2Fixture* fixtureA, b2Fixture* fixtureB, b2BlockAllocator* allocator)
 {
 	if (s_initialized == false)
 	{
@@ -89,11 +89,11 @@ b2Contact* b2Contact::Create(b2Fixture* fixtureA, int32 indexA, b2Fixture* fixtu
 	{
 		if (s_registers[type1][type2].primary)
 		{
-			return createFcn(fixtureA, indexA, fixtureB, indexB, allocator);
+			return createFcn(fixtureA, fixtureB, allocator);
 		}
 		else
 		{
-			return createFcn(fixtureB, indexB, fixtureA, indexA, allocator);
+			return createFcn(fixtureB, fixtureA, allocator);
 		}
 	}
 	else
@@ -127,15 +127,12 @@ void b2Contact::Destroy(b2Contact* contact, b2BlockAllocator* allocator)
 	destroyFcn(contact, allocator);
 }
 
-b2Contact::b2Contact(b2Fixture* fA, int32 indexA, b2Fixture* fB, int32 indexB)
+b2Contact::b2Contact(b2Fixture* fA, b2Fixture* fB)
 {
 	m_flags = e_enabledFlag;
 
 	m_fixtureA = fA;
 	m_fixtureB = fB;
-
-	m_indexA = indexA;
-	m_indexB = indexB;
 
 	m_manifold.pointCount = 0;
 
@@ -186,7 +183,7 @@ void b2Contact::Update(b2ContactListener* listener)
 	{
 		const b2Shape* shapeA = m_fixtureA->GetShape();
 		const b2Shape* shapeB = m_fixtureB->GetShape();
-		touching = b2TestOverlap(shapeA, m_indexA, shapeB, m_indexB, xfA, xfB);
+		touching = b2TestOverlap(shapeA, shapeB, xfA, xfB);
 
 		// Sensors don't generate manifolds.
 		m_manifold.pointCount = 0;

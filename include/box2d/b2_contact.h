@@ -50,8 +50,7 @@ inline float b2MixRestitution(float restitution1, float restitution2)
 	return restitution1 > restitution2 ? restitution1 : restitution2;
 }
 
-typedef b2Contact* b2ContactCreateFcn(	b2Fixture* fixtureA, int32 indexA,
-										b2Fixture* fixtureB, int32 indexB,
+typedef b2Contact* b2ContactCreateFcn(	b2Fixture* fixtureA, b2Fixture* fixtureB,
 										b2BlockAllocator* allocator);
 typedef void b2ContactDestroyFcn(b2Contact* contact, b2BlockAllocator* allocator);
 
@@ -109,15 +108,9 @@ public:
 	b2Fixture* GetFixtureA();
 	const b2Fixture* GetFixtureA() const;
 
-	/// Get the child primitive index for fixture A.
-	int32 GetChildIndexA() const;
-
 	/// Get fixture B in this contact.
 	b2Fixture* GetFixtureB();
 	const b2Fixture* GetFixtureB() const;
-
-	/// Get the child primitive index for fixture B.
-	int32 GetChildIndexB() const;
 
 	/// Override the default friction mixture. You can call this in b2ContactListener::PreSolve.
 	/// This value persists until set or reset.
@@ -183,12 +176,12 @@ protected:
 	static void AddType(b2ContactCreateFcn* createFcn, b2ContactDestroyFcn* destroyFcn,
 						b2Shape::Type typeA, b2Shape::Type typeB);
 	static void InitializeRegisters();
-	static b2Contact* Create(b2Fixture* fixtureA, int32 indexA, b2Fixture* fixtureB, int32 indexB, b2BlockAllocator* allocator);
+	static b2Contact* Create(b2Fixture* fixtureA, b2Fixture* fixtureB, b2BlockAllocator* allocator);
 	static void Destroy(b2Contact* contact, b2Shape::Type typeA, b2Shape::Type typeB, b2BlockAllocator* allocator);
 	static void Destroy(b2Contact* contact, b2BlockAllocator* allocator);
 
 	b2Contact() : m_fixtureA(nullptr), m_fixtureB(nullptr) {}
-	b2Contact(b2Fixture* fixtureA, int32 indexA, b2Fixture* fixtureB, int32 indexB);
+	b2Contact(b2Fixture* fixtureA, b2Fixture* fixtureB);
 	virtual ~b2Contact() {}
 
 	void Update(b2ContactListener* listener);
@@ -208,9 +201,6 @@ protected:
 
 	b2Fixture* m_fixtureA;
 	b2Fixture* m_fixtureB;
-
-	int32 m_indexA;
-	int32 m_indexB;
 
 	b2Manifold m_manifold;
 
@@ -290,19 +280,9 @@ inline b2Fixture* b2Contact::GetFixtureB()
 	return m_fixtureB;
 }
 
-inline int32 b2Contact::GetChildIndexA() const
-{
-	return m_indexA;
-}
-
 inline const b2Fixture* b2Contact::GetFixtureB() const
 {
 	return m_fixtureB;
-}
-
-inline int32 b2Contact::GetChildIndexB() const
-{
-	return m_indexB;
 }
 
 inline void b2Contact::FlagForFiltering()

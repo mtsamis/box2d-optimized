@@ -72,11 +72,6 @@ void b2PolygonShape::SetAsBox(float hx, float hy, const b2Vec2& center, float an
 	}
 }
 
-int32 b2PolygonShape::GetChildCount() const
-{
-	return 1;
-}
-
 static b2Vec2 ComputeCentroid(const b2Vec2* vs, int32 count)
 {
 	b2Assert(count >= 3);
@@ -271,10 +266,8 @@ bool b2PolygonShape::TestPoint(const b2Transform& xf, const b2Vec2& p) const
 	return true;
 }
 
-void b2PolygonShape::ComputeDistance(const b2Transform& xf, const b2Vec2& p, float32* distance, b2Vec2* normal, int32 childIndex) const
+void b2PolygonShape::ComputeDistance(const b2Transform& xf, const b2Vec2& p, float32* distance, b2Vec2* normal) const
 {
-	B2_NOT_USED(childIndex);
-
 	b2Vec2 pLocal = b2MulT(xf.q, p - xf.p);
 	float32 maxDistance = -FLT_MAX;
 	b2Vec2 normalForMaxDistance = pLocal;
@@ -316,10 +309,8 @@ void b2PolygonShape::ComputeDistance(const b2Transform& xf, const b2Vec2& p, flo
 }
 
 bool b2PolygonShape::RayCast(b2RayCastOutput* output, const b2RayCastInput& input,
-								const b2Transform& xf, int32 childIndex) const
+								const b2Transform& xf) const
 {
-	B2_NOT_USED(childIndex);
-
 	// Put the ray into the polygon's frame of reference.
 	b2Vec2 p1 = b2MulT(xf.q, input.p1 - xf.p);
 	b2Vec2 p2 = b2MulT(xf.q, input.p2 - xf.p);
@@ -387,10 +378,8 @@ bool b2PolygonShape::RayCast(b2RayCastOutput* output, const b2RayCastInput& inpu
 	return false;
 }
 
-void b2PolygonShape::ComputeAABB(b2AABB* aabb, const b2Transform& xf, int32 childIndex) const
+void b2PolygonShape::ComputeAABB(b2AABB* aabb, const b2Transform& xf) const
 {
-	B2_NOT_USED(childIndex);
-
 	b2Vec2 lower = b2Mul(xf, m_vertices[0]);
 	b2Vec2 upper = lower;
 

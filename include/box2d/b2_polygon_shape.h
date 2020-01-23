@@ -36,9 +36,6 @@ public:
 	/// Implement b2Shape.
 	b2Shape* Clone(b2BlockAllocator* allocator) const override;
 
-	/// @see b2Shape::GetChildCount
-	int32 GetChildCount() const override;
-
 	/// Create a convex hull from the given array of local points.
 	/// The count must be in the range [3, b2_maxPolygonVertices].
 	/// @warning the points may be re-ordered, even if they form a convex polygon
@@ -62,14 +59,14 @@ public:
 	bool TestPoint(const b2Transform& transform, const b2Vec2& p) const override;
 
 	// @see b2Shape::ComputeDistance
-	void ComputeDistance(const b2Transform& xf, const b2Vec2& p, float32* distance, b2Vec2* normal, int32 childIndex) const;
+	void ComputeDistance(const b2Transform& xf, const b2Vec2& p, float32* distance, b2Vec2* normal) const;
 
 	/// Implement b2Shape.
 	bool RayCast(b2RayCastOutput* output, const b2RayCastInput& input,
-					const b2Transform& transform, int32 childIndex) const override;
+					const b2Transform& transform) const override;
 
 	/// @see b2Shape::ComputeAABB
-	void ComputeAABB(b2AABB* aabb, const b2Transform& transform, int32 childIndex) const override;
+	void ComputeAABB(b2AABB* aabb, const b2Transform& transform) const override;
 
 	/// @see b2Shape::ComputeMass
 	void ComputeMass(b2MassData* massData, float density) const override;

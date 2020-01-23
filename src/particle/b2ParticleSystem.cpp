@@ -91,17 +91,12 @@ public:
 		// now lie on or in the fixture generating
 		if (!contact.fixture->TestPoint(pos))
 		{
-			int32 childCount = contact.fixture->GetShape()->GetChildCount();
-			for (int32 childIndex = 0; childIndex < childCount; childIndex++)
+			float32 distance;
+			b2Vec2 normal;
+			contact.fixture->ComputeDistance(pos, &distance, &normal);
+			if (distance < b2_linearSlop)
 			{
-				float32 distance;
-				b2Vec2 normal;
-				contact.fixture->ComputeDistance(pos, &distance, &normal,
-																	childIndex);
-				if (distance < b2_linearSlop)
-				{
-					return false;
-				}
+				return false;
 			}
 			++(*m_discarded);
 			
@@ -839,7 +834,7 @@ int32 b2ParticleSystem::DestroyParticlesInShape(
 		int32 m_destroyed;
 	} callback(this, shape, xf, callDestructionListener);
 	b2AABB aabb;
-	shape.ComputeAABB(&aabb, xf, 0);
+	shape.ComputeAABB(&aabb, xf);
 	m_world->QueryAABB(&callback, aabb);
 	return callback.Destroyed();
 }
@@ -870,29 +865,26 @@ void b2ParticleSystem::CreateParticlesStrokeShapeForGroup(
 		stride = GetParticleStride();
 	}
 	float32 positionOnEdge = 0;
-	int32 childCount = shape->GetChildCount();
-	for (int32 childIndex = 0; childIndex < childCount; childIndex++)
+	b2EdgeShape edge;
+	if (shape->GetType() == b2Shape::e_edge)
 	{
-		b2EdgeShape edge;
-		if (shape->GetType() == b2Shape::e_edge)
-		{
-			edge = *(b2EdgeShape*) shape;
-		}
-		else
-		{
-			b2Assert(shape->GetType() == b2Shape::e_chain);
-			((b2ChainShape*) shape)->GetChildEdge(&edge, childIndex);
-		}
-		b2Vec2 d = edge.m_vertex2 - edge.m_vertex1;
-		float32 edgeLength = d.Length();
-		while (positionOnEdge < edgeLength)
-		{
-			b2Vec2 p = edge.m_vertex1 + positionOnEdge / edgeLength * d;
-			CreateParticleForGroup(groupDef, xf, p);
-			positionOnEdge += stride;
-		}
-		positionOnEdge -= edgeLength;
+		edge = *(b2EdgeShape*) shape;
 	}
+	else
+	{
+		b2Assert(shape->GetType() == b2Shape::e_chain);
+		// TODO
+		//((b2ChainShape*) shape)->GetChildEdge(&edge, childIndex);
+	}
+	b2Vec2 d = edge.m_vertex2 - edge.m_vertex1;
+	float32 edgeLength = d.Length();
+	while (positionOnEdge < edgeLength)
+	{
+		b2Vec2 p = edge.m_vertex1 + positionOnEdge / edgeLength * d;
+		CreateParticleForGroup(groupDef, xf, p);
+		positionOnEdge += stride;
+	}
+	positionOnEdge -= edgeLength;
 }
 
 void b2ParticleSystem::CreateParticlesFillShapeForGroup(
@@ -907,8 +899,7 @@ void b2ParticleSystem::CreateParticlesFillShapeForGroup(
 	b2Transform identity;
 	identity.SetIdentity();
 	b2AABB aabb;
-	b2Assert(shape->GetChildCount() == 1);
-	shape->ComputeAABB(&aabb, identity, 0);
+	shape->ComputeAABB(&aabb, identity);
 	for (float32 y = floorf(aabb.lowerBound.y / stride) * stride;
 		y < aabb.upperBound.y; y += stride)
 	{
@@ -961,10 +952,6 @@ void b2ParticleSystem::CreateParticlesWithShapesForGroup(
 			B2_NOT_USED(allocator);
 			return NULL;
 		}
-		int32 GetChildCount() const
-		{
-			return 1;
-		}
 		bool TestPoint(const b2Transform& xf, const b2Vec2& p) const
 		{
 			for (int32 i = 0; i < m_shapeCount; i++)
@@ -977,43 +964,35 @@ void b2ParticleSystem::CreateParticlesWithShapesForGroup(
 			return false;
 		}
 		void ComputeDistance(const b2Transform& xf, const b2Vec2& p,
-					float32* distance, b2Vec2* normal, int32 childIndex) const
+					float32* distance, b2Vec2* normal) const
 		{
 			b2Assert(false);
 			B2_NOT_USED(xf);
 			B2_NOT_USED(p);
 			B2_NOT_USED(distance);
 			B2_NOT_USED(normal);
-			B2_NOT_USED(childIndex);
 		}
 		bool RayCast(b2RayCastOutput* output, const b2RayCastInput& input,
-						const b2Transform& transform, int32 childIndex) const
+						const b2Transform& transform) const
 		{
 			b2Assert(false);
 			B2_NOT_USED(output);
 			B2_NOT_USED(input);
 			B2_NOT_USED(transform);
-			B2_NOT_USED(childIndex);
 			return false;
 		}
 		void ComputeAABB(
-				b2AABB* aabb, const b2Transform& xf, int32 childIndex) const
+				b2AABB* aabb, const b2Transform& xf) const
 		{
-			B2_NOT_USED(childIndex);
 			aabb->lowerBound.x = +FLT_MAX;
 			aabb->lowerBound.y = +FLT_MAX;
 			aabb->upperBound.x = -FLT_MAX;
 			aabb->upperBound.y = -FLT_MAX;
-			b2Assert(childIndex == 0);
 			for (int32 i = 0; i < m_shapeCount; i++)
 			{
-				int32 childCount = m_shapes[i]->GetChildCount();
-				for (int32 j = 0; j < childCount; j++)
-				{
-					b2AABB subaabb;
-					m_shapes[i]->ComputeAABB(&subaabb, xf, j);
-					aabb->Combine(subaabb);
-				}
+				b2AABB subaabb;
+				m_shapes[i]->ComputeAABB(&subaabb, xf);
+				aabb->Combine(subaabb);
 			}
 		}
 		void ComputeMass(b2MassData* massData, float32 density) const
@@ -2306,24 +2285,21 @@ private:
 			return true;
 		}
 		const b2Shape* shape = fixture->GetShape();
-		int32 childCount = shape->GetChildCount();
-		for (int32 childIndex = 0; childIndex < childCount; childIndex++)
+		// TODO needs UpdateAABB?
+		b2AABB aabb = fixture->GetAABB();
+		b2ParticleSystem::InsideBoundsEnumerator enumerator =
+							m_system->GetInsideBoundsEnumerator(aabb);
+		int32 index;
+		while ((index = enumerator.GetNext()) >= 0)
 		{
-			b2AABB aabb = fixture->GetAABB(childIndex);
-			b2ParticleSystem::InsideBoundsEnumerator enumerator =
-								m_system->GetInsideBoundsEnumerator(aabb);
-			int32 index;
-			while ((index = enumerator.GetNext()) >= 0)
-			{
-				ReportFixtureAndParticle(fixture, childIndex, index);
-			}
+			ReportFixtureAndParticle(fixture, index);
 		}
 		return true;
 	}
 
 	// Receive a fixture and a particle which may be overlapping.
 	virtual void ReportFixtureAndParticle(
-						b2Fixture* fixture, int32 childIndex, int32 index) = 0;
+						b2Fixture* fixture, int32 index) = 0;
 
 protected:
 	b2ParticleSystem* m_system;
@@ -2436,12 +2412,12 @@ void b2ParticleSystem::UpdateBodyContacts()
 		}
 
 		void ReportFixtureAndParticle(
-								b2Fixture* fixture, int32 childIndex, int32 a)
+								b2Fixture* fixture, int32 a)
 		{
 			b2Vec2 ap = m_system->m_positionBuffer.data[a];
 			float32 d;
 			b2Vec2 n;
-			fixture->ComputeDistance(ap, &d, &n, childIndex);
+			fixture->ComputeDistance(ap, &d, &n);
 			
 			if (d < m_system->m_particleDiameter && ShouldCollide(fixture, a))
 			{
@@ -2574,7 +2550,7 @@ void b2ParticleSystem::SolveCollision(const b2TimeStep& step)
 		}
 
 		void ReportFixtureAndParticle(
-								b2Fixture* fixture, int32 childIndex, int32 a)
+								b2Fixture* fixture, int32 a)
 		{
 			if (ShouldCollide(fixture, a)) {
 				b2Body* body = fixture->GetBody();
@@ -2611,7 +2587,7 @@ void b2ParticleSystem::SolveCollision(const b2TimeStep& step)
 				}
 				input.p2 = ap + m_step.dt * av;
 				input.maxFraction = 1;
-				if (fixture->RayCast(&output, input, childIndex))
+				if (fixture->RayCast(&output, input))
 				{
 					b2Vec2 n = output.normal;
 					b2Vec2 p =
@@ -4334,7 +4310,7 @@ void b2ParticleSystem::QueryShapeAABB(b2QueryCallback* callback,
 									  const b2Transform& xf) const
 {
 	b2AABB aabb;
-	shape.ComputeAABB(&aabb, xf, 0);
+	shape.ComputeAABB(&aabb, xf);
 	QueryAABB(callback, aabb);
 }
 

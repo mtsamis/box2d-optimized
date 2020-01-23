@@ -40,11 +40,6 @@ b2Shape* b2EdgeShape::Clone(b2BlockAllocator* allocator) const
 	return clone;
 }
 
-int32 b2EdgeShape::GetChildCount() const
-{
-	return 1;
-}
-
 bool b2EdgeShape::TestPoint(const b2Transform& xf, const b2Vec2& p) const
 {
 	B2_NOT_USED(xf);
@@ -52,10 +47,8 @@ bool b2EdgeShape::TestPoint(const b2Transform& xf, const b2Vec2& p) const
 	return false;
 }
 
-void b2EdgeShape::ComputeDistance(const b2Transform& xf, const b2Vec2& p, float32* distance, b2Vec2* normal, int32 childIndex) const
+void b2EdgeShape::ComputeDistance(const b2Transform& xf, const b2Vec2& p, float32* distance, b2Vec2* normal) const
 {
-	B2_NOT_USED(childIndex);
-
 	b2Vec2 v1 = b2Mul(xf, m_vertex1);
 	b2Vec2 v2 = b2Mul(xf, m_vertex2);
 
@@ -86,10 +79,8 @@ void b2EdgeShape::ComputeDistance(const b2Transform& xf, const b2Vec2& p, float3
 // p1 + t * d = v1 + s * e
 // s * e - t * d = p1 - v1
 bool b2EdgeShape::RayCast(b2RayCastOutput* output, const b2RayCastInput& input,
-							const b2Transform& xf, int32 childIndex) const
+							const b2Transform& xf) const
 {
-	B2_NOT_USED(childIndex);
-
 	// Put the ray into the edge's frame of reference.
 	b2Vec2 p1 = b2MulT(xf.q, input.p1 - xf.p);
 	b2Vec2 p2 = b2MulT(xf.q, input.p2 - xf.p);
@@ -147,10 +138,8 @@ bool b2EdgeShape::RayCast(b2RayCastOutput* output, const b2RayCastInput& input,
 	return true;
 }
 
-void b2EdgeShape::ComputeAABB(b2AABB* aabb, const b2Transform& xf, int32 childIndex) const
+void b2EdgeShape::ComputeAABB(b2AABB* aabb, const b2Transform& xf) const
 {
-	B2_NOT_USED(childIndex);
-
 	b2Vec2 v1 = b2Mul(xf, m_vertex1);
 	b2Vec2 v2 = b2Mul(xf, m_vertex2);
 
