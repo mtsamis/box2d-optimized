@@ -45,56 +45,46 @@ void b2ContactManager::Destroy(b2Contact* c)
 	b2Body* bodyA = fixtureA->GetBody();
 	b2Body* bodyB = fixtureB->GetBody();
 
-	if (m_contactListener && c->IsTouching())
-	{
+	if (m_contactListener && c->IsTouching()) {
 		m_contactListener->EndContact(c);
 	}
 
 	// Remove from the world.
-	if (c->m_prev)
-	{
+	if (c->m_prev) {
 		c->m_prev->m_next = c->m_next;
 	}
 
-	if (c->m_next)
-	{
+	if (c->m_next) {
 		c->m_next->m_prev = c->m_prev;
 	}
 
-	if (c == m_contactList)
-	{
+	if (c == m_contactList) {
 		m_contactList = c->m_next;
 	}
 
 	// Remove from body 1
-	if (c->m_nodeA.prev)
-	{
+	if (c->m_nodeA.prev) {
 		c->m_nodeA.prev->next = c->m_nodeA.next;
 	}
 
-	if (c->m_nodeA.next)
-	{
+	if (c->m_nodeA.next) {
 		c->m_nodeA.next->prev = c->m_nodeA.prev;
 	}
 
-	if (&c->m_nodeA == bodyA->m_contactList)
-	{
+	if (&c->m_nodeA == bodyA->m_contactList) {
 		bodyA->m_contactList = c->m_nodeA.next;
 	}
 
 	// Remove from body 2
-	if (c->m_nodeB.prev)
-	{
+	if (c->m_nodeB.prev) {
 		c->m_nodeB.prev->next = c->m_nodeB.next;
 	}
 
-	if (c->m_nodeB.next)
-	{
+	if (c->m_nodeB.next) {
 		c->m_nodeB.next->prev = c->m_nodeB.prev;
 	}
 
-	if (&c->m_nodeB == bodyB->m_contactList)
-	{
+	if (&c->m_nodeB == bodyB->m_contactList) {
 		bodyB->m_contactList = c->m_nodeB.next;
 	}
 
@@ -103,28 +93,31 @@ void b2ContactManager::Destroy(b2Contact* c)
 	--m_contactCount;
 }
 
+#include<iostream>
 // This is the top level collision call for the time step. Here
 // all the narrow phase collision is processed for the world
 // contact list.
-void b2ContactManager::Collide()
-{
+void b2ContactManager::Collide() {
+	// Destroy old contacts that did not persist
+	while (m_destroyList) {
+		//TODO since this list is detached we can delete the nodes without removing them from the list 
+		b2Contact* cNuke = m_destroyList;
+		m_destroyList = m_destroyList->GetNext();
+		Destroy(cNuke);
+	}
+	
 	// Update awake contacts.
 	b2Contact* c = m_contactList;
-	while (c)
-	{
+	while (c) {
 		b2Fixture* fixtureA = c->GetFixtureA();
 		b2Fixture* fixtureB = c->GetFixtureB();
-		int32 indexA = c->GetChildIndexA();
-		int32 indexB = c->GetChildIndexB();
 		b2Body* bodyA = fixtureA->GetBody();
 		b2Body* bodyB = fixtureB->GetBody();
 		 
 		// Is this contact flagged for filtering?
-		if (c->m_flags & b2Contact::e_filterFlag)
-		{
+		if (c->m_flags & b2Contact::e_filterFlag) {
 			// Should these bodies collide?
-			if (bodyB->ShouldCollide(bodyA) == false)
-			{
+			if (bodyB->ShouldCollide(bodyA) == false) {
 				b2Contact* cNuke = c;
 				c = cNuke->GetNext();
 				Destroy(cNuke);
@@ -132,14 +125,13 @@ void b2ContactManager::Collide()
 			}
 
 			// Check user filtering.
-			if (m_contactFilter && m_contactFilter->ShouldCollide(fixtureA, fixtureB) == false)
-			{
+			if (m_contactFilter && m_contactFilter->ShouldCollide(fixtureA, fixtureB) == false) {
 				b2Contact* cNuke = c;
 				c = cNuke->GetNext();
 				Destroy(cNuke);
 				continue;
 			}
-
+			
 			// Clear the filtering flag.
 			c->m_flags &= ~b2Contact::e_filterFlag;
 		}
@@ -148,15 +140,15 @@ void b2ContactManager::Collide()
 		bool activeB = bodyB->IsAwake() && bodyB->m_type != b2_staticBody;
 
 		// At least one body must be awake and it must be dynamic or kinematic.
-		if (activeA == false && activeB == false)
-		{
+		if (activeA == false && activeB == false) {
 			c = c->GetNext();
 			continue;
 		}
 
-		int32 proxyIdA = fixtureA->m_proxies[indexA].proxyId;
-		int32 proxyIdB = fixtureB->m_proxies[indexB].proxyId;
-		bool overlap = m_broadPhase.TestOverlap(proxyIdA, proxyIdB);
+		/* contacts that made it to the contact list have persisted
+		//int32 proxyIdA = fixtureA->m_proxies[indexA].proxyId;
+		//int32 proxyIdB = fixtureB->m_proxies[indexB].proxyId;
+		bool overlap = b2TestOverlap(fixtureA->GetAABB(), fixtureB->GetAABB());
 
 		// Here we destroy contacts that cease to overlap in the broad-phase.
 		if (overlap == false)
@@ -166,60 +158,78 @@ void b2ContactManager::Collide()
 			Destroy(cNuke);
 			continue;
 		}
-
+		//*/
+		
 		// The contact persists.
 		c->Update(m_contactListener);
 		c = c->GetNext();
 	}
 }
 
-void b2ContactManager::FindNewContacts()
-{
-	m_broadPhase.UpdatePairs(this);
+void b2ContactManager::FindNewContacts() {
+	m_destroyList = m_contactList;
+	
+	m_broadPhase.UpdateAll();
+	m_broadPhase.QueryAll(this);
+	
+	// Detach from the list of contacts that persisted
+	if (m_destroyList) {
+		if (m_destroyList->m_prev) {
+			m_destroyList->m_prev->m_next = nullptr;
+			m_destroyList->m_prev = nullptr;
+		} else {
+			m_contactList = nullptr;
+		}
+	}
 }
 
-void b2ContactManager::AddPair(void* proxyUserDataA, void* proxyUserDataB)
+void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB)
 {
-	b2FixtureProxy* proxyA = (b2FixtureProxy*)proxyUserDataA;
-	b2FixtureProxy* proxyB = (b2FixtureProxy*)proxyUserDataB;
-
-	b2Fixture* fixtureA = proxyA->fixture;
-	b2Fixture* fixtureB = proxyB->fixture;
-
-	int32 indexA = proxyA->childIndex;
-	int32 indexB = proxyB->childIndex;
-
 	b2Body* bodyA = fixtureA->GetBody();
 	b2Body* bodyB = fixtureB->GetBody();
-
+	
 	// Are the fixtures on the same body?
-	if (bodyA == bodyB)
-	{
+	if (bodyA == bodyB) {
 		return;
 	}
-
-	// TODO_ERIN use a hash table to remove a potential bottleneck when both
-	// bodies have a lot of contacts.
+	
 	// Does a contact already exist?
 	b2ContactEdge* edge = bodyB->GetContactList();
-	while (edge)
-	{
-		if (edge->other == bodyA)
-		{
+	while (edge) {
+		if (edge->other == bodyA) {
 			b2Fixture* fA = edge->contact->GetFixtureA();
 			b2Fixture* fB = edge->contact->GetFixtureB();
-			int32 iA = edge->contact->GetChildIndexA();
-			int32 iB = edge->contact->GetChildIndexB();
-
-			if (fA == fixtureA && fB == fixtureB && iA == indexA && iB == indexB)
-			{
+			
+			if ((fA == fixtureA && fB == fixtureB) || (fA == fixtureB && fB == fixtureA)) {
 				// A contact already exists.
-				return;
-			}
+				
+				b2Contact* cmov = edge->contact;
+				
+				if (cmov == m_destroyList) {
+					m_destroyList = m_destroyList->m_next;
+				}
+				
+				if (cmov->m_prev) {
+					cmov->m_prev->m_next = cmov->m_next;
+				}
 
-			if (fA == fixtureB && fB == fixtureA && iA == indexB && iB == indexA)
-			{
-				// A contact already exists.
+				if (cmov->m_next) {
+					cmov->m_next->m_prev = cmov->m_prev;
+				}
+				
+				if (cmov == m_contactList)
+				{
+					m_contactList = cmov->m_next;
+				}
+
+				cmov->m_prev = nullptr;
+				cmov->m_next = m_contactList;
+				if (m_contactList != nullptr)
+				{
+					m_contactList->m_prev = cmov;
+				}
+				m_contactList = cmov;
+				
 				return;
 			}
 		}
@@ -228,29 +238,24 @@ void b2ContactManager::AddPair(void* proxyUserDataA, void* proxyUserDataB)
 	}
 
 	// Does a joint override collision? Is at least one body dynamic?
-	if (bodyB->ShouldCollide(bodyA) == false)
-	{
+	if (bodyB->ShouldCollide(bodyA) == false) {
 		return;
 	}
 
 	// Check user filtering.
-	if (m_contactFilter && m_contactFilter->ShouldCollide(fixtureA, fixtureB) == false)
-	{
+	if (m_contactFilter && m_contactFilter->ShouldCollide(fixtureA, fixtureB) == false) {
 		return;
 	}
 
 	// Call the factory.
-	b2Contact* c = b2Contact::Create(fixtureA, indexA, fixtureB, indexB, m_allocator);
-	if (c == nullptr)
-	{
+	b2Contact* c = b2Contact::Create(fixtureA, fixtureB, m_allocator);
+	if (c == nullptr) {
 		return;
 	}
 
 	// Contact creation may swap fixtures.
 	fixtureA = c->GetFixtureA();
 	fixtureB = c->GetFixtureB();
-	indexA = c->GetChildIndexA();
-	indexB = c->GetChildIndexB();
 	bodyA = fixtureA->GetBody();
 	bodyB = fixtureB->GetBody();
 

@@ -24,6 +24,7 @@
 #define B2_CONTACT_MANAGER_H
 
 #include "b2_broad_phase.h"
+#include "b2_fixture.h"
 
 class b2Contact;
 class b2ContactFilter;
@@ -37,7 +38,7 @@ public:
 	b2ContactManager();
 
 	// Broad-phase callback.
-	void AddPair(void* proxyUserDataA, void* proxyUserDataB);
+	void QueryCallback(b2Fixture* proxyUserDataA, b2Fixture* proxyUserDataB);
 
 	void FindNewContacts();
 
@@ -47,6 +48,7 @@ public:
             
 	b2BroadPhase m_broadPhase;
 	b2Contact* m_contactList;
+	b2Contact* m_destroyList;
 	int32 m_contactCount;
 	b2ContactFilter* m_contactFilter;
 	b2ContactListener* m_contactListener;
