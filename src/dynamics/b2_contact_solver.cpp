@@ -48,8 +48,29 @@ struct b2ContactPositionConstraint
 	int32 pointCount;
 };
 
+b2ContactSolver::b2ContactSolver()
+{
+	m_positionConstraints = nullptr;
+	m_velocityConstraints = nullptr;
+}
+
 b2ContactSolver::b2ContactSolver(b2ContactSolverDef* def)
 {
+	Initialize(def);
+}
+
+b2ContactSolver::~b2ContactSolver()
+{
+	if (m_velocityConstraints != nullptr) {
+		m_allocator->Free(m_velocityConstraints);
+	}
+	
+	if (m_positionConstraints != nullptr) {
+		m_allocator->Free(m_positionConstraints);
+	}
+}
+
+void b2ContactSolver::Initialize(b2ContactSolverDef* def) {
 	m_step = def->step;
 	m_allocator = def->allocator;
 	m_count = def->count;
@@ -133,12 +154,6 @@ b2ContactSolver::b2ContactSolver(b2ContactSolverDef* def)
 			pc->localPoints[j] = cp->localPoint;
 		}
 	}
-}
-
-b2ContactSolver::~b2ContactSolver()
-{
-	m_allocator->Free(m_velocityConstraints);
-	m_allocator->Free(m_positionConstraints);
 }
 
 // Initialize position dependent portions of the velocity constraints.

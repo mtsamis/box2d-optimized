@@ -73,11 +73,13 @@ struct b2ContactSolverDef
 class b2ContactSolver
 {
 public:
+	b2ContactSolver();
 	b2ContactSolver(b2ContactSolverDef* def);
 	~b2ContactSolver();
 
+	void Initialize(b2ContactSolverDef* def);
 	void InitializeVelocityConstraints();
-
+	
 	void WarmStart();
 	void SolveVelocityConstraints();
 	void StoreImpulses();
