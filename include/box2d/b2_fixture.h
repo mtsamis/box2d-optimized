@@ -146,7 +146,9 @@ public:
 
 	/// Set the user data. Use this to store your application specific data.
 	void SetUserData(void* data);
-
+	
+	uint32 GetId();
+	
 	/// Test a point for containment in this fixture.
 	/// @param p a point in world coordinates.
 	bool TestPoint(const b2Vec2& p) const;
@@ -226,6 +228,8 @@ protected:
 	bool m_isSensor;
 
 	void* m_userData;
+	
+	uint32 m_id;
 };
 
 inline b2Shape::Type b2Fixture::GetType() const
@@ -261,6 +265,11 @@ inline void* b2Fixture::GetUserData() const
 inline void b2Fixture::SetUserData(void* data)
 {
 	m_userData = data;
+}
+
+inline uint32 b2Fixture::GetId()
+{
+	return m_id;
 }
 
 inline b2Body* b2Fixture::GetBody()

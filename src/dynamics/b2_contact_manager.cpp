@@ -29,8 +29,7 @@
 b2ContactFilter b2_defaultFilter;
 b2ContactListener b2_defaultListener;
 
-b2ContactManager::b2ContactManager()
-{
+b2ContactManager::b2ContactManager() {
 	m_contactList = nullptr;
 	m_contactCount = 0;
 	m_contactFilter = &b2_defaultFilter;
@@ -38,8 +37,7 @@ b2ContactManager::b2ContactManager()
 	m_allocator = nullptr;
 }
 
-void b2ContactManager::Destroy(b2Contact* c)
-{
+void b2ContactManager::Destroy(b2Contact* c) {
 	b2Fixture* fixtureA = c->GetFixtureA();
 	b2Fixture* fixtureB = c->GetFixtureB();
 	b2Body* bodyA = fixtureA->GetBody();
@@ -93,7 +91,6 @@ void b2ContactManager::Destroy(b2Contact* c)
 	--m_contactCount;
 }
 
-#include<iostream>
 // This is the top level collision call for the time step. Here
 // all the narrow phase collision is processed for the world
 // contact list.
@@ -169,8 +166,22 @@ void b2ContactManager::Collide() {
 void b2ContactManager::FindNewContacts() {
 	m_destroyList = m_contactList;
 	
-	m_broadPhase.UpdateAll();
-	m_broadPhase.QueryAll(this);
+	// TODO move update to world?
+	
+	m_broadPhase.UpdateAll([](b2Fixture* fixture) {
+		b2Body* b = fixture->GetBody();
+		if ((b->m_flags & b2Body::e_islandFlag) != 0 && b->GetType() != b2_staticBody) {
+			fixture->UpdateAABB();	
+			return true;
+		}
+		
+		return false;
+	});
+	
+	m_broadPhase.QueryAll(this, [](b2Fixture* fixture) {
+		b2Body* b = fixture->GetBody();
+		return (b->m_flags & b2Body::e_islandFlag) != 0 && b->GetType() != b2_staticBody;
+	});
 	
 	// Detach from the list of contacts that persisted
 	if (m_destroyList) {
@@ -183,8 +194,7 @@ void b2ContactManager::FindNewContacts() {
 	}
 }
 
-void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB)
-{
+void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 	b2Body* bodyA = fixtureA->GetBody();
 	b2Body* bodyB = fixtureB->GetBody();
 	
@@ -209,23 +219,20 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB)
 					m_destroyList = m_destroyList->m_next;
 				}
 				
-				if (cmov->m_prev) {
-					cmov->m_prev->m_next = cmov->m_next;
+				if (cmov == m_contactList) {
+					// no need to remove the head
+					return;
 				}
-
+				
+				cmov->m_prev->m_next = cmov->m_next;
+				
 				if (cmov->m_next) {
 					cmov->m_next->m_prev = cmov->m_prev;
 				}
 				
-				if (cmov == m_contactList)
-				{
-					m_contactList = cmov->m_next;
-				}
-
 				cmov->m_prev = nullptr;
 				cmov->m_next = m_contactList;
-				if (m_contactList != nullptr)
-				{
+				if (m_contactList != nullptr) {
 					m_contactList->m_prev = cmov;
 				}
 				m_contactList = cmov;
@@ -262,8 +269,7 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB)
 	// Insert into the world.
 	c->m_prev = nullptr;
 	c->m_next = m_contactList;
-	if (m_contactList != nullptr)
-	{
+	if (m_contactList != nullptr) {
 		m_contactList->m_prev = c;
 	}
 	m_contactList = c;
@@ -276,8 +282,7 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB)
 
 	c->m_nodeA.prev = nullptr;
 	c->m_nodeA.next = bodyA->m_contactList;
-	if (bodyA->m_contactList != nullptr)
-	{
+	if (bodyA->m_contactList != nullptr) {
 		bodyA->m_contactList->prev = &c->m_nodeA;
 	}
 	bodyA->m_contactList = &c->m_nodeA;
@@ -288,15 +293,13 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB)
 
 	c->m_nodeB.prev = nullptr;
 	c->m_nodeB.next = bodyB->m_contactList;
-	if (bodyB->m_contactList != nullptr)
-	{
+	if (bodyB->m_contactList != nullptr) {
 		bodyB->m_contactList->prev = &c->m_nodeB;
 	}
 	bodyB->m_contactList = &c->m_nodeB;
 
 	// Wake up the bodies
-	if (fixtureA->IsSensor() == false && fixtureB->IsSensor() == false)
-	{
+	if (fixtureA->IsSensor() == false && fixtureB->IsSensor() == false) {
 		bodyA->SetAwake(true);
 		bodyB->SetAwake(true);
 	}

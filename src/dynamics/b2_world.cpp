@@ -623,27 +623,6 @@ void b2World::Solve(const b2TimeStep& step)
 
 	{
 		b2Timer timer;
-		
-		// TODO somehow merge some/all of the loops for broadphase detection? this one below, the updateAll in broadphase and the detect loop
-		// Synchronize fixtures, check for out of range bodies.
-		for (b2Body* b = m_bodyList; b; b = b->GetNext())
-		{
-			// If a body was not in an island then it did not move.
-			if ((b->m_flags & b2Body::e_islandFlag) == 0)
-			{
-				continue;
-			}
-
-			if (b->GetType() == b2_staticBody)
-			{
-				continue;
-			}
-
-			// Update fixtures (for broad-phase).
-			//b->SynchronizeFixtures();
-			b->UpdateAABBs();
-		}
-
 		// Look for new contacts.
 		m_contactManager.FindNewContacts();
 		m_profile.broadphase = timer.GetMilliseconds();

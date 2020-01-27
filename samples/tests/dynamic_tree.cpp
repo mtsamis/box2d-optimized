@@ -24,8 +24,13 @@
 
 class DynamicTree : public Test
 {
-public:
+public:	
+	static Test* Create()
+	{
+		return new DynamicTree;
+	}
 
+/*
 	enum
 	{
 		e_actorCount = 128
@@ -42,7 +47,7 @@ public:
 		{
 			Actor* actor = m_actors + i;
 			GetRandomAABB(&actor->aabb);
-			actor->proxyId = m_tree.CreateProxy(actor->aabb, actor);
+			// TODO actor->proxyId = m_tree.CreateProxy(actor->aabb, actor);
 		}
 
 		m_stepCount = 0;
@@ -58,11 +63,6 @@ public:
 		m_rayCastInput.maxFraction = 1.0f;
 
 		m_automated = false;
-	}
-
-	static Test* Create()
-	{
-		return new DynamicTree;
 	}
 
 	void Step(Settings& settings) override
@@ -92,8 +92,8 @@ public:
 		for (int32 i = 0; i < e_actorCount; ++i)
 		{
 			Actor* actor = m_actors + i;
-			if (actor->proxyId == b2_nullNode)
-				continue;
+			// TODO if (actor->proxyId == b2_nullNode)
+			//	continue;
 
 			b2Color c(0.9f, 0.9f, 0.9f);
 			if (actor == m_rayActor && actor->overlap)
@@ -130,7 +130,7 @@ public:
 		}
 
 		{
-			int32 height = m_tree.GetHeight();
+			int32 height = m_tree.GetTreeHeight();
 			g_debugDraw.DrawString(5, m_textLine, "dynamic tree height = %d", height);
 			m_textLine += m_textIncrement;
 		}
@@ -170,7 +170,7 @@ public:
 
 	float RayCastCallback(const b2RayCastInput& input, int32 proxyId)
 	{
-		/*Actor* actor = (Actor*)m_tree.GetUserData(proxyId);
+		Actor* actor = (Actor*)m_tree.GetUserData(proxyId);
 
 		b2RayCastOutput output;
 		bool hit = actor->aabb.RayCast(&output, input);
@@ -183,7 +183,7 @@ public:
 			return output.fraction;
 		}
 
-		return input.maxFraction;*/
+		return input.maxFraction;
 		//TODO
 		return 0;
 	}
@@ -233,10 +233,10 @@ private:
 		{
 			int32 j = rand() % e_actorCount;
 			Actor* actor = m_actors + j;
-			if (actor->proxyId == b2_nullNode)
+			// TODO if (actor->proxyId == b2_nullNode)
 			{
 				GetRandomAABB(&actor->aabb);
-				actor->proxyId = m_tree.CreateProxy(actor->aabb, actor);
+			// TODO	actor->proxyId = m_tree.CreateProxy(actor->aabb, actor);
 				return;
 			}
 		}
@@ -244,6 +244,7 @@ private:
 
 	void DestroyProxy()
 	{
+		//TODO
 		for (int32 i = 0; i < e_actorCount; ++i)
 		{
 			int32 j = rand() % e_actorCount;
@@ -263,10 +264,10 @@ private:
 		{
 			int32 j = rand() % e_actorCount;
 			Actor* actor = m_actors + j;
-			if (actor->proxyId == b2_nullNode)
-			{
-				continue;
-			}
+			// TODO if (actor->proxyId == b2_nullNode)
+			//{
+			//	continue;
+			//}
 
 			b2AABB aabb0 = actor->aabb;
 			MoveAABB(&actor->aabb);
@@ -303,10 +304,10 @@ private:
 
 		for (int32 i = 0; i < e_actorCount; ++i)
 		{
-			if (m_actors[i].proxyId == b2_nullNode)
-			{
-				continue;
-			}
+			// TODO if (m_actors[i].proxyId == b2_nullNode)
+			//{
+			//	continue;
+			//}
 
 			bool overlap = b2TestOverlap(m_queryAABB, m_actors[i].aabb);
 			B2_NOT_USED(overlap);
@@ -328,10 +329,10 @@ private:
 		b2RayCastOutput bruteOutput;
 		for (int32 i = 0; i < e_actorCount; ++i)
 		{
-			if (m_actors[i].proxyId == b2_nullNode)
-			{
-				continue;
-			}
+			// TODO if (m_actors[i].proxyId == b2_nullNode)
+			// {
+			//	continue;
+			//}
 
 			b2RayCastOutput output;
 			bool hit = m_actors[i].aabb.RayCast(&output, input);
@@ -360,6 +361,7 @@ private:
 	Actor m_actors[e_actorCount];
 	int32 m_stepCount;
 	bool m_automated;
+*/
 };
 
 static int testIndex = RegisterTest("Collision", "Dynamic Tree", DynamicTree::Create);

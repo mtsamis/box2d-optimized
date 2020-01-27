@@ -23,40 +23,72 @@
 #ifndef B2_BROAD_PHASE_H
 #define B2_BROAD_PHASE_H
 
-#include "b2_settings.h"
 #include "b2_collision.h"
 #include "b2_fixture.h"
-#include "b2_dynamic_tree.h"
-#include <algorithm>
+#include "b2_growable_stack.h"
 
-/// The broad-phase is used for computing pairs and performing volume queries and ray casts.
-/// This broad-phase does not persist pairs. Instead, this reports potentially new pairs.
-/// It is up to the client to consume the new pairs and to track subsequent overlap.
-class b2BroadPhase
-{
+struct b2TreeNode {
+	b2TreeNode* left;
+	b2TreeNode* right;
+	void* userData;
+	b2AABB aabb;
+	
+	bool IsLeaf() { return left == nullptr; }
+};
+
+struct b2MapNode {
+	uint32 key;
+	uint32 hash;
+	b2TreeNode* value;
+	b2MapNode* next;
+};
+
+class b2IntHashTable {
+protected:
+	friend class b2BroadPhase;
+
+	b2IntHashTable(int32 initialCapacity);
+	
+	~b2IntHashTable();
+	
+	void Grow();
+	b2MapNode** Get(b2Fixture* fixture);
+	
+	b2MapNode** m_mapNodes;
+	int32 m_mapCapacity;
+};
+
+/// A dynamic AABB tree broad-phase, inspired by Nathanael Presson's btDbvt.
+/// A dynamic tree arranges data in a binary tree to accelerate
+/// queries such as volume queries and ray casts. Leafs are proxies
+/// with an AABB. In the tree we expand the proxy AABB by b2_fatAABBFactor
+/// so that the proxy AABB is bigger than the client object. This allows the client
+/// object to move by small amounts without triggering a tree update.
+///
+/// Nodes are pooled and relocatable, so we use node indices rather than pointers.
+class b2BroadPhase {
 public:
-	b2BroadPhase();
-	~b2BroadPhase();
+	b2BroadPhase() : b2BroadPhase(32, 0.05f) {}
+	
+	/// Constructing the tree initializes the node pool.
+	b2BroadPhase(int32 initialCapacity, float qualityFactor);
 
-	/// Create a proxy with an initial AABB. Pairs are not reported until
-	/// UpdatePairs is called.
-	void Add(b2Fixture* fixture);
+	/// Destroy the tree, freeing the node pool.
+	~b2BroadPhase();
 	
-	void Update(b2Fixture* fixture);
-	
-	/// Destroy a proxy. It is up to the client to remove any pairs.
+	bool Add(b2Fixture* fixture);
+	bool Update(b2Fixture* fixture);
 	bool Remove(b2Fixture* fixture);
 	
-	template <typename UnaryPredicate>
-	void RemoveAll(UnaryPredicate predicate);
-	
-	/// Get the number of proxies.
-	int32 GetCount() const;
-
 	void UpdateAll();
 	
 	template <typename Visitor>
-	void UpdateAll(Visitor v);
+	void UpdateAll(Visitor visitor);
+	
+	void RemoveAll();
+	
+	template <typename UnaryPredicate>
+	void RemoveAll(UnaryPredicate predicate);
 	
 	/// Query an AABB for overlapping proxies. The callback class
 	/// is called for each proxy that overlaps the supplied AABB.
@@ -64,10 +96,19 @@ public:
 	void Query(T* callback, const b2AABB& aabb) const;
 	
 	template <typename T>
+	void QueryId(T* callback, b2TreeNode* leaf) const;
+	
+	template <typename T>
 	void QueryAll(T* callback) const;
 	
 	template <typename T, typename UnaryPredicate>
 	void QueryAll(T* callback, UnaryPredicate predicate) const;
+	
+	template <typename T>
+	void detect_impl(T* callback, const b2AABB& aabb, b2TreeNode* root) const;
+	
+	template <typename T>
+	void detect_impl_id(T* callback, const b2TreeNode* leaf, b2TreeNode* root) const;
 	
 	/// Ray-cast against the proxies in the tree. This relies on the callback
 	/// to perform a exact ray-cast in the case were the proxy contains a shape.
@@ -78,83 +119,248 @@ public:
 	/// @param callback a callback class that is called for each proxy that is hit by the ray.
 	template <typename T>
 	void RayCast(T* callback, const b2RayCastInput& input) const;
-
+	
 	/// Get the height of the embedded tree.
 	int32 GetTreeHeight() const;
-
+	
 	/// Get the quality metric of the embedded tree.
 	float GetTreeQuality() const;
-
+	
+	int32 GetCount() const;
+	
 	/// Shift the world origin. Useful for large worlds.
 	/// The shift formula is: position -= newOrigin
 	/// @param newOrigin the new origin with respect to the old origin
 	void ShiftOrigin(const b2Vec2& newOrigin);
-
+	
+	void MarkRebuild();
+	
 private:
-
-	friend class b2DynamicTree;
-
-	b2DynamicTree m_tree;
-
-	int32 m_proxyCount;
+	int32 ComputeHeight(b2TreeNode* node) const;
+	
+	bool RebuildTree();
+	b2TreeNode* RebuildTree(b2TreeNode *parent, int32 start, int32 end);
+	
+	template <typename Visitor>
+	void RefreshTree(Visitor visitor, b2TreeNode* node);
+	
+	float m_currentQuality;
+	float m_lastRebuildQuality;
+	float m_qualityFactor;
+	
+	b2TreeNode** m_links;
+	b2TreeNode* m_nodes;
+	
+	bool m_rebuildLinks;
+	b2TreeNode *m_root;
+	
+	b2IntHashTable m_map;
+	
+	int32 m_capacity;
+	int32 m_count;
 };
 
-inline void b2BroadPhase::Update(b2Fixture* fixture)
-{
-	Add(fixture);
+inline void b2BroadPhase::MarkRebuild() {
+	m_currentQuality = 1;
+	m_lastRebuildQuality = 0;
 }
 
-inline int32 b2BroadPhase::GetCount() const
-{
-	return m_proxyCount;
+inline float b2BroadPhase::GetTreeQuality() const {
+	return (m_currentQuality == 0)? 0 : m_lastRebuildQuality / m_currentQuality;
 }
 
-inline int32 b2BroadPhase::GetTreeHeight() const
-{
-	return m_tree.GetHeight();
+inline int32 b2BroadPhase::GetCount() const {
+	return m_count;
 }
 
-inline float b2BroadPhase::GetTreeQuality() const
-{
-	return m_tree.GetAreaRatio();
+inline void b2BroadPhase::RemoveAll() {
+	// TODO efficient
+	RemoveAll([](b2Fixture* fixture) { return true; });
 }
 
 template <typename UnaryPredicate>
-inline void b2BroadPhase::RemoveAll(UnaryPredicate predicate)
-{
-	// TODO
+void b2BroadPhase::RemoveAll(UnaryPredicate predicate) {
+	MarkRebuild();
+	
+	for (int32 i = 0; i < m_count; i++) {
+		b2Fixture* f = ((b2Fixture*) m_nodes[i].userData);
+		
+		if (predicate(f)) {
+			// TODO efficient traversal of the map
+			Remove(f);
+		}
+	}
+}
+
+inline void b2BroadPhase::UpdateAll() {
+	UpdateAll([](b2Fixture* fixture) { return true; });
+}
+	
+template <typename Visitor>
+inline void b2BroadPhase::UpdateAll(Visitor visitor) {
+	if (RebuildTree()) {
+		m_currentQuality = 0;
+		RefreshTree(visitor, m_root);	
+		
+		m_lastRebuildQuality = m_currentQuality;
+	} else {
+		m_currentQuality = 0;
+		RefreshTree(visitor, m_root);
+	}
 }
 
 template <typename Visitor>
-inline void b2BroadPhase::UpdateAll(Visitor v)
-{
-	// TODO selective/transformative update
-	m_tree.UpdateAll();
+inline void b2BroadPhase::RefreshTree(Visitor visitor, b2TreeNode* node) {
+	if (node->IsLeaf()) {
+		b2Fixture* f = ((b2Fixture*) node->userData);
+		
+		if (visitor(f)) {
+			node->aabb = f->GetAABB();
+		}
+			
+		return;
+	}
+	
+	RefreshTree(visitor, node->left);
+	RefreshTree(visitor, node->right);
+	
+	node->aabb = node->left->aabb;
+	node->aabb.Combine(node->right->aabb);
+	
+	m_currentQuality += node->aabb.upperBound.x - node->aabb.lowerBound.x + node->aabb.upperBound.y - node->aabb.lowerBound.y;
 }
 
 template <typename T>
-inline void b2BroadPhase::Query(T* callback, const b2AABB& aabb) const
-{
-	m_tree.Query(callback, aabb);
-}
-
-template <typename T>
-inline void b2BroadPhase::QueryAll(T* callback) const
-{
-	m_tree.QueryAll(callback);
+inline void b2BroadPhase::QueryAll(T* callback) const {
+	QueryAll(callback, [](b2Fixture* fixture) { return true; });
 }
 
 template <typename T, typename UnaryPredicate>
-inline void b2BroadPhase::QueryAll(T* callback, UnaryPredicate predicate) const
-{
-	// TODO
-	m_tree.QueryAll(callback);
+inline void b2BroadPhase::QueryAll(T* callback, UnaryPredicate predicate) const {
+	for (int32 i = 0; i < m_count; i++) {
+		b2Fixture* f = ((b2Fixture*) m_nodes[i].userData);
+		
+		if (predicate(f)) {
+			QueryId(callback, &m_nodes[i]);
+		}
+	}
+}
+	
+template <typename T>
+inline void b2BroadPhase::QueryId(T* callback, b2TreeNode* leaf) const {
+	detect_impl_id(callback, leaf, m_root);
+}
+
+template <typename T>
+void b2BroadPhase::detect_impl_id(T* callback, const b2TreeNode* leaf, b2TreeNode* root) const {
+	if (root->IsLeaf()) {
+		callback->QueryCallback((b2Fixture*) leaf->userData, (b2Fixture*) root->userData);
+	} else {
+		if (b2TestOverlap(leaf->aabb, root->left->aabb)) detect_impl_id(callback, leaf, root->left);
+		if (b2TestOverlap(leaf->aabb, root->right->aabb)) detect_impl_id(callback, leaf, root->right);
+	}
+}
+
+template <typename T>
+void b2BroadPhase::detect_impl(T* callback, const b2AABB& aabb, b2TreeNode* root) const {
+	if (root->IsLeaf()) {
+		callback->QueryCallback((b2Fixture*) root->userData);
+	} else {
+		if (b2TestOverlap(aabb, root->left->aabb)) detect_impl(callback, aabb, root->left);
+		if (b2TestOverlap(aabb, root->right->aabb)) detect_impl(callback, aabb, root->right);
+	}
+}
+
+template <typename T>
+inline void b2BroadPhase::Query(T* callback, const b2AABB& aabb) const {
+	detect_impl(callback, aabb, m_root);
 }
 
 template <typename T>
 inline void b2BroadPhase::RayCast(T* callback, const b2RayCastInput& input) const
 {
-	m_tree.RayCast(callback, input);
+	/*
+	b2Vec2 p1 = input.p1;
+	b2Vec2 p2 = input.p2;
+	b2Vec2 r = p2 - p1;
+	b2Assert(r.LengthSquared() > 0.0f);
+	r.Normalize();
+
+	// v is perpendicular to the segment.
+	b2Vec2 v = b2Cross(1.0f, r);
+	b2Vec2 abs_v = b2Abs(v);
+
+	// Separating axis for segment (Gino, p80).
+	// |dot(v, p1 - c)| > dot(|v|, h)
+
+	float maxFraction = input.maxFraction;
+
+	// Build a bounding box for the segment.
+	b2AABB segmentAABB;
+	{
+		b2Vec2 t = p1 + maxFraction * (p2 - p1);
+		segmentAABB.lowerBound = b2Min(p1, t);
+		segmentAABB.upperBound = b2Max(p1, t);
+	}
+
+	b2GrowableStack<int32, 256> stack;
+	stack.Push(m_root);
+
+	while (stack.GetCount() > 0)
+	{
+		int32 nodeId = stack.Pop();
+		if (nodeId == b2_nullNode)
+		{
+			continue;
+		}
+
+		const b2TreeNode* node = m_nodes + nodeId;
+
+		if (b2TestOverlap(node->aabb, segmentAABB) == false)
+		{
+			continue;
+		}
+
+		// Separating axis for segment (Gino, p80).
+		// |dot(v, p1 - c)| > dot(|v|, h)
+		b2Vec2 c = node->aabb.GetCenter();
+		b2Vec2 h = node->aabb.GetExtents();
+		float separation = b2Abs(b2Dot(v, p1 - c)) - b2Dot(abs_v, h);
+		if (separation > 0.0f)
+		{
+			continue;
+		}
+
+		if (node->IsLeaf())
+		{
+			b2RayCastInput subInput;
+			subInput.p1 = input.p1;
+			subInput.p2 = input.p2;
+			subInput.maxFraction = maxFraction;
+
+			float value = callback->RayCastCallback(subInput, nodeId);
+
+			if (value == 0.0f)
+			{
+				// The client has terminated the ray cast.
+				return;
+			}
+
+			if (value > 0.0f)
+			{
+				// Update segment bounding box.
+				maxFraction = value;
+				b2Vec2 t = p1 + maxFraction * (p2 - p1);
+				segmentAABB.lowerBound = b2Min(p1, t);
+				segmentAABB.upperBound = b2Max(p1, t);
+			}
+		}
+		else
+		{
+			stack.Push(node->child1);
+			stack.Push(node->child2);
+		}
+	}*/
 }
 
 #endif

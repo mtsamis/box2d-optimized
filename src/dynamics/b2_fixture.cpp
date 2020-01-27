@@ -38,6 +38,9 @@ b2Fixture::b2Fixture()
 	m_next = nullptr;
 	m_shape = nullptr;
 	m_density = 0.0f;
+	
+	static uint32 idGenerator = 0;
+	m_id = idGenerator++;
 }
 
 void b2Fixture::Create(b2BlockAllocator* allocator, b2Body* body, const b2FixtureDef* def)

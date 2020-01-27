@@ -45,7 +45,6 @@ For discussion please visit http://box2d.org/forum
 #include "b2_polygon_shape.h"
 
 #include "b2_broad_phase.h"
-#include "b2_dynamic_tree.h"
 
 #include "b2_body.h"
 #include "b2_contact.h"
