@@ -187,6 +187,14 @@ struct b2AABB
 		float wy = upperBound.y - lowerBound.y;
 		return 2.0f * (wx + wy);
 	}
+	
+	/// Get the perimeter length
+	float GetArea() const
+	{
+		float wx = upperBound.x - lowerBound.x;
+		float wy = upperBound.y - lowerBound.y;
+		return wx * wy;
+	}
 
 	/// Combine an AABB into this one.
 	void Combine(const b2AABB& aabb)
