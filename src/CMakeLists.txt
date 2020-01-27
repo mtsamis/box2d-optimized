@@ -7,7 +7,6 @@ set(BOX2D_SOURCE_FILES
 	collision/b2_collide_polygon.cpp
 	collision/b2_collision.cpp
 	collision/b2_distance.cpp
-	collision/b2_dynamic_tree.cpp
 	collision/b2_edge_shape.cpp
 	collision/b2_polygon_shape.cpp
 	collision/b2_time_of_impact.cpp
@@ -83,7 +82,6 @@ set(BOX2D_HEADER_FILES
 	../include/box2d/b2_distance.h
 	../include/box2d/b2_distance_joint.h
 	../include/box2d/b2_draw.h
-	../include/box2d/b2_dynamic_tree.h
 	../include/box2d/b2_edge_shape.h
 	../include/box2d/b2_fixture.h
 	../include/box2d/b2_friction_joint.h
