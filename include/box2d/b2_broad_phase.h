@@ -190,6 +190,10 @@ inline void b2BroadPhase::UpdateAll() {
 	
 template <typename Visitor>
 inline void b2BroadPhase::UpdateAll(Visitor visitor) {
+	if (m_count == 0) {
+		return;
+	}
+
 	if (RebuildTree()) {
 		m_currentQuality = 0;
 		RefreshTree(visitor, m_root);	
@@ -240,7 +244,9 @@ inline void b2BroadPhase::QueryAll(T* callback, UnaryPredicate predicate) const 
 	
 template <typename T>
 inline void b2BroadPhase::QueryId(T* callback, b2TreeNode* leaf) const {
-	detect_impl_id(callback, leaf, m_root);
+	if (m_count > 0) {
+		detect_impl_id(callback, leaf, m_root);
+	}
 }
 
 template <typename T>
@@ -265,7 +271,9 @@ void b2BroadPhase::detect_impl(T* callback, const b2AABB& aabb, b2TreeNode* root
 
 template <typename T>
 inline void b2BroadPhase::Query(T* callback, const b2AABB& aabb) const {
-	detect_impl(callback, aabb, m_root);
+	if (m_count > 0) {
+		detect_impl(callback, aabb, m_root);
+	}
 }
 
 template <typename T>
