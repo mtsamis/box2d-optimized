@@ -180,7 +180,7 @@ void b2ContactManager::FindNewContacts() {
 	
 	m_broadPhase.QueryAll(this, [](b2Fixture* fixture) {
 		b2Body* b = fixture->GetBody();
-		return (b->m_flags & b2Body::e_islandFlag) != 0 && b->GetType() != b2_staticBody;
+		return b->GetType() != b2_staticBody;
 	});
 	
 	// Detach from the list of contacts that persisted
