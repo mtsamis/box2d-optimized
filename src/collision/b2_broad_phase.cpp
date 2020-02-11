@@ -58,7 +58,7 @@ void b2IntHashTable::Grow() {
 		
 		while (cur != nullptr) {
 			// if the new msd bit to be used is 1 then cur must be moved
-			if (cur->hash & m_mapCapacity == m_mapCapacity) {
+			if (hash(cur->key) & m_mapCapacity == m_mapCapacity) {
 				// remove from old bucket
 				*src = cur->next;
 				
@@ -147,7 +147,9 @@ inline b2Vec2 GetCenter2(const b2AABB& aabb) {
 b2TreeNode* b2BroadPhase::RebuildTree(b2TreeNode *parent, int32 start, int32 end) {
 	int count = end - start;
 	int group0;
-	
+
+	b2Assert(count > 0);
+
 	if (count == 1) {
 		return m_links[start];
 	} else if (count <= 3) {
@@ -237,9 +239,11 @@ bool b2BroadPhase::Add(b2Fixture* fixture) {
 	}
 	
 	// initialize the new tree node
-	b2TreeNode* leaf = &m_nodes[m_count];
-	m_links[m_count] = leaf;
+	int32 idx = m_count;
 	m_count++;
+	
+	b2TreeNode* leaf = &m_nodes[idx];
+	m_links[idx] = leaf;
 	
 	leaf->left = nullptr;
 	leaf->right = nullptr;
@@ -251,8 +255,7 @@ bool b2BroadPhase::Add(b2Fixture* fixture) {
 	b2MapNode* newNode = (b2MapNode*) b2Alloc(sizeof(b2MapNode));
 	
 	newNode->key = fixture->GetId();
-	newNode->hash = hash(newNode->key);
-	newNode->value = leaf;
+	newNode->value = idx;
 	newNode->next = nullptr;
 	
 	// insert at the end of the bucket
@@ -280,8 +283,8 @@ bool b2BroadPhase::Update(b2Fixture* fixture) {
 		return false;
 	}
 	
-	b2TreeNode* node = (*src)->value;
-	node->aabb = fixture->GetAABB();
+	int32 idx = (*src)->value;
+	m_nodes[idx].aabb = fixture->GetAABB();
 	
 	// TODO efficient update
 	MarkRebuild();
@@ -300,14 +303,17 @@ bool b2BroadPhase::Remove(b2Fixture* fixture) {
 	
 	m_count--;
 	
-	b2TreeNode* node = forRemoval->value;
-	b2TreeNode* last = &m_nodes[m_count];
-	
-	b2Swap(*node, *last);
-	
-	b2MapNode** lastMapNode = m_map.Get((b2Fixture*) last->userData);
+	int32 nodeIdx = forRemoval->value;
+	int32 lastIdx = m_count;
+	b2Fixture* lastFixture = (b2Fixture*) m_nodes[lastIdx].userData;
+
+	b2Swap(m_nodes[nodeIdx], m_nodes[lastIdx]);
+
+	// We need to update the hashtable entry that was pointing to the lastIdx node
+	b2MapNode** lastMapNode = m_map.Get(lastFixture);
 	b2Assert(*lastMapNode != nullptr);
-	(*lastMapNode)->value = node;
+
+	(*lastMapNode)->value = nodeIdx;
 	
 	// TODO remove from tree instead if the tree quality is good
 	m_rebuildLinks = true;

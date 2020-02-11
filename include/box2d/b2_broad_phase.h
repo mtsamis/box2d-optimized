@@ -38,8 +38,8 @@ struct b2TreeNode {
 
 struct b2MapNode {
 	uint32 key;
-	uint32 hash;
-	b2TreeNode* value;
+	int32 value;
+
 	b2MapNode* next;
 };
 
@@ -58,14 +58,6 @@ protected:
 	int32 m_mapCapacity;
 };
 
-/// A dynamic AABB tree broad-phase, inspired by Nathanael Presson's btDbvt.
-/// A dynamic tree arranges data in a binary tree to accelerate
-/// queries such as volume queries and ray casts. Leafs are proxies
-/// with an AABB. In the tree we expand the proxy AABB by b2_fatAABBFactor
-/// so that the proxy AABB is bigger than the client object. This allows the client
-/// object to move by small amounts without triggering a tree update.
-///
-/// Nodes are pooled and relocatable, so we use node indices rather than pointers.
 class b2BroadPhase {
 public:
 	b2BroadPhase() : b2BroadPhase(32, 0.05f) {}
