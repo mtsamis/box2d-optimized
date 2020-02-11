@@ -224,7 +224,9 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 					return;
 				}
 				
-				cmov->m_prev->m_next = cmov->m_next;
+				if (cmov->m_prev) {
+					cmov->m_prev->m_next = cmov->m_next;
+				}
 				
 				if (cmov->m_next) {
 					cmov->m_next->m_prev = cmov->m_prev;

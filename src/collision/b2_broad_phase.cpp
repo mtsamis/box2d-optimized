@@ -30,6 +30,16 @@ b2IntHashTable::b2IntHashTable(int32 initialCapacity) {
 }
 
 b2IntHashTable::~b2IntHashTable() {
+	for (int32 i = 0; i < m_mapCapacity; ++i) {
+		b2MapNode* c = m_mapNodes[i];
+
+		while (c != nullptr) {
+			b2MapNode* next = c->next;
+			b2Free(c);
+			c = next;
+		}
+	}
+
 	b2Free(m_mapNodes);
 }
 
@@ -47,11 +57,12 @@ void b2IntHashTable::Grow() {
 		b2MapNode* list = nullptr;
 		
 		while (cur != nullptr) {
-			// TODO replace with 
-			// if (cur->hash & m_mapCapacity == m_mapCapacity)
-			if ((cur->hash & (newMapCapacity - 1)) != (cur->hash & (m_mapCapacity - 1))) {
+			// if the new msd bit to be used is 1 then cur must be moved
+			if (cur->hash & m_mapCapacity == m_mapCapacity) {
+				// remove from old bucket
 				*src = cur->next;
 				
+				// insert in the linked list for the new bucket
 				cur->next = list;
 				list = cur;
 			} else {
@@ -96,7 +107,6 @@ b2BroadPhase::b2BroadPhase(int32 initialCapacity, float qualityFactor) : m_map(i
 	m_nodes = (b2TreeNode*) b2Alloc(m_capacity * 2 * sizeof(b2TreeNode));
 	
 	m_rebuildLinks = false;
-	
 	MarkRebuild();
 }
 
@@ -129,7 +139,7 @@ bool b2BroadPhase::RebuildTree() {
 	return false;
 }
 
-inline b2Vec2 center2(const b2AABB& aabb) {
+inline b2Vec2 GetCenter2(const b2AABB& aabb) {
 	b2Vec2 ret(aabb.lowerBound.x + aabb.upperBound.x, aabb.lowerBound.y + aabb.upperBound.y);
 	return ret;
 }
@@ -145,13 +155,13 @@ b2TreeNode* b2BroadPhase::RebuildTree(b2TreeNode *parent, int32 start, int32 end
 	} else {
 		b2TreeNode *n0 = m_links[start];
 		
-		b2Vec2 c = center2(n0->aabb);
+		b2Vec2 c = GetCenter2(n0->aabb);
 		float minx = c.x, maxx = minx;
 		float miny = c.y, maxy = miny;
 		
 		for (int32 i = start + 1; i < end; i++) {
 			b2TreeNode *node = m_links[i];
-			c = center2(node->aabb);
+			c = GetCenter2(node->aabb);
 			
 			if (c.x < minx) {
 				minx = c.x;
@@ -281,15 +291,16 @@ bool b2BroadPhase::Update(b2Fixture* fixture) {
 
 bool b2BroadPhase::Remove(b2Fixture* fixture) {
 	b2MapNode** src = m_map.Get(fixture);
-	
-	if (*src == nullptr) {
+	b2MapNode* forRemoval = *src;
+
+	if (forRemoval == nullptr) {
 		// nothing to remove
 		return false;
 	}
 	
 	m_count--;
 	
-	b2TreeNode* node = (*src)->value;
+	b2TreeNode* node = forRemoval->value;
 	b2TreeNode* last = &m_nodes[m_count];
 	
 	b2Swap(*node, *last);
@@ -298,14 +309,13 @@ bool b2BroadPhase::Remove(b2Fixture* fixture) {
 	b2Assert(*lastMapNode != nullptr);
 	(*lastMapNode)->value = node;
 	
-	m_rebuildLinks = true;
 	// TODO remove from tree instead if the tree quality is good
+	m_rebuildLinks = true;
 	MarkRebuild();
 	
-	b2Free(*src);
-	
 	// remove from the bucket of the hash table
-	*src = (*src)->next;
+	*src = forRemoval->next;
+	b2Free(forRemoval);
 	
 	return true;
 }
