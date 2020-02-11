@@ -31,6 +31,7 @@ b2ContactListener b2_defaultListener;
 
 b2ContactManager::b2ContactManager() {
 	m_contactList = nullptr;
+	m_destroyList = nullptr;
 	m_contactCount = 0;
 	m_contactFilter = &b2_defaultFilter;
 	m_contactListener = &b2_defaultListener;
