@@ -452,13 +452,6 @@ void b2World::SetAllowSleeping(bool flag)
 // Find islands, integrate and solve constraints, solve position constraints
 void b2World::Solve(const b2TimeStep& step)
 {
-	// update previous transforms
-	// TODO this can be merged elsewhere 
-	for (b2Body* b = m_bodyList; b; b = b->m_next)
-	{
-		b->m_xf0 = b->m_xf;
-	}
-	
 	m_profile.solveInit = 0.0f;
 	m_profile.solveVelocity = 0.0f;
 	m_profile.solvePosition = 0.0f;
@@ -471,20 +464,17 @@ void b2World::Solve(const b2TimeStep& step)
 					m_contactManager.m_contactListener);
 
 	// Clear all the island flags.
-	for (b2Body* b = m_bodyList; b; b = b->m_next)
-	{
+	for (b2Body* b = m_bodyList; b; b = b->m_next) {
+		b->m_xf0 = b->m_xf;
 		b->m_flags &= ~b2Body::e_islandFlag;
 	}
-	for (b2Contact* c = m_contactManager.m_contactList; c; c = c->m_next)
-	{
-		c->m_flags &= ~b2Contact::e_islandFlag;
-	}
-	for (b2Joint* j = m_jointList; j; j = j->m_next)
-	{
+	
+	for (b2Joint* j = m_jointList; j; j = j->m_next) {
 		j->m_islandFlag = false;
 	}
 
 	// Build and simulate all awake islands.
+	// at this point all contacts have the e_islandFlag cleared by b2ContactManager::Collide;
 	int32 stackSize = m_bodyCount;
 	b2Body** stack = (b2Body**)m_stackAllocator.Allocate(stackSize * sizeof(b2Body*));
 	for (b2Body* seed = m_bodyList; seed; seed = seed->m_next)

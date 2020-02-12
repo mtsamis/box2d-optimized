@@ -134,6 +134,9 @@ void b2ContactManager::Collide() {
 			c->m_flags &= ~b2Contact::e_filterFlag;
 		}
 
+		// Clear the island flag; Prepare to build islands in b2World::Solve
+		c->m_flags &= ~b2Contact::e_islandFlag;
+
 		bool activeA = bodyA->IsAwake() && bodyA->m_type != b2_staticBody;
 		bool activeB = bodyB->IsAwake() && bodyB->m_type != b2_staticBody;
 
