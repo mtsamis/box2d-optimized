@@ -60,20 +60,19 @@ public:
                     fd.filter.categoryBits = uint16(1);
                     fd.filter.maskBits = uint16(65535);
                     fd.filter.groupIndex = int16(0);
-                    b2ChainShape shape;
+
                     b2Vec2 vs[3];
                     vs[0].Set(0.000000000000000e+00f, 1.000000000000000e+00f);
                     vs[1].Set(0.000000000000000e+00f, 0.000000000000000e+00f);
                     vs[2].Set(4.000000000000000e+00f, 0.000000000000000e+00f);
-                    shape.CreateChain(vs, 3);
-                    shape.m_prevVertex.Set(4.719737010713663e-34f, 8.266340761211261e-34f);
-                    shape.m_nextVertex.Set(1.401298464324817e-45f, 8.266340761211261e-34f);
-                    shape.m_hasPrevVertex = bool(0);
-                    shape.m_hasNextVertex = bool(0);
+                    
+										//shape.CreateChain(vs, 3);
+                    //shape.m_prevVertex.Set(4.719737010713663e-34f, 8.266340761211261e-34f);
+                    //shape.m_nextVertex.Set(1.401298464324817e-45f, 8.266340761211261e-34f);
+                    //shape.m_hasPrevVertex = bool(0);
+                    //shape.m_hasNextVertex = bool(0);
 
-                    fd.shape = &shape;
-
-                    bodies[0]->CreateFixture(&fd);
+										b2CreateChain(bodies[0], vs, 3);
                 }
             }
             {

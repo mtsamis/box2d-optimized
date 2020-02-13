@@ -25,6 +25,7 @@
 /// This is a test of typical character collision scenarios. This does not
 /// show how you should implement a character in your application.
 /// Instead this is used to test smooth collision on edge chains.
+
 class CharacterCollision : public Test
 {
 public:
@@ -67,9 +68,7 @@ public:
 			vs[1].Set(6.0f, 8.0f);
 			vs[2].Set(7.0f, 8.0f);
 			vs[3].Set(8.0f, 7.0f);
-			b2ChainShape shape;
-			shape.CreateChain(vs, 4);
-			ground->CreateFixture(&shape, 0.0f);
+			b2CreateChain(ground, vs, 4);
 		}
 
 		// Square tiles. This shows that adjacency shapes may
@@ -98,9 +97,7 @@ public:
 			vs[1].Set(1.0f, 3.0f);
 			vs[2].Set(1.0f, 5.0f);
 			vs[3].Set(-1.0f, 5.0f);
-			b2ChainShape shape;
-			shape.CreateLoop(vs, 4);
-			ground->CreateFixture(&shape, 0.0f);
+			b2CreateLoop(ground, vs, 4);
 		}
 
 		// Edge loop. Collision should be smooth.
@@ -120,9 +117,7 @@ public:
 			vs[7].Set(-4.0f, 3.0f);
 			vs[8].Set(-6.0f, 2.0f);
 			vs[9].Set(-6.0f, 0.0f);
-			b2ChainShape shape;
-			shape.CreateLoop(vs, 10);
-			ground->CreateFixture(&shape, 0.0f);
+			b2CreateLoop(ground, vs, 10);
 		}
 
 		// Square character 1
