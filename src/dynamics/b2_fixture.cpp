@@ -23,7 +23,6 @@
 #include "box2d/b2_fixture.h"
 #include "box2d/b2_block_allocator.h"
 #include "box2d/b2_broad_phase.h"
-#include "box2d/b2_chain_shape.h"
 #include "box2d/b2_circle_shape.h"
 #include "box2d/b2_collision.h"
 #include "box2d/b2_contact.h"
@@ -87,14 +86,6 @@ void b2Fixture::Destroy(b2BlockAllocator* allocator)
 			b2PolygonShape* s = (b2PolygonShape*)m_shape;
 			s->~b2PolygonShape();
 			allocator->Free(s, sizeof(b2PolygonShape));
-		}
-		break;
-
-	case b2Shape::e_chain:
-		{
-			b2ChainShape* s = (b2ChainShape*)m_shape;
-			s->~b2ChainShape();
-			allocator->Free(s, sizeof(b2ChainShape));
 		}
 		break;
 
@@ -240,23 +231,6 @@ void b2Fixture::Dump(int32 bodyIndex)
 				b2Log("    vs[%d].Set(%.15lef, %.15lef);\n", i, s->m_vertices[i].x, s->m_vertices[i].y);
 			}
 			b2Log("    shape.Set(vs, %d);\n", s->m_count);
-		}
-		break;
-
-	case b2Shape::e_chain:
-		{
-			b2ChainShape* s = (b2ChainShape*)m_shape;
-			b2Log("    b2ChainShape shape;\n");
-			b2Log("    b2Vec2 vs[%d];\n", s->m_count);
-			for (int32 i = 0; i < s->m_count; ++i)
-			{
-				b2Log("    vs[%d].Set(%.15lef, %.15lef);\n", i, s->m_vertices[i].x, s->m_vertices[i].y);
-			}
-			b2Log("    shape.CreateChain(vs, %d);\n", s->m_count);
-			b2Log("    shape.m_prevVertex.Set(%.15lef, %.15lef);\n", s->m_prevVertex.x, s->m_prevVertex.y);
-			b2Log("    shape.m_nextVertex.Set(%.15lef, %.15lef);\n", s->m_nextVertex.x, s->m_nextVertex.y);
-			b2Log("    shape.m_hasPrevVertex = bool(%d);\n", s->m_hasPrevVertex);
-			b2Log("    shape.m_hasNextVertex = bool(%d);\n", s->m_hasNextVertex);
 		}
 		break;
 

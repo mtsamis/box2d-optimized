@@ -25,7 +25,6 @@
 #include "box2d/b2_fixture.h"
 #include "box2d/b2_shape.h"
 #include "box2d/b2_edge_shape.h"
-#include "box2d/b2_chain_shape.h"
 #include <algorithm>
 
 static const uint32 xTruncBits = 12;
@@ -872,7 +871,7 @@ void b2ParticleSystem::CreateParticlesStrokeShapeForGroup(
 	}
 	else
 	{
-		b2Assert(shape->GetType() == b2Shape::e_chain);
+		//b2Assert(shape->GetType() == b2Shape::e_chain);
 		// TODO
 		//((b2ChainShape*) shape)->GetChildEdge(&edge, childIndex);
 	}
@@ -921,7 +920,7 @@ void b2ParticleSystem::CreateParticlesWithShapeForGroup(
 {
 	switch (shape->GetType()) {
 	case b2Shape::e_edge:
-	case b2Shape::e_chain:
+	//case b2Shape::e_chain:
 		CreateParticlesStrokeShapeForGroup(shape, groupDef, xf);
 		break;
 	case b2Shape::e_polygon:
