@@ -38,36 +38,26 @@ class b2ContactListener;
 
 /// Friction mixing law. The idea is to allow either fixture to drive the friction to zero.
 /// For example, anything slides on ice.
-inline float b2MixFriction(float friction1, float friction2)
-{
+inline float b2MixFriction(float friction1, float friction2) {
 	return b2Sqrt(friction1 * friction2);
 }
 
 /// Restitution mixing law. The idea is allow for anything to bounce off an inelastic surface.
 /// For example, a superball bounces on anything.
-inline float b2MixRestitution(float restitution1, float restitution2)
-{
+inline float b2MixRestitution(float restitution1, float restitution2) {
 	return restitution1 > restitution2 ? restitution1 : restitution2;
 }
 
-typedef b2Contact* b2ContactCreateFcn(	b2Fixture* fixtureA, b2Fixture* fixtureB,
-										b2BlockAllocator* allocator);
-typedef void b2ContactDestroyFcn(b2Contact* contact, b2BlockAllocator* allocator);
-
-struct b2ContactRegister
-{
-	b2ContactCreateFcn* createFcn;
-	b2ContactDestroyFcn* destroyFcn;
-	bool primary;
-};
+typedef void b2EvaluateFunction(b2Manifold* manifold,
+															const b2Shape* shapeA, const b2Transform& xfA,
+															const b2Shape* shapeB, const b2Transform& xfB);
 
 /// A contact edge is used to connect bodies and contacts together
 /// in a contact graph where each body is a node and each contact
 /// is an edge. A contact edge belongs to a doubly linked list
 /// maintained in each attached body. Each contact has two contact
 /// nodes, one for each attached body.
-struct b2ContactEdge
-{
+struct b2ContactEdge {
 	b2Body* other;			///< provides quick access to the other body attached.
 	b2Contact* contact;		///< the contact
 	b2ContactEdge* prev;	///< the previous contact edge in the body's contact list
@@ -77,8 +67,7 @@ struct b2ContactEdge
 /// The class manages contact between two shapes. A contact exists for each overlapping
 /// AABB in the broad-phase (except if filtered). Therefore a contact object may exist
 /// that has no contact points.
-class b2Contact
-{
+class b2Contact {
 public:
 
 	/// Get the contact manifold. Do not modify the manifold unless you understand the
@@ -139,7 +128,7 @@ public:
 	float GetTangentSpeed() const;
 
 	/// Evaluate this contact with your own manifold and transforms.
-	virtual void Evaluate(b2Manifold* manifold, const b2Transform& xfA, const b2Transform& xfB) = 0;
+	void Evaluate(b2Manifold* manifold, const b2Transform& xfA, const b2Transform& xfB);
 
 protected:
 	friend class b2ContactManager;
@@ -149,8 +138,7 @@ protected:
 	friend class b2Fixture;
 
 	// Flags stored in m_flags
-	enum
-	{
+	enum {
 		// Used when crawling contact graph when forming islands.
 		e_islandFlag		= 0x0001,
 
@@ -173,22 +161,16 @@ protected:
 	/// Flag this contact for filtering. Filtering will occur the next time step.
 	void FlagForFiltering();
 
-	static void AddType(b2ContactCreateFcn* createFcn, b2ContactDestroyFcn* destroyFcn,
-						b2Shape::Type typeA, b2Shape::Type typeB);
-	static void InitializeRegisters();
+	static bool InitializeRegisters();
 	static b2Contact* Create(b2Fixture* fixtureA, b2Fixture* fixtureB, b2BlockAllocator* allocator);
-	static void Destroy(b2Contact* contact, b2Shape::Type typeA, b2Shape::Type typeB, b2BlockAllocator* allocator);
 	static void Destroy(b2Contact* contact, b2BlockAllocator* allocator);
 
-	b2Contact() : m_fixtureA(nullptr), m_fixtureB(nullptr) {}
-	b2Contact(b2Fixture* fixtureA, b2Fixture* fixtureB);
-	virtual ~b2Contact() {}
-
+	b2Contact(b2Fixture* fixtureA, b2Fixture* fixtureB, b2EvaluateFunction* evaluateFunction);
+	
 	void Update(b2ContactListener* listener);
 
-	static b2ContactRegister s_registers[b2Shape::e_typeCount][b2Shape::e_typeCount];
-	static bool s_initialized;
-
+	static b2EvaluateFunction* functions[b2Shape::e_typeCount][b2Shape::e_typeCount];
+	
 	uint32 m_flags;
 
 	// World pool and list pointers.
@@ -211,20 +193,19 @@ protected:
 	float m_restitution;
 
 	float m_tangentSpeed;
+	
+	b2EvaluateFunction* m_evaluateFunction;
 };
 
-inline b2Manifold* b2Contact::GetManifold()
-{
+inline b2Manifold* b2Contact::GetManifold() {
 	return &m_manifold;
 }
 
-inline const b2Manifold* b2Contact::GetManifold() const
-{
+inline const b2Manifold* b2Contact::GetManifold() const {
 	return &m_manifold;
 }
 
-inline void b2Contact::GetWorldManifold(b2WorldManifold* worldManifold) const
-{
+inline void b2Contact::GetWorldManifold(b2WorldManifold* worldManifold) const {
 	const b2Body* bodyA = m_fixtureA->GetBody();
 	const b2Body* bodyB = m_fixtureB->GetBody();
 	const b2Shape* shapeA = m_fixtureA->GetShape();
@@ -233,101 +214,84 @@ inline void b2Contact::GetWorldManifold(b2WorldManifold* worldManifold) const
 	worldManifold->Initialize(&m_manifold, bodyA->GetTransform(), shapeA->m_radius, bodyB->GetTransform(), shapeB->m_radius);
 }
 
-inline void b2Contact::SetEnabled(bool flag)
-{
-	if (flag)
-	{
+inline void b2Contact::SetEnabled(bool flag) {
+	if (flag) {
 		m_flags |= e_enabledFlag;
-	}
-	else
-	{
+	} else {
 		m_flags &= ~e_enabledFlag;
 	}
 }
 
-inline bool b2Contact::IsEnabled() const
-{
+inline bool b2Contact::IsEnabled() const {
 	return (m_flags & e_enabledFlag) == e_enabledFlag;
 }
 
-inline bool b2Contact::IsTouching() const
-{
+inline bool b2Contact::IsTouching() const {
 	return (m_flags & e_touchingFlag) == e_touchingFlag;
 }
 
-inline b2Contact* b2Contact::GetNext()
-{
+inline b2Contact* b2Contact::GetNext() {
 	return m_next;
 }
 
-inline const b2Contact* b2Contact::GetNext() const
-{
+inline const b2Contact* b2Contact::GetNext() const {
 	return m_next;
 }
 
-inline b2Fixture* b2Contact::GetFixtureA()
-{
+inline b2Fixture* b2Contact::GetFixtureA() {
 	return m_fixtureA;
 }
 
-inline const b2Fixture* b2Contact::GetFixtureA() const
-{
+inline const b2Fixture* b2Contact::GetFixtureA() const {
 	return m_fixtureA;
 }
 
-inline b2Fixture* b2Contact::GetFixtureB()
-{
+inline b2Fixture* b2Contact::GetFixtureB() {
 	return m_fixtureB;
 }
 
-inline const b2Fixture* b2Contact::GetFixtureB() const
-{
+inline const b2Fixture* b2Contact::GetFixtureB() const {
 	return m_fixtureB;
 }
 
-inline void b2Contact::FlagForFiltering()
-{
+inline void b2Contact::FlagForFiltering() {
 	m_flags |= e_filterFlag;
 }
 
-inline void b2Contact::SetFriction(float friction)
-{
+inline void b2Contact::SetFriction(float friction) {
 	m_friction = friction;
 }
 
-inline float b2Contact::GetFriction() const
-{
+inline float b2Contact::GetFriction() const {
 	return m_friction;
 }
 
-inline void b2Contact::ResetFriction()
-{
+inline void b2Contact::ResetFriction() {
 	m_friction = b2MixFriction(m_fixtureA->m_friction, m_fixtureB->m_friction);
 }
 
-inline void b2Contact::SetRestitution(float restitution)
-{
+inline void b2Contact::SetRestitution(float restitution) {
 	m_restitution = restitution;
 }
 
-inline float b2Contact::GetRestitution() const
-{
+inline float b2Contact::GetRestitution() const {
 	return m_restitution;
 }
 
-inline void b2Contact::ResetRestitution()
-{
+inline void b2Contact::ResetRestitution() {
 	m_restitution = b2MixRestitution(m_fixtureA->m_restitution, m_fixtureB->m_restitution);
 }
 
-inline void b2Contact::SetTangentSpeed(float speed)
-{
+inline void b2Contact::SetTangentSpeed(float speed) {
 	m_tangentSpeed = speed;
 }
 
-inline float b2Contact::GetTangentSpeed() const
-{
+inline float b2Contact::GetTangentSpeed() const {
 	return m_tangentSpeed;
+}
+
+inline void b2Contact::Evaluate(b2Manifold* manifold, const b2Transform& xfA, const b2Transform& xfB) {
+	m_evaluateFunction(manifold, m_fixtureA->GetShape(), xfA, m_fixtureB->GetShape(), xfB);
 }
 
 #endif
