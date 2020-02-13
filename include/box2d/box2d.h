@@ -36,10 +36,10 @@ For discussion please visit http://box2d.org/forum
 // These include files constitute the main Box2D API
 
 #include "b2_settings.h"
+#include "b2_geometry.h"
 #include "b2_draw.h"
 #include "b2_timer.h"
 
-#include "b2_chain_shape.h"
 #include "b2_circle_shape.h"
 #include "b2_edge_shape.h"
 #include "b2_polygon_shape.h"

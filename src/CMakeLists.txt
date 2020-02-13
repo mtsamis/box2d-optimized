@@ -1,6 +1,5 @@
 set(BOX2D_SOURCE_FILES
 	collision/b2_broad_phase.cpp
-	collision/b2_chain_shape.cpp
 	collision/b2_circle_shape.cpp
 	collision/b2_collide_circle.cpp
 	collision/b2_collide_edge.cpp
@@ -14,6 +13,7 @@ set(BOX2D_SOURCE_FILES
 	common/b2_draw.cpp
 	common/b2_math.cpp
 	common/b2_settings.cpp
+	common/b2_geometry.cpp
 	common/b2_stack_allocator.cpp
 	common/b2_timer.cpp
 	dynamics/b2_body.cpp
@@ -60,7 +60,6 @@ set(BOX2D_HEADER_FILES
 	../include/box2d/b2_block_allocator.h
 	../include/box2d/b2_body.h
 	../include/box2d/b2_broad_phase.h
-	../include/box2d/b2_chain_shape.h
 	../include/box2d/b2_circle_shape.h
 	../include/box2d/b2_collision.h
 	../include/box2d/b2_contact.h
@@ -84,6 +83,7 @@ set(BOX2D_HEADER_FILES
 	../include/box2d/b2_rope.h
 	../include/box2d/b2_rope_joint.h
 	../include/box2d/b2_settings.h
+	../include/box2d/b2_geometry.h
 	../include/box2d/b2_shape.h
 	../include/box2d/b2_stack_allocator.h
 	../include/box2d/b2_time_of_impact.h
