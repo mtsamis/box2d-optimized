@@ -17,21 +17,11 @@ set(BOX2D_SOURCE_FILES
 	common/b2_stack_allocator.cpp
 	common/b2_timer.cpp
 	dynamics/b2_body.cpp
-	dynamics/b2_chain_circle_contact.cpp
-	dynamics/b2_chain_circle_contact.h
-	dynamics/b2_chain_polygon_contact.cpp
-	dynamics/b2_chain_polygon_contact.h
-	dynamics/b2_circle_contact.cpp
-	dynamics/b2_circle_contact.h
 	dynamics/b2_contact.cpp
 	dynamics/b2_contact_manager.cpp
 	dynamics/b2_contact_solver.cpp
 	dynamics/b2_contact_solver.h
 	dynamics/b2_distance_joint.cpp
-	dynamics/b2_edge_circle_contact.cpp
-	dynamics/b2_edge_circle_contact.h
-	dynamics/b2_edge_polygon_contact.cpp
-	dynamics/b2_edge_polygon_contact.h
 	dynamics/b2_fixture.cpp
 	dynamics/b2_friction_joint.cpp
 	dynamics/b2_gear_joint.cpp
@@ -40,10 +30,6 @@ set(BOX2D_SOURCE_FILES
 	dynamics/b2_joint.cpp
 	dynamics/b2_motor_joint.cpp
 	dynamics/b2_mouse_joint.cpp
-	dynamics/b2_polygon_circle_contact.cpp
-	dynamics/b2_polygon_circle_contact.h
-	dynamics/b2_polygon_contact.cpp
-	dynamics/b2_polygon_contact.h
 	dynamics/b2_prismatic_joint.cpp
 	dynamics/b2_pulley_joint.cpp
 	dynamics/b2_revolute_joint.cpp
