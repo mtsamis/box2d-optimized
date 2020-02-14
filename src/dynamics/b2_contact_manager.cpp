@@ -142,27 +142,10 @@ void b2ContactManager::Collide() {
 
 		// At least one body must be awake and it must be dynamic or kinematic.
 		if (activeA == false && activeB == false) {
-			c = c->GetNext();
-			continue;
+			// The contact persists.
+			c->Update(m_contactListener);
 		}
 
-		/* contacts that made it to the contact list have persisted
-		//int32 proxyIdA = fixtureA->m_proxies[indexA].proxyId;
-		//int32 proxyIdB = fixtureB->m_proxies[indexB].proxyId;
-		bool overlap = b2TestOverlap(fixtureA->GetAABB(), fixtureB->GetAABB());
-
-		// Here we destroy contacts that cease to overlap in the broad-phase.
-		if (overlap == false)
-		{
-			b2Contact* cNuke = c;
-			c = cNuke->GetNext();
-			Destroy(cNuke);
-			continue;
-		}
-		//*/
-		
-		// The contact persists.
-		c->Update(m_contactListener);
 		c = c->GetNext();
 	}
 }

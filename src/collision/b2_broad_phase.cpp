@@ -152,7 +152,7 @@ b2TreeNode* b2BroadPhase::RebuildTree(b2TreeNode* parent, int32 start, int32 end
 
 	if (count == 1) {
 		return m_links[start];
-	} else if (count <= 3) {
+	} else if (count == 2) {
 		group0 = start + 1;
 	} else {
 		b2TreeNode* n0 = m_links[start];
