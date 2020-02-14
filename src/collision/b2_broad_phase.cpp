@@ -144,7 +144,7 @@ inline b2Vec2 GetCenter2(const b2AABB& aabb) {
 	return ret;
 }
 
-b2TreeNode* b2BroadPhase::RebuildTree(b2TreeNode *parent, int32 start, int32 end) {
+b2TreeNode* b2BroadPhase::RebuildTree(b2TreeNode* parent, int32 start, int32 end) {
 	int count = end - start;
 	int group0;
 
@@ -155,14 +155,14 @@ b2TreeNode* b2BroadPhase::RebuildTree(b2TreeNode *parent, int32 start, int32 end
 	} else if (count <= 3) {
 		group0 = start + 1;
 	} else {
-		b2TreeNode *n0 = m_links[start];
+		b2TreeNode* n0 = m_links[start];
 		
 		b2Vec2 c = GetCenter2(n0->aabb);
 		float minx = c.x, maxx = minx;
 		float miny = c.y, maxy = miny;
 		
 		for (int32 i = start + 1; i < end; i++) {
-			b2TreeNode *node = m_links[i];
+			b2TreeNode* node = m_links[i];
 			c = GetCenter2(node->aabb);
 			
 			if (c.x < minx) {
@@ -183,7 +183,7 @@ b2TreeNode* b2BroadPhase::RebuildTree(b2TreeNode *parent, int32 start, int32 end
 		group0 = start;
 		
 		for (int32 i = start; i < end; i++) {
-			b2TreeNode *node = m_links[i];
+			b2TreeNode* node = m_links[i];
 			float nodeMid = splitX? (node->aabb.lowerBound.x + node->aabb.upperBound.x) : (node->aabb.lowerBound.y + node->aabb.upperBound.y);
 			
 			if (nodeMid < mid) {
@@ -203,7 +203,7 @@ b2TreeNode* b2BroadPhase::RebuildTree(b2TreeNode *parent, int32 start, int32 end
 	}
 	
 	int32 nodeId = m_count++;
-	b2TreeNode *cur = &m_nodes[nodeId];
+	b2TreeNode* cur = &m_nodes[nodeId];
 	
 	cur->left = RebuildTree(cur, start, group0);
 	cur->right = RebuildTree(cur, group0, end);

@@ -33,7 +33,7 @@ struct b2TreeNode {
 	void* userData;
 	b2AABB aabb;
 	
-	bool IsLeaf() { return left == nullptr; }
+	bool IsLeaf() const { return left == nullptr; }
 };
 
 struct b2MapNode {
@@ -131,7 +131,7 @@ private:
 	int32 ComputeHeight(b2TreeNode* node) const;
 	
 	bool RebuildTree();
-	b2TreeNode* RebuildTree(b2TreeNode *parent, int32 start, int32 end);
+	b2TreeNode* RebuildTree(b2TreeNode* parent, int32 start, int32 end);
 	
 	template <typename Visitor>
 	void RefreshTree(Visitor visitor, b2TreeNode* node);
@@ -144,7 +144,7 @@ private:
 	b2TreeNode* m_nodes;
 	
 	bool m_rebuildLinks;
-	b2TreeNode *m_root;
+	b2TreeNode* m_root;
 	
 	b2IntHashTable m_map;
 	
@@ -279,7 +279,6 @@ inline void b2BroadPhase::Query(T* callback, const b2AABB& aabb) const {
 template <typename T>
 inline void b2BroadPhase::RayCast(T* callback, const b2RayCastInput& input) const
 {
-	/*
 	b2Vec2 p1 = input.p1;
 	b2Vec2 p2 = input.p2;
 	b2Vec2 r = p2 - p1;
@@ -303,21 +302,13 @@ inline void b2BroadPhase::RayCast(T* callback, const b2RayCastInput& input) cons
 		segmentAABB.upperBound = b2Max(p1, t);
 	}
 
-	b2GrowableStack<int32, 256> stack;
+	b2GrowableStack<b2TreeNode*, 256> stack;
 	stack.Push(m_root);
 
-	while (stack.GetCount() > 0)
-	{
-		int32 nodeId = stack.Pop();
-		if (nodeId == b2_nullNode)
-		{
-			continue;
-		}
+	while (stack.GetCount() > 0) {
+		const b2TreeNode* node = stack.Pop();
 
-		const b2TreeNode* node = m_nodes + nodeId;
-
-		if (b2TestOverlap(node->aabb, segmentAABB) == false)
-		{
+		if (b2TestOverlap(node->aabb, segmentAABB) == false) {
 			continue;
 		}
 
@@ -326,41 +317,35 @@ inline void b2BroadPhase::RayCast(T* callback, const b2RayCastInput& input) cons
 		b2Vec2 c = node->aabb.GetCenter();
 		b2Vec2 h = node->aabb.GetExtents();
 		float separation = b2Abs(b2Dot(v, p1 - c)) - b2Dot(abs_v, h);
-		if (separation > 0.0f)
-		{
+		if (separation > 0.0f) {
 			continue;
 		}
 
-		if (node->IsLeaf())
-		{
+		if (node->IsLeaf()) {
 			b2RayCastInput subInput;
 			subInput.p1 = input.p1;
 			subInput.p2 = input.p2;
 			subInput.maxFraction = maxFraction;
 
-			float value = callback->RayCastCallback(subInput, nodeId);
+			float value = callback->RayCastCallback(subInput, (b2Fixture*) node->userData);
 
-			if (value == 0.0f)
-			{
+			if (value == 0.0f) {
 				// The client has terminated the ray cast.
 				return;
 			}
 
-			if (value > 0.0f)
-			{
+			if (value > 0.0f) {
 				// Update segment bounding box.
 				maxFraction = value;
 				b2Vec2 t = p1 + maxFraction * (p2 - p1);
 				segmentAABB.lowerBound = b2Min(p1, t);
 				segmentAABB.upperBound = b2Max(p1, t);
 			}
+		} else {
+			stack.Push(node->left);
+			stack.Push(node->right);
 		}
-		else
-		{
-			stack.Push(node->child1);
-			stack.Push(node->child2);
-		}
-	}*/
+	}
 }
 
 #endif

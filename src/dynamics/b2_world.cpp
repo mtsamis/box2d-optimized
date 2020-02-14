@@ -1051,26 +1051,17 @@ void b2World::QueryAABB(b2QueryCallback* callback, const b2AABB& aabb) const
 
 struct b2WorldRayCastWrapper
 {
-	float RayCastCallback(const b2RayCastInput& input, int32 proxyId)
-	{
-	/*
-		void* userData = broadPhase->GetUserData(proxyId);
-		b2FixtureProxy* proxy = (b2FixtureProxy*)userData;
-		b2Fixture* fixture = proxy->fixture;
-		int32 index = proxy->childIndex;
+	float RayCastCallback(const b2RayCastInput& input, b2Fixture* fixture) {
 		b2RayCastOutput output;
-		bool hit = fixture->RayCast(&output, input, index);
+		bool hit = fixture->RayCast(&output, input);
 
-		if (hit)
-		{
+		if (hit) {
 			float fraction = output.fraction;
 			b2Vec2 point = (1.0f - fraction) * input.p1 + fraction * input.p2;
 			return callback->ReportFixture(fixture, point, output.normal, fraction);
 		}
 
-		return input.maxFraction;*/
-		//TODO
-		return 0;
+		return input.maxFraction;
 	}
 
 	const b2BroadPhase* broadPhase;
