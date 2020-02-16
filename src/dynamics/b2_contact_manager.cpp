@@ -141,7 +141,7 @@ void b2ContactManager::Collide() {
 		bool activeB = bodyB->IsAwake() && bodyB->m_type != b2_staticBody;
 
 		// At least one body must be awake and it must be dynamic or kinematic.
-		if (activeA == false && activeB == false) {
+		if (activeA == true || activeB == true) {
 			// The contact persists.
 			c->Update(m_contactListener);
 		}
