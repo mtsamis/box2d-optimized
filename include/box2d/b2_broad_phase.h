@@ -88,19 +88,10 @@ public:
 	void Query(T* callback, const b2AABB& aabb) const;
 	
 	template <typename T>
-	void QueryId(T* callback, b2TreeNode* leaf) const;
-	
-	template <typename T>
 	void QueryAll(T* callback) const;
 	
 	template <typename T, typename UnaryPredicate>
 	void QueryAll(T* callback, UnaryPredicate predicate) const;
-	
-	template <typename T>
-	void detect_impl(T* callback, const b2AABB& aabb, b2TreeNode* root) const;
-	
-	template <typename T>
-	void detect_impl_id(T* callback, const b2TreeNode* leaf, b2TreeNode* root) const;
 	
 	/// Ray-cast against the proxies in the tree. This relies on the callback
 	/// to perform a exact ray-cast in the case were the proxy contains a shape.
@@ -128,13 +119,18 @@ public:
 	void MarkRebuild();
 	
 private:
-	int32 ComputeHeight(b2TreeNode* node) const;
-	
 	bool RebuildTree();
+	int32 ComputeHeight(b2TreeNode* node) const;
 	b2TreeNode* RebuildTree(b2TreeNode* parent, int32 start, int32 end);
 	
 	template <typename Visitor>
 	void RefreshTree(Visitor visitor, b2TreeNode* node);
+	
+	template <typename T>
+	void QueryNode(T* callback, const b2TreeNode* leaf, const b2TreeNode* root) const;
+	
+	template <typename T>
+	void QueryAABB(T* callback, const b2AABB& aabb, b2TreeNode* root) const;
 	
 	float m_currentQuality;
 	float m_lastRebuildQuality;
@@ -237,42 +233,41 @@ inline void b2BroadPhase::QueryAll(T* callback, UnaryPredicate predicate) const 
 		b2Fixture* f = ((b2Fixture*) m_nodes[i].userData);
 		
 		if (predicate(f)) {
-			QueryId(callback, &m_nodes[i]);
+			QueryNode(callback, &m_nodes[i], m_root);
 		}
 	}
 }
 	
-template <typename T>
-inline void b2BroadPhase::QueryId(T* callback, b2TreeNode* leaf) const {
-	if (m_count > 0) {
-		detect_impl_id(callback, leaf, m_root);
-	}
-}
 
 template <typename T>
-void b2BroadPhase::detect_impl_id(T* callback, const b2TreeNode* leaf, b2TreeNode* root) const {
+void b2BroadPhase::QueryNode(T* callback, const b2TreeNode* leaf, const b2TreeNode* root) const {
 	if (root->IsLeaf()) {
 		callback->QueryCallback((b2Fixture*) leaf->userData, (b2Fixture*) root->userData);
 	} else {
-		if (b2TestOverlap(leaf->aabb, root->left->aabb)) detect_impl_id(callback, leaf, root->left);
-		if (b2TestOverlap(leaf->aabb, root->right->aabb)) detect_impl_id(callback, leaf, root->right);
-	}
-}
-
-template <typename T>
-void b2BroadPhase::detect_impl(T* callback, const b2AABB& aabb, b2TreeNode* root) const {
-	if (root->IsLeaf()) {
-		callback->QueryCallback((b2Fixture*) root->userData);
-	} else {
-		if (b2TestOverlap(aabb, root->left->aabb)) detect_impl(callback, aabb, root->left);
-		if (b2TestOverlap(aabb, root->right->aabb)) detect_impl(callback, aabb, root->right);
+		if (b2TestOverlap(leaf->aabb, root->left->aabb)) QueryNode(callback, leaf, root->left);
+		if (b2TestOverlap(leaf->aabb, root->right->aabb)) QueryNode(callback, leaf, root->right);
 	}
 }
 
 template <typename T>
 inline void b2BroadPhase::Query(T* callback, const b2AABB& aabb) const {
 	if (m_count > 0) {
-		detect_impl(callback, aabb, m_root);
+		QueryAABB(callback, aabb, m_root);
+	}
+}
+
+template <typename T>
+void b2BroadPhase::QueryAABB(T* callback, const b2AABB& aabb, b2TreeNode* root) const {
+	if (root->IsLeaf()) {
+		callback->QueryCallback((b2Fixture*) root->userData);
+	} else {
+		if (b2TestOverlap(aabb, root->left->aabb)) {
+			QueryAABB(callback, aabb, root->left);
+		}
+
+		if (b2TestOverlap(aabb, root->right->aabb)) {
+			QueryAABB(callback, aabb, root->right);
+		}
 	}
 }
 
