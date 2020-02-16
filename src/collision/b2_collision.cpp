@@ -239,9 +239,8 @@ bool b2TestOverlap(	const b2Shape* shapeA,
 					const b2Transform& xfA, const b2Transform& xfB)
 {
 	b2DistanceInput input;
-	// TODO remove 0
-	input.proxyA.Set(shapeA, 0);
-	input.proxyB.Set(shapeB, 0);
+	input.proxyA.Set(shapeA);
+	input.proxyB.Set(shapeB);
 	input.transformA = xfA;
 	input.transformB = xfB;
 	input.useRadii = true;

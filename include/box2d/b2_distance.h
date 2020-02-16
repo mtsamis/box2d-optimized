@@ -35,11 +35,11 @@ struct b2DistanceProxy
 
 	/// Initialize the proxy using the given shape. The shape
 	/// must remain in scope while the proxy is in use.
-	void Set(const b2Shape* shape, int32 index);
+	void Set(const b2Shape* shape);
 
-    /// Initialize the proxy using a vertex cloud and radius. The vertices
-    /// must remain in scope while the proxy is in use.
-    void Set(const b2Vec2* vertices, int32 count, float radius);
+  /// Initialize the proxy using a vertex cloud and radius. The vertices
+  /// must remain in scope while the proxy is in use.
+  void Set(const b2Vec2* vertices, int32 count, float radius);
 
 	/// Get the supporting vertex index in the given direction.
 	int32 GetSupport(const b2Vec2& d) const;
