@@ -618,6 +618,71 @@ void b2World::Solve(const b2TimeStep& step)
 	}
 }
 
+b2HeapNode b2MinHeap::Min() {
+	b2Assert(m_count > 0);
+	return m_heap[0];
+}
+
+b2HeapNode b2MinHeap::DeleteMin() {
+	b2Assert(m_count > 0);
+	
+	b2HeapNode ret = m_heap[0];
+	m_count--;
+	
+	m_heap[0] = m_heap[m_count];
+	HeapifyDown(0);
+	
+	return ret;
+}
+
+void b2MinHeap::DecreaseKey(int32 idx, float toi) {
+	b2Assert(idx >= 0 && idx < m_count);
+	b2Assert(toi < m_heap[idx].toi);
+	
+	m_heap[idx].toi = toi;
+	HeapifyUp(idx);
+}
+
+void b2MinHeap::HeapifyDown(int32 idx) {
+	while (true) {
+		int32 minIdx = idx;
+		int32 left = 2 * idx;
+		int32 right = 2 * idx + 1;
+		
+		if (left < m_count && m_heap[left].toi < m_heap[minIdx].toi) {
+			minIdx = left;
+		}
+		
+		if (right < m_count && m_heap[right].toi < m_heap[minIdx].toi) {
+			minIdx = right;
+		}
+		
+		if (minIdx != idx) {
+			b2Swap(m_heap[idx], m_heap[minIdx]);
+			idx = minIdx;
+		} else {
+			break;
+		}
+	}
+}
+
+void b2MinHeap::HeapifyUp(int32 idx) {
+	float toi = m_heap[idx].toi;
+	idx /= 2;
+	
+	while (idx > 0 && toi < m_heap[idx].toi) {
+		int32 parent = idx / 2;
+		b2Swap(m_heap[idx], m_heap[parent]);
+		idx = parent;
+	}
+}
+
+void b2MinHeap::Build() {
+	for (int32 i = m_count / 2 - 1; i >= 0; --i) {
+		HeapifyDown(i);
+	}
+}
+
 // Find TOI contacts and solve them.
 void b2World::SolveTOI(const b2TimeStep& step) {
 	b2Island island(2 * b2_maxTOIContacts, b2_maxTOIContacts, 0, &m_stackAllocator, m_contactManager.m_contactListener);
