@@ -146,18 +146,16 @@ void b2Fixture::Refilter()
 	}
 
 	// Flag associated contacts for filtering.
-	b2ContactEdge* edge = m_body->GetContactList();
-	while (edge)
+	for (int32 i = 0; i < m_body->GetContactCount(); ++i)
 	{
-		b2Contact* contact = edge->contact;
+		b2Contact* contact = m_body->GetContact(i);
+
 		b2Fixture* fixtureA = contact->GetFixtureA();
 		b2Fixture* fixtureB = contact->GetFixtureB();
 		if (fixtureA == this || fixtureB == this)
 		{
 			contact->FlagForFiltering();
 		}
-
-		edge = edge->next;
 	}
 
 	b2World* world = m_body->GetWorld();

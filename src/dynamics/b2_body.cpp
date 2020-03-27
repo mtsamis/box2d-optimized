@@ -72,7 +72,10 @@ b2Body::b2Body(const b2BodyDef* bd, b2World* world)
 	m_sweep.alpha0 = 0.0f;
 
 	m_jointList = nullptr;
-	m_contactList = nullptr;
+	m_contactCount = 0;
+	m_contactCapacity = 2;
+	m_contactList = (b2Contact**) b2Alloc(m_contactCapacity * sizeof(b2Contact*));
+
 	m_prev = nullptr;
 	m_next = nullptr;
 
@@ -149,14 +152,11 @@ void b2Body::SetType(b2BodyType type)
 	m_torque = 0.0f;
 
 	// Delete the attached contacts.
-	b2ContactEdge* ce = m_contactList;
-	while (ce)
-	{
-		b2ContactEdge* ce0 = ce;
-		ce = ce->next;
-		m_world->m_contactManager.Destroy(ce0->contact);
+	for (int32 i = 0; i < m_contactCount; ++i) {
+		m_world->m_contactManager.Destroy(m_contactList[i]);
 	}
-	m_contactList = nullptr;
+	
+	m_contactCount = 0;
 
 	// Touch the proxies so that new contacts will be created (when appropriate)
 	//TODO? probably not needed
@@ -256,20 +256,20 @@ void b2Body::DestroyFixture(b2Fixture* fixture)
 	b2Assert(found);
 
 	// Destroy any contacts associated with the fixture.
-	b2ContactEdge* edge = m_contactList;
-	while (edge)
-	{
-		b2Contact* c = edge->contact;
-		edge = edge->next;
+	for (int32 i = 0; i < m_contactCount; ++i) {
+		b2Contact* c = m_contactList[i];
 
 		b2Fixture* fixtureA = c->GetFixtureA();
 		b2Fixture* fixtureB = c->GetFixtureB();
 
-		if (fixture == fixtureA || fixture == fixtureB)
-		{
+		if (fixture == fixtureA || fixture == fixtureB) {
 			// This destroys the contact and removes it from
 			// this body's contact list.
 			m_world->m_contactManager.Destroy(c);
+			
+			m_contactCount--;
+			b2Swap(m_contactList[i], m_contactList[m_contactCount]);
+			i--;
 		}
 	}
 
@@ -527,6 +527,17 @@ void b2Body::SetFixedRotation(bool flag)
 	m_angularVelocity = 0.0f;
 
 	ResetMassData();
+}
+
+void b2Body::AddContact(b2Contact* c) {
+	if (m_contactCount == m_contactCapacity) {
+		m_contactCapacity *= 2;
+		b2Contact** newList = (b2Contact**) b2Alloc(m_contactCapacity * sizeof(b2Contact*));
+		memcpy(newList, m_contactList, m_contactCount * sizeof(b2Contact*));
+		m_contactList = newList;
+	}
+
+	m_contactList[m_contactCount++] = c;
 }
 
 void b2Body::Dump()

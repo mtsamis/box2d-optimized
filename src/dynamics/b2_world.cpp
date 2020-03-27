@@ -115,6 +115,21 @@ void b2World::SetDebugDraw(b2Draw* debugDraw)
 	m_debugDraw = debugDraw;
 }
 
+void b2World::RemoveDeadContacts() {
+	// Contacts that were not persisted must be removed from the body lists
+	for (b2Body* b = m_bodyList; b; b = b->m_next) {
+		for (int32 i = 0; i < b->GetContactCount(); ++i) {
+			b2Contact* contact = b->GetContact(i);
+
+			if ((contact->m_flags & b2Contact::e_persistFlag) == 0) {
+				b->m_contactCount--;
+				b->m_contactList[i] = b->m_contactList[b->m_contactCount];
+				i--;
+			}
+		}
+	}
+}
+
 b2Body* b2World::CreateBody(const b2BodyDef* def)
 {
 	b2Assert(IsLocked() == false);
@@ -167,14 +182,11 @@ void b2World::DestroyBody(b2Body* b)
 	b->m_jointList = nullptr;
 
 	// Delete the attached contacts.
-	b2ContactEdge* ce = b->m_contactList;
-	while (ce)
-	{
-		b2ContactEdge* ce0 = ce;
-		ce = ce->next;
-		m_contactManager.Destroy(ce0->contact);
+	for (int32 i = 0; i < b->GetContactCount(); ++i) {
+		m_contactManager.Destroy(b->GetContact(i));
 	}
-	b->m_contactList = nullptr;
+	
+	b->m_contactCount = 0;
 
 	// Delete the attached fixtures. This destroys broad-phase proxies.
 	b2Fixture* f = b->m_fixtureList;
@@ -264,17 +276,15 @@ b2Joint* b2World::CreateJoint(const b2JointDef* def)
 	// If the joint prevents collisions, then flag any contacts for filtering.
 	if (def->collideConnected == false)
 	{
-		b2ContactEdge* edge = bodyB->GetContactList();
-		while (edge)
-		{
-			if (edge->other == bodyA)
-			{
+		for (int32 i = 0; i < bodyB->GetContactCount(); ++i) {
+			b2Contact* c = bodyB->GetContact(i);
+
+			// One of the bodies is bodyB, we want the other to be bodyA but we don't know which one is where so we check both
+			if (c->GetFixtureA()->GetBody() == bodyA || c->GetFixtureB()->GetBody() == bodyA) {
 				// Flag the contact for filtering at the next time step (where either
 				// body is awake).
-				edge->contact->FlagForFiltering();
+				c->FlagForFiltering();
 			}
-
-			edge = edge->next;
 		}
 	}
 
@@ -363,17 +373,15 @@ void b2World::DestroyJoint(b2Joint* j)
 	// If the joint prevents collisions, then flag any contacts for filtering.
 	if (collideConnected == false)
 	{
-		b2ContactEdge* edge = bodyB->GetContactList();
-		while (edge)
-		{
-			if (edge->other == bodyA)
-			{
+		for (int32 i = 0; i < bodyB->GetContactCount(); ++i) {
+			b2Contact* c = bodyB->GetContact(i);
+
+			// One of the bodies is bodyB, we want the other to be bodyA but we don't know which one is where so we check both
+			if (c->GetFixtureA()->GetBody() == bodyA || c->GetFixtureB()->GetBody() == bodyA) {
 				// Flag the contact for filtering at the next time step (where either
 				// body is awake).
-				edge->contact->FlagForFiltering();
+				c->FlagForFiltering();
 			}
-
-			edge = edge->next;
 		}
 	}
 }
@@ -519,10 +527,9 @@ void b2World::Solve(const b2TimeStep& step)
 			}
 
 			// Search all contacts connected to this body.
-			for (b2ContactEdge* ce = b->m_contactList; ce; ce = ce->next)
-			{
-				b2Contact* contact = ce->contact;
-
+			for (int32 i = 0; i < b->GetContactCount(); ++i) {
+				b2Contact* contact = b->GetContact(i);
+			
 				// Has this contact already been added to an island?
 				if (contact->m_flags & b2Contact::e_islandFlag)
 				{
@@ -547,7 +554,9 @@ void b2World::Solve(const b2TimeStep& step)
 				island.Add(contact);
 				contact->m_flags |= b2Contact::e_islandFlag;
 
-				b2Body* other = ce->other;
+				b2Body* bA = contact->GetFixtureA()->GetBody();
+				b2Body* bB = contact->GetFixtureB()->GetBody();
+				b2Body* other = (bA == b)? bB : bA;
 
 				// Was the other body already added to this island?
 				if (other->m_flags & b2Body::e_islandFlag)
@@ -609,11 +618,12 @@ void b2World::Solve(const b2TimeStep& step)
 	}
 
 	m_stackAllocator.Free(stack);
-
+	
 	{
 		b2Timer timer;
 		// Look for new contacts.
 		m_contactManager.FindNewContacts();
+		RemoveDeadContacts();
 		m_profile.broadphase = timer.GetMilliseconds();
 	}
 }
@@ -850,7 +860,9 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 		for (int32 i = 0; i < 2; ++i) {
 			b2Body* body = bodies[i];
 			if (body->m_type == b2_dynamicBody) {
-				for (b2ContactEdge* ce = body->m_contactList; ce; ce = ce->next) {
+				for (int32 i = 0; i < body->GetContactCount(); ++i) {
+					b2Contact* contact = body->GetContact(i);
+
 					if (island.m_bodyCount == island.m_bodyCapacity) {
 						break;
 					}
@@ -859,8 +871,6 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 						break;
 					}
 
-					b2Contact* contact = ce->contact;
-
 					// Has this contact already been added to the island?
 					if (contact->m_flags & b2Contact::e_islandFlag)
 					{
@@ -868,7 +878,10 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 					}
 
 					// Only add static, kinematic, or bullet bodies.
-					b2Body* other = ce->other;
+					b2Body* bA = contact->GetFixtureA()->GetBody();
+					b2Body* bB = contact->GetFixtureB()->GetBody();
+					b2Body* other = (bA == body)? bB : bA;
+
 					if (other->m_type == b2_dynamicBody &&
 						body->IsBullet() == false && other->IsBullet() == false) {
 						continue;
@@ -950,8 +963,9 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 			}
 
 			// Invalidate all contact TOIs on this displaced body.
-			for (b2ContactEdge* ce = body->m_contactList; ce; ce = ce->next) {
-				ce->contact->m_flags &= ~(b2Contact::e_toiFlag | b2Contact::e_islandFlag);
+			for (int32 i = 0; i < body->GetContactCount(); ++i) {
+				b2Contact* contact = body->GetContact(i);
+				contact->m_flags &= ~(b2Contact::e_toiFlag | b2Contact::e_islandFlag);
 			}
 		}
 
@@ -959,6 +973,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 		// Also, some contacts can be destroyed.
 		// TODO replace with efficient
 		m_contactManager.FindNewContacts();
+		RemoveDeadContacts();
 
 		if (m_subStepping) {
 			m_stepComplete = false;
@@ -975,6 +990,7 @@ void b2World::Step(float dt, int32 velocityIterations, int32 positionIterations,
 	if (m_flags & e_newFixture)
 	{
 		m_contactManager.FindNewContacts();
+		RemoveDeadContacts();
 		m_flags &= ~e_newFixture;
 	}
 

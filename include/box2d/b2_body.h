@@ -23,6 +23,8 @@
 #ifndef B2_BODY_H
 #define B2_BODY_H
 
+#include <cstring>
+
 #include "b2_math.h"
 #include "b2_shape.h"
 
@@ -372,8 +374,10 @@ public:
 	/// Get the list of all contacts attached to this body.
 	/// @warning this list changes during the time step and you may
 	/// miss some collisions if you don't use b2ContactListener.
-	b2ContactEdge* GetContactList();
-	const b2ContactEdge* GetContactList() const;
+	int32 GetContactCount();
+	b2Contact* GetContact(int32 idx);
+	const b2Contact* GetContact(int32 idx) const;
+	void AddContact(b2Contact* c);
 
 	/// Get the next body in the world's body list.
 	b2Body* GetNext();
@@ -465,7 +469,9 @@ private:
 	int32 m_fixtureCount;
 
 	b2JointEdge* m_jointList;
-	b2ContactEdge* m_contactList;
+	b2Contact** m_contactList;
+	int32 m_contactCount;
+	int32 m_contactCapacity;
 
 	float m_mass, m_invMass;
 
@@ -716,14 +722,16 @@ inline const b2JointEdge* b2Body::GetJointList() const
 	return m_jointList;
 }
 
-inline b2ContactEdge* b2Body::GetContactList()
-{
-	return m_contactList;
+inline int32 b2Body::GetContactCount() {
+	return m_contactCount;
 }
 
-inline const b2ContactEdge* b2Body::GetContactList() const
-{
-	return m_contactList;
+inline b2Contact* b2Body::GetContact(int32 idx) {
+	return m_contactList[idx];
+}
+
+inline const b2Contact* b2Body::GetContact(int32 idx) const {
+	return m_contactList[idx];
 }
 
 inline b2Body* b2Body::GetNext()

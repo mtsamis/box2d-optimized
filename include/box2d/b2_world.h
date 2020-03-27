@@ -287,6 +287,8 @@ private:
 	
 	friend class b2ParticleSystem;
 
+	void RemoveDeadContacts();
+
 	void Solve(const b2TimeStep& step);
 	void SolveTOI(const b2TimeStep& step);
 
