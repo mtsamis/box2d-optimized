@@ -268,7 +268,7 @@ void b2Body::DestroyFixture(b2Fixture* fixture)
 			m_world->m_contactManager.Destroy(c);
 			
 			m_contactCount--;
-			b2Swap(m_contactList[i], m_contactList[m_contactCount]);
+			m_contactList[i] = m_contactList[m_contactCount];
 			i--;
 		}
 	}
