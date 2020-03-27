@@ -92,7 +92,7 @@ void b2Contact::Destroy(b2Contact* contact, b2BlockAllocator* allocator) {
 }
 
 b2Contact::b2Contact(b2Fixture* fA, b2Fixture* fB, b2EvaluateFunction* evaluateFunction) {
-	m_flags = e_enabledFlag;
+	m_flags = e_enabledFlag | e_persistFlag;
 
 	m_fixtureA = fA;
 	m_fixtureB = fB;
@@ -102,16 +102,6 @@ b2Contact::b2Contact(b2Fixture* fA, b2Fixture* fB, b2EvaluateFunction* evaluateF
 
 	m_prev = nullptr;
 	m_next = nullptr;
-
-	m_nodeA.contact = nullptr;
-	m_nodeA.prev = nullptr;
-	m_nodeA.next = nullptr;
-	m_nodeA.other = nullptr;
-
-	m_nodeB.contact = nullptr;
-	m_nodeB.prev = nullptr;
-	m_nodeB.next = nullptr;
-	m_nodeB.other = nullptr;
 
 	m_toiCount = 0;
 

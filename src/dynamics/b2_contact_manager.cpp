@@ -31,7 +31,6 @@ b2ContactListener b2_defaultListener;
 
 b2ContactManager::b2ContactManager() {
 	m_contactList = nullptr;
-	m_destroyList = nullptr;
 	m_contactCount = 0;
 	m_contactFilter = &b2_defaultFilter;
 	m_contactListener = &b2_defaultListener;
@@ -39,11 +38,6 @@ b2ContactManager::b2ContactManager() {
 }
 
 void b2ContactManager::Destroy(b2Contact* c) {
-	b2Fixture* fixtureA = c->GetFixtureA();
-	b2Fixture* fixtureB = c->GetFixtureB();
-	b2Body* bodyA = fixtureA->GetBody();
-	b2Body* bodyB = fixtureB->GetBody();
-
 	if (m_contactListener && c->IsTouching()) {
 		m_contactListener->EndContact(c);
 	}
@@ -61,33 +55,6 @@ void b2ContactManager::Destroy(b2Contact* c) {
 		m_contactList = c->m_next;
 	}
 
-	// Remove from body 1
-	if (c->m_nodeA.prev) {
-		c->m_nodeA.prev->next = c->m_nodeA.next;
-	}
-
-	if (c->m_nodeA.next) {
-		c->m_nodeA.next->prev = c->m_nodeA.prev;
-	}
-
-	if (&c->m_nodeA == bodyA->m_contactList) {
-		bodyA->m_contactList = c->m_nodeA.next;
-	}
-
-	// Remove from body 2
-	if (c->m_nodeB.prev) {
-		c->m_nodeB.prev->next = c->m_nodeB.next;
-	}
-
-	if (c->m_nodeB.next) {
-		c->m_nodeB.next->prev = c->m_nodeB.prev;
-	}
-
-	if (&c->m_nodeB == bodyB->m_contactList) {
-		bodyB->m_contactList = c->m_nodeB.next;
-	}
-
-	// Call the factory.
 	b2Contact::Destroy(c, m_allocator);
 	--m_contactCount;
 }
@@ -96,22 +63,21 @@ void b2ContactManager::Destroy(b2Contact* c) {
 // all the narrow phase collision is processed for the world
 // contact list.
 void b2ContactManager::Collide() {
-	// Destroy old contacts that did not persist
-	while (m_destroyList) {
-		//TODO since this list is detached we can delete the nodes without removing them from the list 
-		b2Contact* cNuke = m_destroyList;
-		m_destroyList = m_destroyList->GetNext();
-		Destroy(cNuke);
-	}
-	
 	// Update awake contacts.
 	b2Contact* c = m_contactList;
 	while (c) {
+		if ((c->m_flags & b2Contact::e_persistFlag) == 0) {
+			b2Contact* cNuke = c;
+			c = cNuke->GetNext();
+			Destroy(cNuke);
+			continue;
+		}
+
 		b2Fixture* fixtureA = c->GetFixtureA();
 		b2Fixture* fixtureB = c->GetFixtureB();
 		b2Body* bodyA = fixtureA->GetBody();
 		b2Body* bodyB = fixtureB->GetBody();
-		 
+
 		// Is this contact flagged for filtering?
 		if (c->m_flags & b2Contact::e_filterFlag) {
 			// Should these bodies collide?
@@ -129,13 +95,12 @@ void b2ContactManager::Collide() {
 				Destroy(cNuke);
 				continue;
 			}
-			
-			// Clear the filtering flag.
-			c->m_flags &= ~b2Contact::e_filterFlag;
 		}
 
 		// Clear the island flag; Prepare to build islands in b2World::Solve
-		c->m_flags &= ~b2Contact::e_islandFlag;
+		// Clear the persist flag; Prepare to add/remove new contacts from the broadphase 
+		// Clear the filtering flag
+		c->m_flags &= ~(b2Contact::e_islandFlag | b2Contact::e_persistFlag | b2Contact::e_filterFlag);
 
 		bool activeA = bodyA->IsAwake() && bodyA->m_type != b2_staticBody;
 		bool activeB = bodyB->IsAwake() && bodyB->m_type != b2_staticBody;
@@ -151,8 +116,6 @@ void b2ContactManager::Collide() {
 }
 
 void b2ContactManager::FindNewContacts() {
-	m_destroyList = m_contactList;
-	
 	// TODO move update to world?
 	
 	m_broadPhase.UpdateAll([](b2Fixture* fixture) {
@@ -169,21 +132,16 @@ void b2ContactManager::FindNewContacts() {
 		b2Body* b = fixture->GetBody();
 		return b->GetType() != b2_staticBody;
 	});
-	
-	// Detach from the list of contacts that persisted
-	if (m_destroyList) {
-		if (m_destroyList->m_prev) {
-			m_destroyList->m_prev->m_next = nullptr;
-			m_destroyList->m_prev = nullptr;
-		} else {
-			m_contactList = nullptr;
-		}
-	}
 }
 
 void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 	b2Body* bodyA = fixtureA->GetBody();
 	b2Body* bodyB = fixtureB->GetBody();
+	
+	if (bodyA->GetContactCount() < bodyB->GetContactCount()) {
+		bodyA = fixtureB->GetBody();
+		bodyB = fixtureA->GetBody();
+	}
 	
 	// Are the fixtures on the same body?
 	if (bodyA == bodyB) {
@@ -191,46 +149,18 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 	}
 	
 	// Does a contact already exist?
-	b2ContactEdge* edge = bodyB->GetContactList();
-	while (edge) {
-		if (edge->other == bodyA) {
-			b2Fixture* fA = edge->contact->GetFixtureA();
-			b2Fixture* fB = edge->contact->GetFixtureB();
-			
-			if ((fA == fixtureA && fB == fixtureB) || (fA == fixtureB && fB == fixtureA)) {
-				// A contact already exists.
-				
-				b2Contact* cmov = edge->contact;
-				
-				if (cmov == m_destroyList) {
-					m_destroyList = m_destroyList->m_next;
-				}
-				
-				if (cmov == m_contactList) {
-					// no need to remove the head
-					return;
-				}
-				
-				if (cmov->m_prev) {
-					cmov->m_prev->m_next = cmov->m_next;
-				}
-				
-				if (cmov->m_next) {
-					cmov->m_next->m_prev = cmov->m_prev;
-				}
-				
-				cmov->m_prev = nullptr;
-				cmov->m_next = m_contactList;
-				if (m_contactList != nullptr) {
-					m_contactList->m_prev = cmov;
-				}
-				m_contactList = cmov;
-				
-				return;
-			}
-		}
+	for (int32 i = 0; i < bodyB->GetContactCount(); ++i) {
+		b2Contact* c = bodyB->GetContact(i);
 
-		edge = edge->next;
+		b2Fixture* fA = c->GetFixtureA();
+		b2Fixture* fB = c->GetFixtureB();
+		
+		if ((fA == fixtureA && fB == fixtureB) || (fA == fixtureB && fB == fixtureA)) {
+			// persist the contact
+			c->m_flags |= b2Contact::e_persistFlag;
+
+			return;
+		}
 	}
 
 	// Does a joint override collision? Is at least one body dynamic?
@@ -249,12 +179,6 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 		return;
 	}
 
-	// Contact creation may swap fixtures.
-	fixtureA = c->GetFixtureA();
-	fixtureB = c->GetFixtureB();
-	bodyA = fixtureA->GetBody();
-	bodyB = fixtureB->GetBody();
-
 	// Insert into the world.
 	c->m_prev = nullptr;
 	c->m_next = m_contactList;
@@ -263,29 +187,8 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 	}
 	m_contactList = c;
 
-	// Connect to island graph.
-
-	// Connect to body A
-	c->m_nodeA.contact = c;
-	c->m_nodeA.other = bodyB;
-
-	c->m_nodeA.prev = nullptr;
-	c->m_nodeA.next = bodyA->m_contactList;
-	if (bodyA->m_contactList != nullptr) {
-		bodyA->m_contactList->prev = &c->m_nodeA;
-	}
-	bodyA->m_contactList = &c->m_nodeA;
-
-	// Connect to body B
-	c->m_nodeB.contact = c;
-	c->m_nodeB.other = bodyA;
-
-	c->m_nodeB.prev = nullptr;
-	c->m_nodeB.next = bodyB->m_contactList;
-	if (bodyB->m_contactList != nullptr) {
-		bodyB->m_contactList->prev = &c->m_nodeB;
-	}
-	bodyB->m_contactList = &c->m_nodeB;
+	bodyA->AddContact(c);
+	bodyB->AddContact(c);
 
 	// Wake up the bodies
 	if (fixtureA->IsSensor() == false && fixtureB->IsSensor() == false) {

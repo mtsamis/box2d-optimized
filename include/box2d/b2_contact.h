@@ -52,18 +52,6 @@ typedef void b2EvaluateFunction(b2Manifold* manifold,
 															const b2Shape* shapeA, const b2Transform& xfA,
 															const b2Shape* shapeB, const b2Transform& xfB);
 
-/// A contact edge is used to connect bodies and contacts together
-/// in a contact graph where each body is a node and each contact
-/// is an edge. A contact edge belongs to a doubly linked list
-/// maintained in each attached body. Each contact has two contact
-/// nodes, one for each attached body.
-struct b2ContactEdge {
-	b2Body* other;			///< provides quick access to the other body attached.
-	b2Contact* contact;		///< the contact
-	b2ContactEdge* prev;	///< the previous contact edge in the body's contact list
-	b2ContactEdge* next;	///< the next contact edge in the body's contact list
-};
-
 /// The class manages contact between two shapes. A contact exists for each overlapping
 /// AABB in the broad-phase (except if filtered). Therefore a contact object may exist
 /// that has no contact points.
@@ -142,20 +130,23 @@ protected:
 		// Used when crawling contact graph when forming islands.
 		e_islandFlag		= 0x0001,
 
-		// Set when the shapes are touching.
-		e_touchingFlag		= 0x0002,
-
-		// This contact can be disabled (by user)
-		e_enabledFlag		= 0x0004,
+		// This contact has persisted from the previous step
+		e_persistFlag		= 0x0002,
 
 		// This contact needs filtering because a fixture filter was changed.
-		e_filterFlag		= 0x0008,
+		e_filterFlag		= 0x0004,
+
+		// Set when the shapes are touching.
+		e_touchingFlag		= 0x0008,
+
+		// This contact can be disabled (by user)
+		e_enabledFlag		= 0x0010,
 
 		// This bullet contact had a TOI event
-		e_bulletHitFlag		= 0x0010,
+		e_bulletHitFlag		= 0x0020,
 
 		// This contact has a valid TOI in m_toi
-		e_toiFlag			= 0x0020
+		e_toiFlag			= 0x0040
 	};
 
 	/// Flag this contact for filtering. Filtering will occur the next time step.
@@ -176,10 +167,6 @@ protected:
 	// World pool and list pointers.
 	b2Contact* m_prev;
 	b2Contact* m_next;
-
-	// Nodes for connecting bodies.
-	b2ContactEdge m_nodeA;
-	b2ContactEdge m_nodeB;
 
 	b2Fixture* m_fixtureA;
 	b2Fixture* m_fixtureB;
