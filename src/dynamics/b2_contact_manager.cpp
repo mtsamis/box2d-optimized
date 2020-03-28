@@ -128,8 +128,8 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 	b2Body* bodyA = fixtureA->GetBody();
 	b2Body* bodyB = fixtureB->GetBody();
 	
-	// Are the fixtures on the same body? Are both bodies static?
-	if (bodyA == bodyB || (bodyA->m_type == b2_staticBody && bodyB->m_type == b2_staticBody)) {
+	// Are the fixtures on the same body?
+	if (bodyA == bodyB) {
 		return;
 	}
 	
