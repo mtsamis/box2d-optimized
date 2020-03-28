@@ -240,10 +240,9 @@ b2TreeNode* b2BroadPhase::UpdateAndQuery(T* callback, int32 start, int32 end, b2
 		double mid = splitX? (minx + maxx) / 2 : (miny + maxy) / 2;
 		group0 = start;
 
-		leftAABB.lowerBound = {FLT_MAX, FLT_MAX};
-		leftAABB.upperBound = {-FLT_MAX, -FLT_MAX};
-		rightAABB.lowerBound = {FLT_MAX, FLT_MAX};
-		rightAABB.upperBound = {-FLT_MAX, -FLT_MAX};
+		leftAABB.lowerBound = {b2_maxFloat, b2_maxFloat};
+		leftAABB.upperBound = {-b2_maxFloat, -b2_maxFloat};
+		rightAABB = leftAABB;
 
 		for (int32 i = start; i < end; i++) {
 			b2TreeNode* node = m_links[i];
