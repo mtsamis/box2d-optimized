@@ -93,6 +93,9 @@ public:
 	template <typename T, typename UnaryPredicate>
 	void QueryAll(T* callback, UnaryPredicate predicate) const;
 	
+	template <typename T, typename UnaryPredicate>
+	void UpdateAndQuery(T* callback, UnaryPredicate predicate);
+
 	/// Ray-cast against the proxies in the tree. This relies on the callback
 	/// to perform a exact ray-cast in the case were the proxy contains a shape.
 	/// The callback also performs the any collision filtering. This has performance
@@ -121,8 +124,12 @@ public:
 private:
 	bool RebuildTree();
 	int32 ComputeHeight(b2TreeNode* node) const;
+	b2Vec2 GetCenter2(const b2AABB& aabb);
 	b2TreeNode* RebuildTree(b2TreeNode* parent, int32 start, int32 end);
-	
+
+	template <typename T>
+	b2TreeNode* UpdateAndQuery(T* callback, int32 start, int32 end, b2TreeNode** collision, int32 ccount);
+
 	template <typename Visitor>
 	void RefreshTree(Visitor visitor, b2TreeNode* node);
 	
@@ -159,6 +166,147 @@ inline float b2BroadPhase::GetTreeQuality() const {
 
 inline int32 b2BroadPhase::GetCount() const {
 	return m_count;
+}
+
+inline b2Vec2 b2BroadPhase::GetCenter2(const b2AABB& aabb) {
+	b2Vec2 ret(aabb.lowerBound.x + aabb.upperBound.x, aabb.lowerBound.y + aabb.upperBound.y);
+	return ret;
+}
+
+template <typename T, typename UnaryPredicate>
+void b2BroadPhase::UpdateAndQuery(T* callback, UnaryPredicate predicate) {
+	if (m_count == 0) {
+		return;
+	}
+
+	for (int32 i = 0; i < m_count; i++) {
+		m_links[i] = &m_nodes[i];
+		b2Fixture* f = (b2Fixture*) m_links[i]->userData;
+
+		if (predicate(f)) {
+			f->UpdateAABB();
+			m_links[i]->aabb = f->GetAABB();
+		}
+	}
+	
+	b2TreeNode* temp[m_count];
+	int32 savedCount = m_count;
+	m_count = m_capacity;
+	m_currentQuality = 0;
+
+	m_root = UpdateAndQuery(callback, 0, savedCount, temp, 0);
+
+	m_lastRebuildQuality = m_currentQuality;
+	m_count = savedCount;
+}
+#include<iostream>
+template <typename T>
+b2TreeNode* b2BroadPhase::UpdateAndQuery(T* callback, int32 start, int32 end, b2TreeNode** collision, int32 ccount) {
+	int count = end - start;
+
+	b2Assert(count > 0);
+
+	if (count == 1) {
+		for (int32 i = 0; i < ccount; ++i) {
+			callback->QueryCallback((b2Fixture*) m_links[start]->userData, (b2Fixture*) collision[i]->userData);
+		}
+
+		return m_links[start];
+	}
+
+	int group0;
+	b2AABB leftAABB;
+	b2AABB rightAABB;
+
+	if (count == 2) {
+		leftAABB = m_links[start]->aabb;
+		rightAABB = m_links[start + 1]->aabb;
+		group0 = start + 1;
+	} else {
+		b2Vec2 c = GetCenter2(m_links[start]->aabb);
+		float minx = c.x, maxx = minx;
+		float miny = c.y, maxy = miny;
+
+		for (int32 i = start + 1; i < end; i++) {
+			c = GetCenter2(m_links[i]->aabb);
+
+			minx = b2Min(minx, c.x);
+			miny = b2Min(miny, c.y);
+			maxx = b2Max(maxx, c.x);
+			maxy = b2Max(maxy, c.y);
+		}
+
+		bool splitX = (maxx - minx) > (maxy - miny);
+		double mid = splitX? (minx + maxx) / 2 : (miny + maxy) / 2;
+		group0 = start;
+
+		leftAABB.lowerBound = {FLT_MAX, FLT_MAX};
+		leftAABB.upperBound = {-FLT_MAX, -FLT_MAX};
+		rightAABB.lowerBound = {FLT_MAX, FLT_MAX};
+		rightAABB.upperBound = {-FLT_MAX, -FLT_MAX};
+
+		for (int32 i = start; i < end; i++) {
+			b2TreeNode* node = m_links[i];
+			float nodeMid = splitX? (node->aabb.lowerBound.x + node->aabb.upperBound.x) : (node->aabb.lowerBound.y + node->aabb.upperBound.y);
+
+			if (nodeMid < mid) {
+				b2Swap(m_links[i], m_links[group0]);
+				group0++;
+				leftAABB.Combine(node->aabb);
+			} else {
+				rightAABB.Combine(node->aabb);
+			}
+		}
+		
+		// TODO something better to prevent endless looping & poor conditioned trees; maybe better split heuristic
+		if (group0 < start + 1) {
+			leftAABB.Combine(m_links[start]->aabb);
+			group0 = start + 1;
+		} else if (group0 > end - 1) {
+			rightAABB.Combine(m_links[end - 1]->aabb);
+			group0 = end - 1;
+		}
+	}
+
+	b2TreeNode* left[b2Min(ccount + count, m_count)];
+	b2TreeNode** right = collision;
+	int32 leftCount = 0;
+	int32 rightCount = 0;
+
+	for (int32 i = 0; i < ccount; ++i) {
+		if (b2TestOverlap(leftAABB, collision[i]->aabb)) {
+			left[leftCount++] = collision[i];
+		}
+
+		if (b2TestOverlap(rightAABB, collision[i]->aabb)) {
+			right[rightCount++] = collision[i];
+		}
+	}
+
+	if (group0 - start < end - group0) {
+		for (int32 i = start; i < group0; ++i) {
+			if (b2TestOverlap(rightAABB, m_links[i]->aabb)) {
+				right[rightCount++] = m_links[i];
+			}
+		}
+	} else {
+		for (int32 i = group0; i < end; ++i) {
+			if (b2TestOverlap(leftAABB, m_links[i]->aabb)) {
+				left[leftCount++] = m_links[i];
+			}
+		}
+	}
+
+	int32 nodeId = m_count++;
+	b2TreeNode* cur = &m_nodes[nodeId];
+
+	cur->left = UpdateAndQuery(callback, start, group0, left, leftCount);
+	cur->right = UpdateAndQuery(callback, group0, end, right, rightCount);
+	cur->aabb.Combine(cur->left->aabb, cur->right->aabb);
+
+	m_currentQuality += cur->aabb.upperBound.x - cur->aabb.lowerBound.x + cur->aabb.upperBound.y - cur->aabb.lowerBound.y;
+
+	return cur;
 }
 
 inline void b2BroadPhase::RemoveAll() {

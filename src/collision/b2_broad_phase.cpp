@@ -139,11 +139,6 @@ bool b2BroadPhase::RebuildTree() {
 	return false;
 }
 
-inline b2Vec2 GetCenter2(const b2AABB& aabb) {
-	b2Vec2 ret(aabb.lowerBound.x + aabb.upperBound.x, aabb.lowerBound.y + aabb.upperBound.y);
-	return ret;
-}
-
 b2TreeNode* b2BroadPhase::RebuildTree(b2TreeNode* parent, int32 start, int32 end) {
 	int count = end - start;
 	int group0;

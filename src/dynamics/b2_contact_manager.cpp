@@ -102,6 +102,7 @@ void b2ContactManager::Collide() {
 		// Clear the filtering flag
 		c->m_flags &= ~(b2Contact::e_islandFlag | b2Contact::e_persistFlag | b2Contact::e_filterFlag);
 
+		// TODO this checks can probably be removed with some extra code in b2_body
 		bool activeA = bodyA->IsAwake() && bodyA->m_type != b2_staticBody;
 		bool activeB = bodyB->IsAwake() && bodyB->m_type != b2_staticBody;
 
@@ -117,20 +118,9 @@ void b2ContactManager::Collide() {
 
 void b2ContactManager::FindNewContacts() {
 	// TODO move update to world?
-	
-	m_broadPhase.UpdateAll([](b2Fixture* fixture) {
+	m_broadPhase.UpdateAndQuery(this, [](b2Fixture* fixture) {
 		b2Body* b = fixture->GetBody();
-		if ((b->m_flags & b2Body::e_islandFlag) != 0 && b->GetType() != b2_staticBody) {
-			fixture->UpdateAABB();	
-			return true;
-		}
-		
-		return false;
-	});
-	
-	m_broadPhase.QueryAll(this, [](b2Fixture* fixture) {
-		b2Body* b = fixture->GetBody();
-		return b->GetType() != b2_staticBody;
+		return (b->m_flags & b2Body::e_islandFlag) != 0 && b->GetType() != b2_staticBody;
 	});
 }
 
@@ -138,14 +128,15 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 	b2Body* bodyA = fixtureA->GetBody();
 	b2Body* bodyB = fixtureB->GetBody();
 	
+	// Are the fixtures on the same body? Are both bodies static?
+	if (bodyA == bodyB || (bodyA->m_type == b2_staticBody && bodyB->m_type == b2_staticBody)) {
+		return;
+	}
+	
+	// prefer to loop over the body with the fewer contacts
 	if (bodyA->GetContactCount() < bodyB->GetContactCount()) {
 		bodyA = fixtureB->GetBody();
 		bodyB = fixtureA->GetBody();
-	}
-	
-	// Are the fixtures on the same body?
-	if (bodyA == bodyB) {
-		return;
 	}
 	
 	// Does a contact already exist?
