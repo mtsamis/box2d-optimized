@@ -1318,10 +1318,8 @@ void b2World::DebugDraw()
 		{
 			b2Fixture* fixtureA = c->GetFixtureA();
 			b2Fixture* fixtureB = c->GetFixtureB();
-			int32 indexA = c->GetChildIndexA();
-			int32 indexB = c->GetChildIndexB();
-			b2Vec2 cA = fixtureA->GetAABB(indexA).GetCenter();
-			b2Vec2 cB = fixtureB->GetAABB(indexB).GetCenter();
+			b2Vec2 cA = fixtureA->GetAABB().GetCenter();
+			b2Vec2 cB = fixtureB->GetAABB().GetCenter();
 
 			m_debugDraw->DrawSegment(cA, cB, color);
 		}

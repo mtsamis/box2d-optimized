@@ -466,14 +466,10 @@ void b2Body::SetEnabled(bool flag)
 		{
 			f->CreateProxies(broadPhase, m_xf);
 		}
-<<<<<<< HEAD
-*/
-		// Contacts are created the next time step.
-=======
+		*/
 
 		// Contacts are created at the beginning of the next
 		m_world->m_newContacts = true;
->>>>>>> Bug fix from PR #546 (#582)
 	}
 	else
 	{
