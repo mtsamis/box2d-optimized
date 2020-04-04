@@ -24,7 +24,7 @@
 
 #include "b2_shape.h"
 
-/// A convex polygon. It is assumed that the interior of the polygon is to
+/// A solid convex polygon. It is assumed that the interior of the polygon is to
 /// the left of each edge.
 /// Polygons have a maximum number of vertices equal to b2_maxPolygonVertices.
 /// In most cases you should not need many vertices for a convex polygon.
@@ -62,6 +62,8 @@ public:
 	void ComputeDistance(const b2Transform& xf, const b2Vec2& p, float32* distance, b2Vec2* normal) const;
 
 	/// Implement b2Shape.
+	/// @note because the polygon is solid, rays that start inside do not hit because the normal is
+	/// not defined.
 	bool RayCast(b2RayCastOutput* output, const b2RayCastInput& input,
 					const b2Transform& transform) const override;
 

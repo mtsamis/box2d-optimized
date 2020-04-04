@@ -67,6 +67,7 @@ set (TESTBED_SOURCE_FILES
 	tests/time_of_impact.cpp
 	tests/tumbler.cpp
 	tests/wave_machine.cpp
+	tests/wheel_joint.cpp
 )
 
 add_executable(testbed ${TESTBED_SOURCE_FILES})
