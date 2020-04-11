@@ -394,7 +394,7 @@ public:
 	
 	void UpdateAABBs();
 
-	/// Dump this body to a log file
+	/// Dump this body to a file
 	void Dump();
 
 private:
