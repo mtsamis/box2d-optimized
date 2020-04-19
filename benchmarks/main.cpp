@@ -91,6 +91,7 @@ int main() {
 
 	// Construct a world object, which will hold and simulate the rigid bodies.
 	b2World world(gravity);
+  world.SetContinuousPhysics(false);
 
   InitWorld(&world);
 
