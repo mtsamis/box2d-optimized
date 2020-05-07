@@ -175,11 +175,5 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 	bodyA->AddContact(c);
 	bodyB->AddContact(c);
 
-	// Wake up the bodies
-	if (fixtureA->IsSensor() == false && fixtureB->IsSensor() == false) {
-		bodyA->SetAwake(true);
-		bodyB->SetAwake(true);
-	}
-
 	++m_contactCount;
 }
