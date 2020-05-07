@@ -342,18 +342,12 @@ void Test::Step(Settings& settings)
 		m_maxProfile.step = b2Max(m_maxProfile.step, p.step);
 		m_maxProfile.collide = b2Max(m_maxProfile.collide, p.collide);
 		m_maxProfile.solve = b2Max(m_maxProfile.solve, p.solve);
-		m_maxProfile.solveInit = b2Max(m_maxProfile.solveInit, p.solveInit);
-		m_maxProfile.solveVelocity = b2Max(m_maxProfile.solveVelocity, p.solveVelocity);
-		m_maxProfile.solvePosition = b2Max(m_maxProfile.solvePosition, p.solvePosition);
 		m_maxProfile.solveTOI = b2Max(m_maxProfile.solveTOI, p.solveTOI);
 		m_maxProfile.broadphase = b2Max(m_maxProfile.broadphase, p.broadphase);
 
 		m_totalProfile.step += p.step;
 		m_totalProfile.collide += p.collide;
 		m_totalProfile.solve += p.solve;
-		m_totalProfile.solveInit += p.solveInit;
-		m_totalProfile.solveVelocity += p.solveVelocity;
-		m_totalProfile.solvePosition += p.solvePosition;
 		m_totalProfile.solveTOI += p.solveTOI;
 		m_totalProfile.broadphase += p.broadphase;
 	}
@@ -370,9 +364,6 @@ void Test::Step(Settings& settings)
 			aveProfile.step = scale * m_totalProfile.step;
 			aveProfile.collide = scale * m_totalProfile.collide;
 			aveProfile.solve = scale * m_totalProfile.solve;
-			aveProfile.solveInit = scale * m_totalProfile.solveInit;
-			aveProfile.solveVelocity = scale * m_totalProfile.solveVelocity;
-			aveProfile.solvePosition = scale * m_totalProfile.solvePosition;
 			aveProfile.solveTOI = scale * m_totalProfile.solveTOI;
 			aveProfile.broadphase = scale * m_totalProfile.broadphase;
 		}
@@ -382,12 +373,6 @@ void Test::Step(Settings& settings)
 		g_debugDraw.DrawString(5, m_textLine, "collide [ave] (max) = %5.2f [%6.2f] (%6.2f)", p.collide, aveProfile.collide, m_maxProfile.collide);
 		m_textLine += m_textIncrement;
 		g_debugDraw.DrawString(5, m_textLine, "solve [ave] (max) = %5.2f [%6.2f] (%6.2f)", p.solve, aveProfile.solve, m_maxProfile.solve);
-		m_textLine += m_textIncrement;
-		g_debugDraw.DrawString(5, m_textLine, "solve init [ave] (max) = %5.2f [%6.2f] (%6.2f)", p.solveInit, aveProfile.solveInit, m_maxProfile.solveInit);
-		m_textLine += m_textIncrement;
-		g_debugDraw.DrawString(5, m_textLine, "solve velocity [ave] (max) = %5.2f [%6.2f] (%6.2f)", p.solveVelocity, aveProfile.solveVelocity, m_maxProfile.solveVelocity);
-		m_textLine += m_textIncrement;
-		g_debugDraw.DrawString(5, m_textLine, "solve position [ave] (max) = %5.2f [%6.2f] (%6.2f)", p.solvePosition, aveProfile.solvePosition, m_maxProfile.solvePosition);
 		m_textLine += m_textIncrement;
 		g_debugDraw.DrawString(5, m_textLine, "solveTOI [ave] (max) = %5.2f [%6.2f] (%6.2f)", p.solveTOI, aveProfile.solveTOI, m_maxProfile.solveTOI);
 		m_textLine += m_textIncrement;

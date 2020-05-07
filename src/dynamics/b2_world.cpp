@@ -461,10 +461,6 @@ void b2World::SetAllowSleeping(bool flag)
 // Find islands, integrate and solve constraints, solve position constraints
 void b2World::Solve(const b2TimeStep& step)
 {
-	m_profile.solveInit = 0.0f;
-	m_profile.solveVelocity = 0.0f;
-	m_profile.solvePosition = 0.0f;
-
 	// Size the island for the worst case.
 	b2Island island(m_bodyCount,
 					m_contactManager.m_contactCount,
@@ -601,11 +597,7 @@ void b2World::Solve(const b2TimeStep& step)
 			}
 		}
 
-		b2Profile profile;
-		island.Solve(&profile, step, m_gravity, m_allowSleep);
-		m_profile.solveInit += profile.solveInit;
-		m_profile.solveVelocity += profile.solveVelocity;
-		m_profile.solvePosition += profile.solvePosition;
+		island.Solve(step, m_gravity, m_allowSleep);
 
 		// Post solve cleanup.
 		for (int32 i = 0; i < island.m_bodyCount; ++i)

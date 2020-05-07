@@ -26,7 +26,6 @@
 #include "box2d/b2_fixture.h"
 #include "box2d/b2_joint.h"
 #include "box2d/b2_stack_allocator.h"
-#include "box2d/b2_timer.h"
 #include "box2d/b2_world.h"
 
 #include "b2_island.h"
@@ -185,10 +184,8 @@ b2Island::~b2Island()
 	m_allocator->Free(m_bodies);
 }
 
-void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& gravity, bool allowSleep)
+void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSleep)
 {
-	b2Timer timer;
-
 	float h = step.dt;
 
 	// Integrate velocities and apply damping. Initialize the body state.
@@ -228,8 +225,6 @@ void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& g
 		m_velocities[i].w = w;
 	}
 
-	timer.Reset();
-
 	// Solver data
 	b2SolverData solverData;
 	solverData.step = step;
@@ -262,10 +257,7 @@ void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& g
 		m_joints[i]->InitVelocityConstraints(solverData);
 	}
 
-	profile->solveInit = timer.GetMilliseconds();
-
 	// Solve velocity constraints
-	timer.Reset();
 	
 	if (m_contactCount > 0) {
 		for (int32 i = 0; i < step.velocityIterations; ++i)
@@ -290,8 +282,6 @@ void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& g
 		}
 	}
 	
-	profile->solveVelocity = timer.GetMilliseconds();
-
 	// Integrate positions
 	for (int32 i = 0; i < m_bodyCount; ++i)
 	{
@@ -326,7 +316,6 @@ void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& g
 	}
 
 	// Solve position constraints
-	timer.Reset();
 	
 	bool positionSolved = false;
 	
@@ -379,8 +368,6 @@ void b2Island::Solve(b2Profile* profile, const b2TimeStep& step, const b2Vec2& g
 		body->SynchronizeTransform();
 	}
 
-	profile->solvePosition = timer.GetMilliseconds();
-	
 	if (m_contactCount > 0) {
 		Report(contactSolver.m_velocityConstraints);	
 	}

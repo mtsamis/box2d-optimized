@@ -30,9 +30,6 @@ struct b2Profile
 	float step;
 	float collide;
 	float solve;
-	float solveInit;
-	float solveVelocity;
-	float solvePosition;
 	float broadphase;
 	float solveTOI;
 };
