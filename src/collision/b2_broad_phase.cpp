@@ -58,7 +58,7 @@ void b2IntHashTable::Grow() {
 		
 		while (cur != nullptr) {
 			// if the new msd bit to be used is 1 then cur must be moved
-			if (hash(cur->key) & m_mapCapacity == m_mapCapacity) {
+			if ((hash(cur->key) & m_mapCapacity) == m_mapCapacity) {
 				// remove from old bucket
 				*src = cur->next;
 				
