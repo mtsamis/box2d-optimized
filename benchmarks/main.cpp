@@ -229,6 +229,128 @@ int main() {
   } b4;
   benchmarks.push_back(&b4);
   
+  class : public b2Benchmark {
+    virtual void InitBenchmark() override {
+      name = "n^2";
+      simulationSteps = 100;
+    }
+    
+    virtual void InitWorld(b2World* world) override {
+		  {
+			  b2BodyDef bd;
+			  bd.position.Set(0.0f, 0.0f);
+			  b2Body* body = world->CreateBody(&bd);
+
+			  b2EdgeShape shape;
+			  shape.Set(b2Vec2(50.0f, 0.0f), b2Vec2(-50.0f, 0.0f));
+
+			  body->CreateFixture(&shape, 0.0f);
+		  }
+
+		  // Table
+		  for (int32 i = 0; i < 200; ++i) {
+			  b2BodyDef bd;
+			  bd.type = b2_dynamicBody;
+			  bd.position.Set(-5.0f, 1.0f);
+			  b2Body* m_table2 = world->CreateBody(&bd);
+
+			  b2PolygonShape top;
+			  top.SetAsBox(3.0f, 0.5f, b2Vec2(0.0f, 3.5f), 0.0f);
+
+			  b2PolygonShape leftLeg;
+			  leftLeg.SetAsBox(0.5f, 2.0f, b2Vec2(-2.5f, 2.0f), 0.0f);
+
+			  b2PolygonShape rightLeg;
+			  rightLeg.SetAsBox(0.5f, 2.0f, b2Vec2(2.5f, 2.0f), 0.0f);
+
+			  m_table2->CreateFixture(&top, 2.0f);
+			  m_table2->CreateFixture(&leftLeg, 2.0f);
+			  m_table2->CreateFixture(&rightLeg, 2.0f);
+		  }
+
+		  // Spaceship
+		  for (int32 i = 0; i < 200; ++i) {
+			  b2BodyDef bd;
+			  bd.type = b2_dynamicBody;
+			  bd.position.Set(15.0f, 1.0f);
+			  b2Body* m_ship2 = world->CreateBody(&bd);
+
+			  b2Vec2 vertices[3];
+
+			  b2PolygonShape left;
+			  vertices[0].Set(-2.0f, 0.0f);
+			  vertices[1].Set(1.0f, 2.0f);
+			  vertices[2].Set(0.0f, 4.0f);
+			  left.Set(vertices, 3);
+
+			  b2PolygonShape right;
+			  vertices[0].Set(2.0f, 0.0f);
+			  vertices[1].Set(-1.0f, 2.0f);
+			  vertices[2].Set(0.0f, 4.0f);
+			  right.Set(vertices, 3);
+
+			  m_ship2->CreateFixture(&left, 2.0f);
+			  m_ship2->CreateFixture(&right, 2.0f);
+		  }
+    }
+  } b5;
+  benchmarks.push_back(&b5);
+
+  class : public b2Benchmark {
+    virtual void InitBenchmark() override {
+      name = "Multi-fixture";
+      simulationSteps = 500;
+    }
+    
+    virtual void InitWorld(b2World* world) override {
+		  {
+			  b2BodyDef bd;
+			  bd.position.Set(0.0f, 0.0f);
+			  b2Body* body = world->CreateBody(&bd);
+
+			  b2PolygonShape shape;
+			  
+			  shape.SetAsBox(35, 1, b2Vec2(0.0f, 0.0f), 0);
+			  body->CreateFixture(&shape, 0.0f);
+			  
+			  shape.SetAsBox(1, 25, b2Vec2(-36.0f, 24.0f), 0);
+			  body->CreateFixture(&shape, 0.0f);
+			  
+			  shape.SetAsBox(1, 25, b2Vec2(36.0f, 24.0f), 0);
+			  body->CreateFixture(&shape, 0.0f);
+		  }
+
+		  // Table
+		  for (int32 i = 0; i < 100; ++i) {
+			  b2BodyDef bd;
+			  bd.type = b2_dynamicBody;
+			  bd.position.Set(-20.0f + (i % 6) * 7 + i / 10, 1.0f + (i / 6) * 5);
+			  b2Body* m_table2 = world->CreateBody(&bd);
+
+        const int32 c = 50 - i / 2;
+
+        for (int32 z = 0; z < c; ++z) {
+          b2PolygonShape top;
+          float bs = 2.0f / c;
+          float ps = 2.0f * z * bs + bs;
+          
+    			top.SetAsBox(bs, 0.5f, b2Vec2(ps - 2.0f, 3.5f), 0.0f);
+	  
+    			b2PolygonShape leftLeg;
+			    leftLeg.SetAsBox(0.5f, bs, b2Vec2(-1.5f, ps), 0.0f);
+
+			    b2PolygonShape rightLeg;
+			    rightLeg.SetAsBox(0.5f, bs, b2Vec2(1.5f, ps), 0.0f);
+
+			    m_table2->CreateFixture(&leftLeg, 2.0f / c);
+			    m_table2->CreateFixture(&rightLeg, 2.0f / c);
+          m_table2->CreateFixture(&top, 2.0f / c);
+    		}
+		  }
+    }
+  } b6;
+  benchmarks.push_back(&b6);
+  
   for (auto benchmark : benchmarks) {
     benchmark->InitBenchmark();
     int32 iterations = 1;
