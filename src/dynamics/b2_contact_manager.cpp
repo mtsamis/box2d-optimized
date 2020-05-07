@@ -133,12 +133,6 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 		return;
 	}
 	
-	// prefer to loop over the body with the fewer contacts
-	if (bodyA->GetContactCount() < bodyB->GetContactCount()) {
-		bodyA = fixtureB->GetBody();
-		bodyB = fixtureA->GetBody();
-	}
-	
 	// Does a contact already exist?
 	for (int32 i = 0; i < bodyB->GetContactCount(); ++i) {
 		b2Contact* c = bodyB->GetContact(i);
