@@ -84,7 +84,7 @@ int main() {
 		  }
     }
   } b1;
-  benchmarks.push_back(&b1);
+  benchmarks.insert(benchmarks.begin(), &b1);
   
   class : public b2Benchmark {
     virtual void InitBenchmark() override {
@@ -120,7 +120,7 @@ int main() {
 		  }
     }
   } b2;
-  benchmarks.push_back(&b2);
+  benchmarks.insert(benchmarks.begin(), &b2);
 
   class : public b2Benchmark {
     virtual void InitBenchmark() override {
@@ -185,7 +185,7 @@ int main() {
 		  }
     }
   } b3;
-  benchmarks.push_back(&b3);
+  benchmarks.insert(benchmarks.begin(), &b3);
 
   class : public b2Benchmark {
     virtual void InitBenchmark() override {
@@ -227,11 +227,11 @@ int main() {
 		  }
     }
   } b4;
-  benchmarks.push_back(&b4);
+  benchmarks.insert(benchmarks.begin(), &b4);
   
   class : public b2Benchmark {
     virtual void InitBenchmark() override {
-      name = "n^2";
+      name = "mild n^2";
       simulationSteps = 100;
     }
     
@@ -294,7 +294,33 @@ int main() {
 		  }
     }
   } b5;
-  benchmarks.push_back(&b5);
+  benchmarks.insert(benchmarks.begin(), &b5);
+
+  class : public b2Benchmark {
+    virtual void InitBenchmark() override {
+      name = "n^2";
+      simulationSteps = 100;
+    }
+    
+    virtual void InitWorld(b2World* world) override {
+		  {
+			  b2BodyDef bd;
+			  b2Body* ground = world->CreateBody(&bd);
+
+			  int32 N = 40;
+			  int32 M = 40;
+			  
+			  for (int32 j = 0; j < M; ++j) {
+				  for (int32 i = 0; i < N; ++i) {
+				    b2CircleShape shape;
+    				shape.m_radius = 1;
+    				ground->CreateFixture(&shape, 0.0f);
+    			}
+			  }
+		  }
+    }
+  } b6;
+  benchmarks.insert(benchmarks.begin(), &b6);
 
   class : public b2Benchmark {
     virtual void InitBenchmark() override {
@@ -348,9 +374,230 @@ int main() {
     		}
 		  }
     }
-  } b6;
-  benchmarks.push_back(&b6);
+  } b7;
+  benchmarks.insert(benchmarks.begin(), &b7);
   
+  class : public b2Benchmark {
+    virtual void InitBenchmark() override {
+      name = "Mostly static (single body)";
+      simulationSteps = 400;
+    }
+    
+    virtual void InitWorld(b2World* world) override {
+		  {
+			  float a = 0.5f;
+			  b2BodyDef bd;
+			  bd.position.y = -a;
+			  b2Body* ground = world->CreateBody(&bd);
+
+			  int32 N = 200;
+			  int32 M = 200;
+			  b2Vec2 position;
+			  position.y = 0.0f;
+			  for (int32 j = 0; j < M; ++j) {
+				  position.x = -N * a;
+
+				  for (int32 i = 0; i < N; ++i) {
+				    if (b2Abs(j - i) > 3) {
+    				  b2PolygonShape shape;
+    					shape.SetAsBox(a, a, position, 0.0f);
+    					ground->CreateFixture(&shape, 0.0f);
+				    } else if (i == j) {
+				      bd.type = b2_dynamicBody;
+				      bd.position = position;
+				      b2Body* body = world->CreateBody(&bd);
+				      b2CircleShape shape;
+				      shape.m_radius = a * 2;
+				      body->CreateFixture(&shape, 1.0f);
+				    }
+				    
+					  position.x += 2.0f * a;
+				  }
+				  
+				  position.y -= 2.0f * a;
+			  }
+		  }
+    }
+  } b8;
+  benchmarks.insert(benchmarks.begin(), &b8);
+  
+  class : public b2Benchmark {
+    virtual void InitBenchmark() override {
+      name = "Mostly static (multi body)";
+      simulationSteps = 500;
+    }
+    
+    virtual void InitWorld(b2World* world) override {
+		  {
+			  float a = 0.5f;
+			  
+			  int32 N = 200;
+			  int32 M = 200;
+			  b2Vec2 position;
+			  position.y = 0.0f;
+			  for (int32 j = 0; j < M; ++j) {
+				  position.x = -N * a;
+
+				  for (int32 i = 0; i < N; ++i) {
+				    if (b2Abs(j - i) > 3) {
+    				  b2BodyDef bd;
+			        bd.position = position;      
+			        b2Body* ground = world->CreateBody(&bd);
+              b2PolygonShape shape;
+    					shape.SetAsBox(a, a);
+    					ground->CreateFixture(&shape, 0.0f);
+				    } else if (i == j) {
+				      b2BodyDef bd;
+			        bd.type = b2_dynamicBody;
+				      bd.position = position;
+				      b2Body* body = world->CreateBody(&bd);
+				      b2CircleShape shape;
+				      shape.m_radius = a * 2;
+				      body->CreateFixture(&shape, 1.0f);
+				    }
+				    
+					  position.x += 2.0f * a;
+				  }
+				  
+				  position.y -= 2.0f * a;
+			  }
+		  }
+    }
+  } b9;
+  benchmarks.insert(benchmarks.begin(), &b9);
+  
+  class : public b2Benchmark {
+    virtual void InitBenchmark() override {
+      name = "Diagonal";
+      simulationSteps = 1000;
+    }
+    
+    virtual void InitWorld(b2World* world) override {
+		  {
+			  float a = 0.5f;
+			  
+			  int32 N = 50;
+			  int32 M = 25;
+			  b2Vec2 position;
+			  position.y = 0.0f;
+			  for (int32 j = 0; j < M; ++j) {
+				  position.x = -N * a;
+
+				  for (int32 i = 0; i < N; ++i) {
+				    b2BodyDef bd;
+			      bd.position = position;
+				    b2Body* body = world->CreateBody(&bd);
+				    
+				    b2PolygonShape shape;
+    				shape.SetAsBox(a, (3 * j + 1) * a, position, b2_pi / 4);
+    				body->CreateFixture(&shape, 0.0f);
+				    
+					  position.x += 8.0f * a;
+				  }
+				  
+				  position.y -= 8.0f * a;
+			  }
+		  }
+		  
+		  {
+			  for (int32 i = 0; i < 3000; ++i) {
+				  b2BodyDef bd;
+				  b2Vec2 pos;
+				  pos.x = (i / 15) * 2 - 75;
+				  pos.y = (i % 15) * 2 + 50;
+			    bd.position = pos;
+				  bd.type = b2_dynamicBody;
+				  b2Body* body = world->CreateBody(&bd);
+				  
+				  b2CircleShape shape;
+				  shape.m_radius = 0.5f;
+    			body->CreateFixture(&shape, 1.0f);
+			  }
+		  }
+    }
+  } b10;
+  benchmarks.insert(benchmarks.begin(), &b10);
+  
+  class : public b2Benchmark {
+    virtual void InitBenchmark() override {
+      name = "Mixed static/dynamic";
+      simulationSteps = 400;
+    }
+    
+    virtual void InitWorld(b2World* world) override {
+		  int32 N = 150;
+		  int32 M = 150;
+		  b2Vec2 cntr = {M / 2.0f, N / 2.0f};
+		  float a = 0.5f;
+			  
+		  {
+			  b2BodyDef bd;
+			  b2Body* ground = world->CreateBody(&bd);
+
+			  for (int32 j = 0; j < M; ++j) {
+				  for (int32 i = 0; i < N; ++i) {
+				    b2Vec2 pos;
+				    pos.x = i;
+				    pos.y = j;
+				    
+				    if (b2Dot(pos - cntr, pos - cntr) > 67 * 67) {
+				      b2CircleShape shape;
+      				shape.m_radius = a;
+      				shape.m_p = pos;
+      				ground->CreateFixture(&shape, 0.0f);
+				    }
+    			}
+			  }
+		  }
+		  
+		  {
+			  for (int32 i = 0; i < 6000; ++i) {
+          b2BodyDef bd;
+			    bd.type = b2_dynamicBody;
+			    b2Vec2 pos;
+			    float s = i / 6000.0f;
+			    pos.x = cosf(s * 30.0f) * (s * 50 + 10);
+			    pos.y = sinf(s * 30.0f) * (s * 50 + 10);
+				  bd.position = pos + cntr;
+				  b2Body* body = world->CreateBody(&bd);
+				  body->SetLinearVelocity(pos);
+				  b2CircleShape shape;
+				  shape.m_radius = a;
+				  body->CreateFixture(&shape, 0.5f);
+			  }
+		  }
+    }
+  } b11;
+  benchmarks.insert(benchmarks.begin(), &b11);
+  
+  class : public b2Benchmark {
+    virtual void InitBenchmark() override {
+      name = "Adversarial (exponential)";
+      simulationSteps = 200;
+    }
+    
+    virtual void InitWorld(b2World* world) override {
+		  {
+			  int x = 1;
+				b2Vec2 pos;
+				pos.y = 0;
+        
+			  for (int32 j = 0; j < 1000; ++j) {
+				  pos.x = x;
+				  x = x * 2;
+				    
+				  b2BodyDef bd;
+			    b2Body* ground = world->CreateBody(&bd);
+          b2CircleShape shape;
+      		shape.m_radius = 1;
+      		shape.m_p = pos;
+      	  ground->CreateFixture(&shape, 0.0f);
+			  }
+		  }
+    }
+  } b12;
+  benchmarks.insert(benchmarks.begin(), &b12);
+
   for (auto benchmark : benchmarks) {
     benchmark->InitBenchmark();
     int32 iterations = 1;
@@ -379,9 +626,8 @@ int main() {
 	    totalTime += time;
     }
     
-    std::cout.precision(std::numeric_limits<float>::digits10);
-    std::cout << std::left << std::setw(20) << benchmark->name << ": "
-              << std::right << std::setw(15) << (totalTime / 1000000.0 / iterations) << " ms" << std::endl;
+    std::cout << std::left << std::setw(30) << benchmark->name << ": "
+              << std::right << std::setw(15) << (int32) (totalTime / 1000000.0 / iterations) << " ms" << std::endl;
   }
 
 /*
