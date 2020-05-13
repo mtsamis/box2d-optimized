@@ -184,8 +184,62 @@ b2Island::~b2Island()
 	m_allocator->Free(m_bodies);
 }
 
-void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSleep)
-{
+void b2Island::SolveOrphan(b2Body* b, const b2TimeStep& step, const b2Vec2& gravity, bool allowSleep) {
+  // Assumes that b has no contacts, no joints and is not static
+  float h = step.dt;
+  b2Vec2 v = b->m_linearVelocity;
+	float w = b->m_angularVelocity;
+
+	if (b->m_type == b2_dynamicBody) {
+		v += h * b->m_invMass * (b->m_gravityScale * b->m_mass * gravity + b->m_force);
+		w += h * b->m_invI * b->m_torque;
+
+		// Apply damping.
+		v /= (1.0f + h * b->m_linearDamping);
+		w /= (1.0f + h * b->m_angularDamping);
+	}
+
+	// Check for large velocities
+	b2Vec2 translation = h * v;
+	if (b2Dot(translation, translation) > b2_maxTranslationSquared) {
+		float ratio = b2_maxTranslation / translation.Length();
+		v *= ratio;
+	}
+
+	float rotation = h * w;
+	if (rotation * rotation > b2_maxRotationSquared) {
+		float ratio = b2_maxRotation / b2Abs(rotation);
+		w *= ratio;
+	}
+
+	// Integrate
+	b->m_sweep.c += h * v;
+	b->m_sweep.a += h * w;
+
+	b->m_linearVelocity = v;
+	b->m_angularVelocity = w;
+
+	b->SynchronizeTransform();
+
+	if (allowSleep) {
+		const float linTolSqr = b2_linearSleepTolerance * b2_linearSleepTolerance;
+		const float angTolSqr = b2_angularSleepTolerance * b2_angularSleepTolerance;
+
+		if ((b->m_flags & b2Body::e_autoSleepFlag) == 0 ||
+			  b->m_angularVelocity * b->m_angularVelocity > angTolSqr ||
+			  b2Dot(b->m_linearVelocity, b->m_linearVelocity) > linTolSqr) {
+			b->m_sleepTime = 0.0f;
+		} else {
+			b->m_sleepTime += h;
+
+			if (b->m_sleepTime >= b2_timeToSleep) {
+			  b->SetAwake(false);
+		  }
+		}
+	}
+}
+
+void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSleep) {
 	float h = step.dt;
 
 	// Integrate velocities and apply damping. Initialize the body state.
@@ -197,10 +251,6 @@ void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSl
 		float a = b->m_sweep.a;
 		b2Vec2 v = b->m_linearVelocity;
 		float w = b->m_angularVelocity;
-
-		// Store positions for continuous collision.
-		b->m_sweep.c0 = b->m_sweep.c;
-		b->m_sweep.a0 = b->m_sweep.a;
 
 		if (b->m_type == b2_dynamicBody)
 		{
@@ -215,8 +265,8 @@ void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSl
 			// v2 = exp(-c * dt) * v1
 			// Pade approximation:
 			// v2 = v1 * 1 / (1 + c * dt)
-			v *= 1.0f / (1.0f + h * b->m_linearDamping);
-			w *= 1.0f / (1.0f + h * b->m_angularDamping);
+			v /= (1.0f + h * b->m_linearDamping);
+			w /= (1.0f + h * b->m_angularDamping);
 		}
 
 		m_positions[i].c = c;

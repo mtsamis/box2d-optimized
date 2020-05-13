@@ -50,6 +50,7 @@ public:
 	}
 
 	void Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSleep);
+	void SolveOrphan(b2Body* b, const b2TimeStep& step, const b2Vec2& gravity, bool allowSleep);
 
 	void SolveTOI(const b2TimeStep& subStep, int32 toiIndexA, int32 toiIndexB);
 
