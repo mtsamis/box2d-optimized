@@ -573,7 +573,7 @@ int main() {
   class : public b2Benchmark {
     virtual void InitBenchmark() override {
       name = "Adversarial (exponential)";
-      simulationSteps = 200;
+      simulationSteps = 100;
     }
     
     virtual void InitWorld(b2World* world) override {
@@ -598,10 +598,40 @@ int main() {
   } b12;
   benchmarks.insert(benchmarks.begin(), &b12);
 
+  class : public b2Benchmark {
+    virtual void InitBenchmark() override {
+      name = "Slow explosion";
+      simulationSteps = 1000;
+    }
+    
+    virtual void InitWorld(b2World* world) override {
+		  world->SetGravity(b2Vec2(0.0f,0.0f));
+		  
+		  {
+			  for (int32 i = 0; i < 6000; ++i) {
+          b2BodyDef bd;
+			    bd.type = b2_dynamicBody;
+			    b2Vec2 pos;
+			    float s = i / 600.0f;
+			    pos.x = cosf(s * 30.0f) * (s * 30 + 5);
+			    pos.y = sinf(s * 30.0f) * (s * 30 + 5);
+				  bd.position = pos;
+				  b2Body* body = world->CreateBody(&bd);
+				  body->SetLinearVelocity(0.2f * pos);
+				  b2CircleShape shape;
+				  shape.m_radius = 0.5f;
+				  body->CreateFixture(&shape, 0.5f);
+			  }
+		  }
+    }
+  } b13;
+  benchmarks.insert(benchmarks.begin(), &b13);
+
   for (auto benchmark : benchmarks) {
     benchmark->InitBenchmark();
     int32 iterations = 1;
     int64 totalTime = 0;
+    int64 maxTime = 0;
     
     for (int32 i = 0; i < iterations; ++i) {
 	    // Construct a world object, which will hold and simulate the rigid bodies.
@@ -611,23 +641,28 @@ int main() {
       benchmark->InitWorld(&world);
 
       using std::chrono::high_resolution_clock;
-	    auto start = high_resolution_clock::now();
-	    
-	    // This is our little game loop.
+	    int64 maxTime0 = 0;
+
 	    for (int32 i = 0; i < benchmark->simulationSteps; ++i) {
-		    // Instruct the world to perform a single step of simulation.
-		    // It is generally best to keep the time step and iterations fixed.
+		    auto start = high_resolution_clock::now();
+
 		    world.Step(benchmark->timeStep, benchmark->velocityIterations, benchmark->positionIterations);
 		    benchmark->StepWorld(&world);
+
+	      auto finish = high_resolution_clock::now();
+  	    int64 time = (finish - start).count();
+  	    totalTime += time;
+  	    maxTime0 = b2Max(maxTime0, time);
 	    }
 	    
-	    auto finish = high_resolution_clock::now();
-	    int64 time = (finish - start).count();
-	    totalTime += time;
+	    maxTime = (maxTime == 0)? maxTime0 : b2Min(maxTime0, maxTime);
     }
     
-    std::cout << std::left << std::setw(30) << benchmark->name << ": "
-              << std::right << std::setw(15) << (int32) (totalTime / 1000000.0 / iterations) << " ms" << std::endl;
+    std::cout << std::left << std::setw(30) << benchmark->name << "  " << std::right
+              << std::setw(8) << "total: "
+              << std::setw(12) << (int32) (totalTime / 1000000.0 / iterations) << " ms"
+              << std::setw(8) << " max:  "
+              << std::setw(12) << (((int32) (maxTime / 10000.0)) / 100.0) << " ms" <<  std::endl;
   }
 
 /*
