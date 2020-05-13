@@ -1025,7 +1025,7 @@ void b2World::Step(float dt, int32 velocityIterations, int32 positionIterations,
 	step.warmStarting = m_warmStarting;
 	
 	// Update contacts. This is where some contacts are destroyed.
-	{
+	if (step.dt > 0.0f) {
 		b2Timer timer;
 		m_contactManager.Collide();
 		m_profile.collide = timer.GetMilliseconds();
