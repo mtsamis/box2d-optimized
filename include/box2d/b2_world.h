@@ -293,7 +293,8 @@ private:
 
 	b2ContactManager m_contactManager;
 
-	b2Body* m_bodyList;
+	b2Body* m_bodyListHead;
+	b2Body* m_bodyListTail;
 	b2Joint* m_jointList;
 	b2ParticleSystem* m_particleSystemList;
 	
@@ -326,12 +327,12 @@ private:
 
 inline b2Body* b2World::GetBodyList()
 {
-	return m_bodyList;
+	return m_bodyListHead;
 }
 
 inline const b2Body* b2World::GetBodyList() const
 {
-	return m_bodyList;
+	return m_bodyListHead;
 }
 
 inline b2Joint* b2World::GetJointList()
