@@ -71,56 +71,54 @@ struct b2Vec2
 	b2Vec2 operator -() const { b2Vec2 v; v.Set(-x, -y); return v; }
 	
 	/// Read from and indexed element.
-	float operator () (int32 i) const
-	{
+	float operator () (int32 i) const {
 		return (&x)[i];
 	}
 
 	/// Write to an indexed element.
-	float& operator () (int32 i)
-	{
+	float& operator () (int32 i) {
 		return (&x)[i];
 	}
 
 	/// Add a vector to this vector.
-	void operator += (const b2Vec2& v)
-	{
+	void operator += (const b2Vec2& v) {
 		x += v.x; y += v.y;
 	}
 	
 	/// Subtract a vector from this vector.
-	void operator -= (const b2Vec2& v)
-	{
+	void operator -= (const b2Vec2& v) {
 		x -= v.x; y -= v.y;
 	}
 
 	/// Multiply this vector by a scalar.
-	void operator *= (float a)
-	{
+	void operator *= (float a) {
 		x *= a; y *= a;
 	}
 
+	/// Divide this vector by a scalar.
+	void operator /= (float a) {
+		x /= a; y /= a;
+	}
+
 	/// Get the length of this vector (the norm).
-	float Length() const
-	{
+	float Length() const {
 		return b2Sqrt(x * x + y * y);
 	}
 
 	/// Get the length squared. For performance, use this instead of
 	/// b2Vec2::Length (if possible).
-	float LengthSquared() const
-	{
+	float LengthSquared() const {
 		return x * x + y * y;
 	}
 
 	/// Convert this vector into a unit vector. Returns the length.
-	float Normalize()
-	{
+	float Normalize() {
 		float length = Length();
-		if (length < b2_epsilon)
-		{
+
+		if (length < b2_epsilon) {
 			return 0.0f;
 		}
+
 		float invLength = 1.0f / length;
 		x *= invLength;
 		y *= invLength;
@@ -129,25 +127,17 @@ struct b2Vec2
 	}
 
 	/// Does this vector contain finite coordinates?
-	bool IsValid() const
-	{
+	bool IsValid() const {
 		return b2IsValid(x) && b2IsValid(y);
 	}
 
 	/// Get the skew vector such that dot(skew_vec, other) == cross(vec, other)
-	b2Vec2 Skew() const
-	{
+	b2Vec2 Skew() const {
 		return b2Vec2(-y, x);
 	}
 
 	float x, y;
 };
-
-/// TODO remove? Divide a vector by a float.
-inline b2Vec2 operator / (const b2Vec2& v, float f)
-{
-	return b2Vec2(v.x / f, v.y / f);
-}
 
 /// A 2D column vector with 3 elements.
 struct b2Vec3
@@ -467,6 +457,11 @@ inline b2Vec2 operator - (const b2Vec2& a, const b2Vec2& b)
 inline b2Vec2 operator * (float s, const b2Vec2& a)
 {
 	return b2Vec2(s * a.x, s * a.y);
+}
+
+inline b2Vec2 operator / (const b2Vec2& v, float f)
+{
+	return b2Vec2(v.x / f, v.y / f);
 }
 
 inline bool operator == (const b2Vec2& a, const b2Vec2& b)
