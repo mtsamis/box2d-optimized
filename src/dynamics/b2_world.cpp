@@ -495,6 +495,12 @@ void b2World::Solve(const b2TimeStep& step)
 		b->m_sweep.a0 = b->m_sweep.a;
 
 		b->m_flags &= ~b2Body::e_islandFlag;
+	  
+	  if (b->GetType() == b2_staticBody) {
+	    // Reminder: after the first static body in the body list all subsequent are static as well
+	    // Static bodies do not move hence we need not update xf0, c0, a0
+	    break;
+	  }
 	}
 	
 	for (b2Joint* j = m_jointList; j; j = j->m_next) {
@@ -516,7 +522,14 @@ void b2World::Solve(const b2TimeStep& step)
 
 		// The seed can be dynamic or kinematic.
 		if (seed->GetType() == b2_staticBody) {
-			continue;
+	    // Reminder: after the first static body in the body list all subsequent are static as well
+			break;
+		}
+
+		if (seed->GetContactCount() == 0 && seed->GetJointList() == nullptr) {
+		  island.SolveOrphan(seed, step, m_gravity, m_allowSleep);
+		  seed->m_flags |= (b2Body::e_islandFlag | b2Body::e_awakeFlag);
+		  continue;
 		}
 
 		// Reset island and stack.
