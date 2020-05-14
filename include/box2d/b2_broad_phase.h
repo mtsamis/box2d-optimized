@@ -192,14 +192,12 @@ void b2BroadPhase::UpdateAndQuery(T* callback, UnaryPredicate predicate) {
 	b2TreeNode* temp[m_count];
 	int32 savedCount = m_count;
 	m_count = m_capacity;
-	m_currentQuality = 0;
 
 	m_root = UpdateAndQuery(callback, 0, savedCount, temp, 0);
 
-	m_lastRebuildQuality = m_currentQuality;
 	m_count = savedCount;
 }
-#include<iostream>
+
 template <typename T>
 b2TreeNode* b2BroadPhase::UpdateAndQuery(T* callback, int32 start, int32 end, b2TreeNode** collision, int32 ccount) {
 	int count = end - start;
@@ -212,16 +210,34 @@ b2TreeNode* b2BroadPhase::UpdateAndQuery(T* callback, int32 start, int32 end, b2
 		}
 
 		return m_links[start];
-	}
+	} else if (count == 2) {
+	  // Although the count == 1 case is enough for the algorithm to work correctly this
+	  // extra code for the common count == 2 case helps improve performance
+	  b2TreeNode* n1 = m_links[start];
+	  b2TreeNode* n2 = m_links[start + 1];
 
-	int group0;
-	b2AABB leftAABB;
-	b2AABB rightAABB;
+	  for (int32 i = 0; i < ccount; ++i) {
+	    if (b2TestOverlap(n1->aabb, collision[i]->aabb)) {
+  			callback->QueryCallback((b2Fixture*) n1->userData, (b2Fixture*) collision[i]->userData);
+	    }
 
-	if (count == 2) {
-		leftAABB = m_links[start]->aabb;
-		rightAABB = m_links[start + 1]->aabb;
-		group0 = start + 1;
+	    if (b2TestOverlap(n2->aabb, collision[i]->aabb)) {
+  			callback->QueryCallback((b2Fixture*) n2->userData, (b2Fixture*) collision[i]->userData);
+	    }
+		}
+
+		if (b2TestOverlap(n1->aabb, n2->aabb)) {
+      callback->QueryCallback((b2Fixture*) n1->userData, (b2Fixture*) n2->userData);
+    }
+
+		int32 nodeId = m_count++;
+	  b2TreeNode* cur = &m_nodes[nodeId];
+
+	  cur->left = n1;
+	  cur->right = n2;
+	  cur->aabb.Combine(n1->aabb, n2->aabb);
+
+		return cur;
 	} else {
 		b2Vec2 c = GetCenter2(m_links[start]->aabb);
 		float minx = c.x, maxx = minx;
@@ -236,76 +252,108 @@ b2TreeNode* b2BroadPhase::UpdateAndQuery(T* callback, int32 start, int32 end, b2
 			maxy = b2Max(maxy, c.y);
 		}
 
-		bool splitX = (maxx - minx) > (maxy - miny);
-		double mid = splitX? (minx + maxx) / 2 : (miny + maxy) / 2;
-		group0 = start;
+    int32 group0 = start;
+    b2AABB leftAABB, rightAABB;
 
-		leftAABB.lowerBound = {b2_maxFloat, b2_maxFloat};
-		leftAABB.upperBound = {-b2_maxFloat, -b2_maxFloat};
-		rightAABB = leftAABB;
+    if (b2Abs(maxx - minx) < b2_epsilon && b2Abs(maxy - miny) < b2_epsilon) {
+      // If all the centers coincide then we have a degenerate O(n^2) collision case
+      // This is quite bad for the physics pipeline, but we can help with this special handling
 
-		for (int32 i = start; i < end; i++) {
-			b2TreeNode* node = m_links[i];
-			float nodeMid = splitX? (node->aabb.lowerBound.x + node->aabb.upperBound.x) : (node->aabb.lowerBound.y + node->aabb.upperBound.y);
+		  for (int32 i = start; i < end; i++) {
+		    for (int32 j = i + 1; j < end; ++j) {
+			    callback->QueryCallback((b2Fixture*) m_links[i]->userData, (b2Fixture*) m_links[j]->userData);
+		    }
 
-			if (nodeMid < mid) {
-				b2Swap(m_links[i], m_links[group0]);
-				group0++;
-				leftAABB.Combine(node->aabb);
-			} else {
-				rightAABB.Combine(node->aabb);
-			}
-		}
-		
-		// TODO something better to prevent endless looping & poor conditioned trees; maybe better split heuristic
-		if (group0 < start + 1) {
-			leftAABB.Combine(m_links[start]->aabb);
-			group0 = start + 1;
-		} else if (group0 > end - 1) {
-			rightAABB.Combine(m_links[end - 1]->aabb);
-			group0 = end - 1;
-		}
+		    for (int32 i = 0; i < ccount; ++i) {
+			    callback->QueryCallback((b2Fixture*) m_links[i]->userData, (b2Fixture*) collision[i]->userData);
+		    }
+		  }
+
+		  // TODO create a valid subtree here
+		  return m_links[start];
+    } else {
+      bool splitX = (maxx - minx) > (maxy - miny);
+		  float mid = splitX? (minx + maxx) / 2 : (miny + maxy) / 2;
+
+		  leftAABB.lowerBound = {b2_maxFloat, b2_maxFloat};
+		  leftAABB.upperBound = {-b2_maxFloat, -b2_maxFloat};
+		  rightAABB = leftAABB;
+
+      for (int32 i = start; i < end; i++) {
+			  b2AABB aabb = m_links[i]->aabb;
+			  float nodeMid = splitX? (aabb.lowerBound.x + aabb.upperBound.x) : (aabb.lowerBound.y + aabb.upperBound.y);
+
+			  if (nodeMid < mid) {
+				  b2Swap(m_links[i], m_links[group0++]);
+				  leftAABB.Combine(aabb);
+			  } else {
+				  rightAABB.Combine(aabb);
+			  }
+		  }
+
+		  // prevent a degenrate tree with O(n) height
+		  // while this will degrade tree quality but linear height is even worse
+		  int32 lim = b2Max(count / 16, 1);
+		  if (group0 < start + lim || group0 > end - lim) {
+			  if (group0 < start + lim) {
+			    group0 = start + lim;
+			  } else {
+  			  group0 = end - lim;
+			  }
+
+		    leftAABB = m_links[start]->aabb;
+		    rightAABB = m_links[end - 1]->aabb;
+
+		    for (int32 i = start + 1; i < group0; i++) {
+			    leftAABB.Combine(m_links[i]->aabb);
+			  }
+
+			  for (int32 i = group0; i < end - 1; i++) {
+			    rightAABB.Combine(m_links[i]->aabb);
+			  }
+		  }
+    }
+
+		b2TreeNode* left[b2Min(ccount + count, m_count)];
+	  b2TreeNode** right = collision;
+	  int32 leftCount = 0;
+	  int32 rightCount = 0;
+
+	  for (int32 i = 0; i < ccount; ++i) {
+		  if (b2TestOverlap(leftAABB, collision[i]->aabb)) {
+			  left[leftCount++] = collision[i];
+		  }
+
+		  if (b2TestOverlap(rightAABB, collision[i]->aabb)) {
+			  right[rightCount++] = collision[i];
+		  }
+	  }
+
+    if (b2TestOverlap(leftAABB, rightAABB)) {
+	    if (group0 - start < end - group0) {
+		    for (int32 i = start; i < group0; ++i) {
+			    if (b2TestOverlap(rightAABB, m_links[i]->aabb)) {
+				    right[rightCount++] = m_links[i];
+			    }
+		    }
+	    } else {
+		    for (int32 i = group0; i < end; ++i) {
+			    if (b2TestOverlap(leftAABB, m_links[i]->aabb)) {
+				    left[leftCount++] = m_links[i];
+			    }
+		    }
+	    }
+    }
+
+	  int32 nodeId = m_count++;
+	  b2TreeNode* cur = &m_nodes[nodeId];
+
+	  cur->aabb.Combine(leftAABB, rightAABB);
+	  cur->left = UpdateAndQuery(callback, start, group0, left, leftCount);
+	  cur->right = UpdateAndQuery(callback, group0, end, right, rightCount);
+
+	  return cur;
 	}
-
-	b2TreeNode* left[b2Min(ccount + count, m_count)];
-	b2TreeNode** right = collision;
-	int32 leftCount = 0;
-	int32 rightCount = 0;
-
-	for (int32 i = 0; i < ccount; ++i) {
-		if (b2TestOverlap(leftAABB, collision[i]->aabb)) {
-			left[leftCount++] = collision[i];
-		}
-
-		if (b2TestOverlap(rightAABB, collision[i]->aabb)) {
-			right[rightCount++] = collision[i];
-		}
-	}
-
-	if (group0 - start < end - group0) {
-		for (int32 i = start; i < group0; ++i) {
-			if (b2TestOverlap(rightAABB, m_links[i]->aabb)) {
-				right[rightCount++] = m_links[i];
-			}
-		}
-	} else {
-		for (int32 i = group0; i < end; ++i) {
-			if (b2TestOverlap(leftAABB, m_links[i]->aabb)) {
-				left[leftCount++] = m_links[i];
-			}
-		}
-	}
-
-	int32 nodeId = m_count++;
-	b2TreeNode* cur = &m_nodes[nodeId];
-
-	cur->left = UpdateAndQuery(callback, start, group0, left, leftCount);
-	cur->right = UpdateAndQuery(callback, group0, end, right, rightCount);
-	cur->aabb.Combine(cur->left->aabb, cur->right->aabb);
-
-	m_currentQuality += cur->aabb.upperBound.x - cur->aabb.lowerBound.x + cur->aabb.upperBound.y - cur->aabb.lowerBound.y;
-
-	return cur;
 }
 
 inline void b2BroadPhase::RemoveAll() {
