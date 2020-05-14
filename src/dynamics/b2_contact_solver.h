@@ -57,7 +57,7 @@ struct b2ContactVelocityConstraint
 	float restitution;
 	float tangentSpeed;
 	int32 pointCount;
-	int32 contactIndex;
+	b2Manifold* manifold;
 };
 
 struct b2ContactSolverDef
@@ -87,13 +87,11 @@ public:
 	bool SolvePositionConstraints();
 	bool SolveTOIPositionConstraints(int32 toiIndexA, int32 toiIndexB);
 
-	b2TimeStep m_step;
 	b2Position* m_positions;
 	b2Velocity* m_velocities;
 	b2StackAllocator* m_allocator;
 	b2ContactPositionConstraint* m_positionConstraints;
 	b2ContactVelocityConstraint* m_velocityConstraints;
-	b2Contact** m_contacts;
 	int m_count;
 };
 

@@ -71,19 +71,18 @@ b2ContactSolver::~b2ContactSolver()
 }
 
 void b2ContactSolver::Initialize(b2ContactSolverDef* def) {
-	m_step = def->step;
 	m_allocator = def->allocator;
 	m_count = def->count;
 	m_positionConstraints = (b2ContactPositionConstraint*)m_allocator->Allocate(m_count * sizeof(b2ContactPositionConstraint));
 	m_velocityConstraints = (b2ContactVelocityConstraint*)m_allocator->Allocate(m_count * sizeof(b2ContactVelocityConstraint));
 	m_positions = def->positions;
 	m_velocities = def->velocities;
-	m_contacts = def->contacts;
+	b2TimeStep m_step = def->step;
 
 	// Initialize position independent portions of the constraints.
 	for (int32 i = 0; i < m_count; ++i)
 	{
-		b2Contact* contact = m_contacts[i];
+		b2Contact* contact = def->contacts[i];
 
 		b2Fixture* fixtureA = contact->m_fixtureA;
 		b2Fixture* fixtureB = contact->m_fixtureB;
@@ -110,7 +109,7 @@ void b2ContactSolver::Initialize(b2ContactSolverDef* def) {
 		vc->invMassB = bodyB->m_invMass;
 		vc->invIA = bodyA->m_invI;
 		vc->invIB = bodyB->m_invI;
-		vc->contactIndex = i;
+		vc->manifold = manifold;
 		vc->pointCount = pointCount;
 
 		pc->indexA = bodyA->m_islandIndex;
@@ -155,7 +154,7 @@ void b2ContactSolver::InitializeVelocityConstraints()
 
 		float radiusA = pc->radiusA;
 		float radiusB = pc->radiusB;
-		b2Manifold* manifold = m_contacts[vc->contactIndex]->GetManifold();
+		b2Manifold* manifold = vc->manifold;
 
 		int32 indexA = vc->indexA;
 		int32 indexB = vc->indexB;
@@ -614,7 +613,7 @@ void b2ContactSolver::StoreImpulses()
 	for (int32 i = 0; i < m_count; ++i)
 	{
 		b2ContactVelocityConstraint* vc = m_velocityConstraints + i;
-		b2Manifold* manifold = m_contacts[vc->contactIndex]->GetManifold();
+		b2Manifold* manifold = vc->manifold;
 
 		for (int32 j = 0; j < vc->pointCount; ++j)
 		{
