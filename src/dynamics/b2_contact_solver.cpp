@@ -99,6 +99,8 @@ void b2ContactSolver::Initialize(b2ContactSolverDef* def) {
 		b2Assert(pointCount > 0);
 
 		b2ContactVelocityConstraint* vc = m_velocityConstraints + i;
+		b2ContactPositionConstraint* pc = m_positionConstraints + i;
+
 		vc->friction = contact->m_friction;
 		vc->restitution = contact->m_restitution;
 		vc->tangentSpeed = contact->m_tangentSpeed;
@@ -110,10 +112,7 @@ void b2ContactSolver::Initialize(b2ContactSolverDef* def) {
 		vc->invIB = bodyB->m_invI;
 		vc->contactIndex = i;
 		vc->pointCount = pointCount;
-		vc->K.SetZero();
-		vc->normalMass.SetZero();
 
-		b2ContactPositionConstraint* pc = m_positionConstraints + i;
 		pc->indexA = bodyA->m_islandIndex;
 		pc->indexB = bodyB->m_islandIndex;
 		pc->invMassA = bodyA->m_invMass;
@@ -129,27 +128,17 @@ void b2ContactSolver::Initialize(b2ContactSolverDef* def) {
 		pc->radiusB = radiusB;
 		pc->type = manifold->type;
 
-		for (int32 j = 0; j < pointCount; ++j)
-		{
+		for (int32 j = 0; j < pointCount; ++j) {
 			b2ManifoldPoint* cp = manifold->points + j;
 			b2VelocityConstraintPoint* vcp = vc->points + j;
 	
-			if (m_step.warmStarting)
-			{
+			if (m_step.warmStarting) {
 				vcp->normalImpulse = m_step.dtRatio * cp->normalImpulse;
 				vcp->tangentImpulse = m_step.dtRatio * cp->tangentImpulse;
-			}
-			else
-			{
+			} else {
 				vcp->normalImpulse = 0.0f;
 				vcp->tangentImpulse = 0.0f;
 			}
-
-			vcp->rA.SetZero();
-			vcp->rB.SetZero();
-			vcp->normalMass = 0.0f;
-			vcp->tangentMass = 0.0f;
-			vcp->velocityBias = 0.0f;
 
 			pc->localPoints[j] = cp->localPoint;
 		}
