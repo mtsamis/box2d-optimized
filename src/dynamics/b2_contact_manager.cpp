@@ -27,13 +27,12 @@
 #include "box2d/b2_world_callbacks.h"
 
 b2ContactFilter b2_defaultFilter;
-b2ContactListener b2_defaultListener;
 
 b2ContactManager::b2ContactManager() {
 	m_contactList = nullptr;
 	m_contactCount = 0;
 	m_contactFilter = &b2_defaultFilter;
-	m_contactListener = &b2_defaultListener;
+	m_contactListener = nullptr;
 	m_allocator = nullptr;
 }
 
