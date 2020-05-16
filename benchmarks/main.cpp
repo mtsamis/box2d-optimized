@@ -304,19 +304,15 @@ int main() {
     
     virtual void InitWorld(b2World* world) override {
 		  {
-			  b2BodyDef bd;
-			  b2Body* ground = world->CreateBody(&bd);
-
-			  int32 N = 40;
-			  int32 M = 40;
-			  
-			  for (int32 j = 0; j < M; ++j) {
-				  for (int32 i = 0; i < N; ++i) {
-				    b2CircleShape shape;
-    				shape.m_radius = 1;
-    				ground->CreateFixture(&shape, 0.0f);
-    			}
-			  }
+        for (int32 j = 0; j < 750; ++j) {
+          b2BodyDef bd;
+          bd.type = b2_dynamicBody;
+          bd.position = {j * 0.01f, j * 0.01f};
+          b2Body* ground = world->CreateBody(&bd);
+          b2CircleShape shape;
+          shape.m_radius = 1;
+          ground->CreateFixture(&shape, 1.0f);
+        }
 		  }
     }
   } b6;
@@ -572,26 +568,25 @@ int main() {
   
   class : public b2Benchmark {
     virtual void InitBenchmark() override {
-      name = "Adversarial (exponential)";
+      name = "Exponential";
       simulationSteps = 100;
     }
     
     virtual void InitWorld(b2World* world) override {
 		  {
-			  int x = 1;
-				b2Vec2 pos;
-				pos.y = 0;
+			  float x = 1;
         
-			  for (int32 j = 0; j < 1000; ++j) {
-				  pos.x = x;
-				  x = x * 2;
+			  for (int32 j = 0; j < 500; ++j) {
+				  x *= 2;
 				    
 				  b2BodyDef bd;
-			    b2Body* ground = world->CreateBody(&bd);
-          b2CircleShape shape;
+				  bd.position = {x, 0.0f};
+				  bd.linearVelocity = {2.0f, 0.0f};
+			    bd.type = b2_dynamicBody;
+			    b2Body* body = world->CreateBody(&bd);
+      		b2CircleShape shape;
       		shape.m_radius = 1;
-      		shape.m_p = pos;
-      	  ground->CreateFixture(&shape, 0.0f);
+      		body->CreateFixture(&shape, 1.0f);
 			  }
 		  }
     }
