@@ -1342,11 +1342,6 @@ int32 b2World::GetTreeHeight() const
 	return m_contactManager.m_broadPhase.GetTreeHeight();
 }
 
-float b2World::GetTreeQuality() const
-{
-	return m_contactManager.m_broadPhase.GetTreeQuality();
-}
-
 void b2World::ShiftOrigin(const b2Vec2& newOrigin)
 {
 	b2Assert(m_locked == false);

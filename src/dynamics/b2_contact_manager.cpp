@@ -118,10 +118,7 @@ void b2ContactManager::Collide() {
 
 void b2ContactManager::FindNewContacts() {
 	// TODO move update to world?
-	m_broadPhase.UpdateAndQuery(this, [](b2Fixture* fixture) {
-		b2Body* b = fixture->GetBody();
-		return (b->m_flags & b2Body::e_islandFlag) != 0 && b->GetType() != b2_staticBody;
-	});
+	m_broadPhase.UpdateAndQuery(this);
 }
 
 void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {

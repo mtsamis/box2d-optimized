@@ -306,7 +306,7 @@ void Test::Step(Settings& settings)
 
 	m_world->SetAllowSleeping(settings.m_enableSleep);
 	m_world->SetWarmStarting(settings.m_enableWarmStarting);
-	m_world->SetContinuousPhysics(settings.m_enableContinuous);
+	m_world->SetContinuousPhysics(false);
 	m_world->SetSubStepping(settings.m_enableSubStepping);
 
 	m_pointCount = 0;
@@ -331,8 +331,7 @@ void Test::Step(Settings& settings)
 
 		int32 proxyCount = m_world->GetProxyCount();
 		int32 height = m_world->GetTreeHeight();
-		float quality = m_world->GetTreeQuality();
-		g_debugDraw.DrawString(5, m_textLine, "proxies/height/quality = %d/%d/%g", proxyCount, height, quality);
+		g_debugDraw.DrawString(5, m_textLine, "proxies/height = %d/%d/%g", proxyCount, height);
 		m_textLine += m_textIncrement;
 	}
 

@@ -236,10 +236,6 @@ public:
 	/// Get the height of the dynamic tree.
 	int32 GetTreeHeight() const;
 
-	/// Get the quality metric of the dynamic tree. The smaller the better.
-	/// The minimum is 1.
-	float GetTreeQuality() const;
-
 	/// Change the global gravity vector.
 	void SetGravity(const b2Vec2& gravity);
 	
