@@ -325,7 +325,9 @@ struct b2Rot
 	/// Get the angle in radians
 	float GetAngle() const
 	{
-		return b2Atan2(s, c);
+    float acos = acosf(c);
+    float angle = (s >= 0)? acos: -acos;
+    return angle;
 	}
 
 	/// Get the x-axis
