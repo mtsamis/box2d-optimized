@@ -104,6 +104,7 @@ b2Contact::b2Contact(b2Fixture* fA, b2Fixture* fB, b2EvaluateFunction* evaluateF
 	m_next = nullptr;
 
 	m_toiCount = 0;
+	m_toiIndex = -1;
 
 	m_friction = b2MixFriction(m_fixtureA->m_friction, m_fixtureB->m_friction);
 	m_restitution = b2MixRestitution(m_fixtureA->m_restitution, m_fixtureB->m_restitution);

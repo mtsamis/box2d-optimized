@@ -121,6 +121,7 @@ public:
 protected:
 	friend class b2ContactManager;
 	friend class b2World;
+	friend class b2MinHeap;
 	friend class b2ContactSolver;
 	friend class b2Body;
 	friend class b2Fixture;
@@ -162,7 +163,7 @@ protected:
 
 	static b2EvaluateFunction* functions[b2Shape::e_typeCount][b2Shape::e_typeCount];
 	
-	uint32 m_flags;
+	b2EvaluateFunction* m_evaluateFunction;
 
 	// World pool and list pointers.
 	b2Contact* m_prev;
@@ -173,15 +174,16 @@ protected:
 
 	b2Manifold m_manifold;
 
+	uint32 m_flags;
+
 	int32 m_toiCount;
+	int32 m_toiIndex;
 	float m_toi;
 
 	float m_friction;
 	float m_restitution;
 
 	float m_tangentSpeed;
-	
-	b2EvaluateFunction* m_evaluateFunction;
 };
 
 inline b2Manifold* b2Contact::GetManifold() {
