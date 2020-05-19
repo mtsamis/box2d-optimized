@@ -121,7 +121,7 @@ public:
 protected:
 	friend class b2ContactManager;
 	friend class b2World;
-	friend class b2MinHeap;
+	friend class b2TOIMinHeap;
 	friend class b2ContactSolver;
 	friend class b2Body;
 	friend class b2Fixture;

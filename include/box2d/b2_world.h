@@ -43,26 +43,6 @@ class b2Joint;
 
 class b2ParticleGroup;
 
-struct b2HeapNode {
-	float toi;
-	b2Contact* c;
-};
-
-class b2MinHeap {
-public:
-	b2HeapNode Min();
-	b2HeapNode DeleteMin();
-	void DecreaseKey(int32 idx, float toi);
-	void HeapifyDown(int32 idx);
-	void HeapifyUp(int32 idx);
-	void Build();
-
-private:
-	int32 m_capacity = 0;
-	int32 m_count = 0;
-	b2HeapNode* m_heap;
-};
-
 /// The world class manages all physics entities, dynamic simulation,
 /// and asynchronous queries. The world also contains efficient memory
 /// management facilities.
@@ -279,6 +259,7 @@ private:
 
 	void Solve(const b2TimeStep& step);
 	void SolveTOI(const b2TimeStep& step);
+	float CalculateTOI(b2Contact* c);
 
 	void DrawShape(b2Fixture* shape, const b2Transform& xf, const b2Color& color);
 

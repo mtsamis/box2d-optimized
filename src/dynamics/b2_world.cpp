@@ -651,32 +651,108 @@ void b2World::Solve(const b2TimeStep& step)
 	}
 }
 
-b2HeapNode b2MinHeap::Min() {
+struct b2HeapNode {
+	float toi;
+	b2Contact* c;
+};
+
+class b2TOIMinHeap {
+public:
+	b2TOIMinHeap(int32 count, b2StackAllocator* stackAllocator);
+	~b2TOIMinHeap();
+
+	b2HeapNode Min();
+	b2HeapNode DeleteMin();
+	void Insert(b2HeapNode node);
+	b2HeapNode Delete(int32 idx);
+	void SetKey(int32 idx, float toi);
+	void HeapifyDown(int32 idx);
+	void HeapifyUp(int32 idx);
+	void Build();
+
+	b2HeapNode& operator [] (int32 idx) {
+		return m_heap[idx];
+	}
+
+private:
+	friend class b2World;
+	
+	int32 m_count;
+	int32 m_capacity;
+	b2HeapNode* m_heap;
+	b2StackAllocator* m_stackAllocator;
+};
+
+b2TOIMinHeap::b2TOIMinHeap(int32 count, b2StackAllocator* stackAllocator) {
+	b2Assert(count > 0);
+	m_count = count;
+	m_capacity = m_count * 3;
+	m_heap = (b2HeapNode*) stackAllocator->Allocate(m_capacity * sizeof(b2HeapNode));
+	m_stackAllocator = stackAllocator;
+}
+
+b2TOIMinHeap::~b2TOIMinHeap() {
+	m_stackAllocator->Free(m_heap);
+}
+
+b2HeapNode b2TOIMinHeap::Min() {
 	b2Assert(m_count > 0);
 	return m_heap[0];
 }
 
-b2HeapNode b2MinHeap::DeleteMin() {
-	b2Assert(m_count > 0);
-	
-	b2HeapNode ret = m_heap[0];
-	m_count--;
-	
-	m_heap[0] = m_heap[m_count];
-	HeapifyDown(0);
-	
-	return ret;
+b2HeapNode b2TOIMinHeap::DeleteMin() {
+	return Delete(0);
 }
 
-void b2MinHeap::DecreaseKey(int32 idx, float toi) {
-	b2Assert(idx >= 0 && idx < m_count);
-	b2Assert(toi < m_heap[idx].toi);
+void b2TOIMinHeap::Insert(b2HeapNode node) {
+	if (m_count == m_capacity) {
+		// TODO dynamic resize
+		__builtin_abort();
+	}
+
+	int32 idx = m_count;
+	m_heap[idx] = node;
+	m_count++;
 	
-	m_heap[idx].toi = toi;
 	HeapifyUp(idx);
 }
 
-void b2MinHeap::HeapifyDown(int32 idx) {
+b2HeapNode b2TOIMinHeap::Delete(int32 idx) {
+	b2Assert(m_count > 0);
+	b2Assert(idx >= 0 && idx < m_count);
+	
+	b2HeapNode ret = m_heap[idx];
+	m_count--;
+	
+	if (idx != m_count) {
+		m_heap[idx] = m_heap[m_count - 1];
+		int32 parent = idx / 2;
+		
+		if (m_heap[idx].toi < m_heap[parent].toi) {
+			HeapifyUp(idx);
+		} else {
+			HeapifyDown(idx);
+		}
+	}
+
+	return ret;
+}
+
+void b2TOIMinHeap::SetKey(int32 idx, float toi) {
+	b2Assert(idx >= 0 && idx < m_count);
+
+	bool up = toi < m_heap[idx].toi;
+	
+	m_heap[idx].toi = toi;
+
+	if (up) {
+		HeapifyUp(idx);
+	} else {
+		HeapifyDown(idx);
+	}
+}
+
+void b2TOIMinHeap::HeapifyDown(int32 idx) {
 	while (true) {
 		int32 minIdx = idx;
 		int32 left = 2 * idx;
@@ -691,6 +767,7 @@ void b2MinHeap::HeapifyDown(int32 idx) {
 		}
 		
 		if (minIdx != idx) {
+			b2Swap(m_heap[idx].c->m_toiIndex, m_heap[minIdx].c->m_toiIndex);
 			b2Swap(m_heap[idx], m_heap[minIdx]);
 			idx = minIdx;
 		} else {
@@ -699,25 +776,106 @@ void b2MinHeap::HeapifyDown(int32 idx) {
 	}
 }
 
-void b2MinHeap::HeapifyUp(int32 idx) {
+void b2TOIMinHeap::HeapifyUp(int32 idx) {
 	float toi = m_heap[idx].toi;
 	idx /= 2;
 	
 	while (idx > 0 && toi < m_heap[idx].toi) {
 		int32 parent = idx / 2;
+		b2Swap(m_heap[idx].c->m_toiIndex, m_heap[parent].c->m_toiIndex);
 		b2Swap(m_heap[idx], m_heap[parent]);
 		idx = parent;
 	}
 }
 
-void b2MinHeap::Build() {
+void b2TOIMinHeap::Build() {
 	for (int32 i = m_count / 2 - 1; i >= 0; --i) {
 		HeapifyDown(i);
 	}
+
+	for (int32 i = 0; i < m_count; ++i) {
+		m_heap[i].c->m_toiIndex = i;
+	}
+}
+
+float b2World::CalculateTOI(b2Contact* c) {
+	b2Fixture* fA = c->GetFixtureA();
+	b2Fixture* fB = c->GetFixtureB();
+
+	// Is there a sensor?
+	if (fA->IsSensor() || fB->IsSensor()) {
+		return 1.0f;
+	}
+
+	b2Body* bA = fA->GetBody();
+	b2Body* bB = fB->GetBody();
+
+	b2BodyType typeA = bA->m_type;
+	b2BodyType typeB = bB->m_type;
+	b2Assert(typeA == b2_dynamicBody || typeB == b2_dynamicBody);
+
+	bool activeA = bA->IsAwake() && typeA != b2_staticBody;
+	bool activeB = bB->IsAwake() && typeB != b2_staticBody;
+
+	// Is at least one body active (awake and dynamic or kinematic)?
+	if (activeA == false && activeB == false) {
+		return 1.0f;
+	}
+
+	bool collideA = bA->IsBullet() || typeA != b2_dynamicBody;
+	bool collideB = bB->IsBullet() || typeB != b2_dynamicBody;
+
+	// Are these two non-bullet dynamic bodies?
+	if (collideA == false && collideB == false) {
+		return 1.0f;
+	}
+
+	// Compute the TOI for this contact.
+	// Put the sweeps onto the same time interval.
+	float alpha0 = bA->m_sweep.alpha0;
+
+	if (bA->m_sweep.alpha0 < bB->m_sweep.alpha0) {
+		alpha0 = bB->m_sweep.alpha0;
+		bA->m_sweep.Advance(alpha0);
+	} else if (bB->m_sweep.alpha0 < bA->m_sweep.alpha0) {
+		alpha0 = bA->m_sweep.alpha0;
+		bB->m_sweep.Advance(alpha0);
+	}
+
+	b2Assert(alpha0 < 1.0f);
+
+	// Compute the time of impact in interval [0, minTOI]
+	b2TOIInput input;
+	input.proxyA.Set(fA->GetShape());
+	input.proxyB.Set(fB->GetShape());
+	input.sweepA = bA->m_sweep;
+	input.sweepB = bB->m_sweep;
+	input.tMax = 1.0f;
+
+	b2TOIOutput output;
+	b2TimeOfImpact(&output, &input);
+
+	// Beta is the fraction of the remaining portion of the .
+	float alpha;
+	float beta = output.t;
+	if (output.state == b2TOIOutput::e_touching) {
+		alpha = b2Min(alpha0 + (1.0f - alpha0) * beta, 1.0f);
+	} else {
+		alpha = 1.0f;
+	}
+
+	c->m_toi = alpha;
+	c->m_flags |= b2Contact::e_toiFlag;
+
+	return alpha;
 }
 
 // Find TOI contacts and solve them.
 void b2World::SolveTOI(const b2TimeStep& step) {
+  if (m_contactManager.m_contactCount == 0) {
+		return;
+	}
+
 	b2Island island(2 * b2_maxTOIContacts, b2_maxTOIContacts, 0, &m_stackAllocator, m_contactManager.m_contactListener);
 
 	if (m_stepComplete) {
@@ -733,6 +891,17 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 			c->m_toi = 1.0f;
 		}
 	}
+
+	b2TOIMinHeap heap(m_contactManager.m_contactCount, &m_stackAllocator);
+	int32 i = 0;
+	for (b2Contact* c = m_contactManager.m_contactList; c; c = c->m_next) {
+		heap[i].c = c;
+		heap[i].toi = CalculateTOI(c);
+
+		++i;
+	}
+
+	heap.Build();
 
 	// Find TOI events and solve them.
 	for (;;) {
@@ -756,72 +925,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 				// This contact has a valid cached TOI.
 				alpha = c->m_toi;
 			} else {
-				b2Fixture* fA = c->GetFixtureA();
-				b2Fixture* fB = c->GetFixtureB();
-
-				// Is there a sensor?
-				if (fA->IsSensor() || fB->IsSensor()) {
-					continue;
-				}
-
-				b2Body* bA = fA->GetBody();
-				b2Body* bB = fB->GetBody();
-
-				b2BodyType typeA = bA->m_type;
-				b2BodyType typeB = bB->m_type;
-				b2Assert(typeA == b2_dynamicBody || typeB == b2_dynamicBody);
-
-				bool activeA = bA->IsAwake() && typeA != b2_staticBody;
-				bool activeB = bB->IsAwake() && typeB != b2_staticBody;
-
-				// Is at least one body active (awake and dynamic or kinematic)?
-				if (activeA == false && activeB == false) {
-					continue;
-				}
-
-				bool collideA = bA->IsBullet() || typeA != b2_dynamicBody;
-				bool collideB = bB->IsBullet() || typeB != b2_dynamicBody;
-
-				// Are these two non-bullet dynamic bodies?
-				if (collideA == false && collideB == false) {
-					continue;
-				}
-
-				// Compute the TOI for this contact.
-				// Put the sweeps onto the same time interval.
-				float alpha0 = bA->m_sweep.alpha0;
-
-				if (bA->m_sweep.alpha0 < bB->m_sweep.alpha0) {
-					alpha0 = bB->m_sweep.alpha0;
-					bA->m_sweep.Advance(alpha0);
-				} else if (bB->m_sweep.alpha0 < bA->m_sweep.alpha0) {
-					alpha0 = bA->m_sweep.alpha0;
-					bB->m_sweep.Advance(alpha0);
-				}
-
-				b2Assert(alpha0 < 1.0f);
-
-				// Compute the time of impact in interval [0, minTOI]
-				b2TOIInput input;
-				input.proxyA.Set(fA->GetShape());
-				input.proxyB.Set(fB->GetShape());
-				input.sweepA = bA->m_sweep;
-				input.sweepB = bB->m_sweep;
-				input.tMax = 1.0f;
-
-				b2TOIOutput output;
-				b2TimeOfImpact(&output, &input);
-
-				// Beta is the fraction of the remaining portion of the .
-				float beta = output.t;
-				if (output.state == b2TOIOutput::e_touching) {
-					alpha = b2Min(alpha0 + (1.0f - alpha0) * beta, 1.0f);
-				} else {
-					alpha = 1.0f;
-				}
-
-				c->m_toi = alpha;
-				c->m_flags |= b2Contact::e_toiFlag;
+				alpha = CalculateTOI(c);
 			}
 
 			if (alpha < minAlpha) {
