@@ -657,7 +657,8 @@ struct b2HeapNode {
 };
 
 class b2TOIMinHeap {
-public:
+	friend class b2World;
+
 	b2TOIMinHeap(int32 count, b2StackAllocator* stackAllocator);
 	~b2TOIMinHeap();
 
@@ -673,9 +674,6 @@ public:
 	b2HeapNode& operator [] (int32 idx) {
 		return m_heap[idx];
 	}
-
-private:
-	friend class b2World;
 	
 	int32 m_count;
 	int32 m_capacity;
