@@ -1110,75 +1110,62 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 void b2World::Step(float dt, int32 velocityIterations, int32 positionIterations, int32 particleIterations)
 {
 	b2Timer stepTimer;
+	m_locked = true;
 
 	// If new fixtures were added, we need to find the new contacts.
-	if (m_newContacts)
-	{
+	if (m_newContacts) {
 		m_contactManager.FindNewContacts();
 		RemoveDeadContacts();
 		m_newContacts = false;
 	}
-
-	m_locked = true;
 
 	b2TimeStep step;
 	step.dt = dt;
 	step.velocityIterations	= velocityIterations;
 	step.positionIterations = positionIterations;
 	step.particleIterations = particleIterations;
-	if (dt > 0.0f)
-	{
+	step.dtRatio = m_inv_dt0 * dt;
+	step.warmStarting = m_warmStarting;
+	
+	if (dt > 0.0f) {
 		step.inv_dt = 1.0f / dt;
-	}
-	else
-	{
+
+		// Update contacts. This is where some contacts are destroyed.
+	  {
+		  b2Timer timer;
+		  m_contactManager.Collide();
+		  m_profile.collide = timer.GetMilliseconds();
+	  }
+
+	  // Integrate velocities, solve velocity constraints, and integrate positions.
+	  if (m_stepComplete) {
+		  b2Timer timer;
+
+		  for (b2ParticleSystem* p = m_particleSystemList; p; p = p->GetNext()) {
+			  p->Solve(step); // Particle Simulation
+		  }
+
+		  Solve(step);
+		  m_profile.solve = timer.GetMilliseconds();
+	  }
+
+	  // Handle TOI events.
+	  if (m_continuousPhysics) {
+		  b2Timer timer;
+		  SolveTOI(step);
+		  m_profile.solveTOI = timer.GetMilliseconds();
+	  }
+
+		m_inv_dt0 = step.inv_dt;
+	} else {
 		step.inv_dt = 0.0f;
 	}
 
-	step.dtRatio = m_inv_dt0 * dt;
-
-	step.warmStarting = m_warmStarting;
-	
-	// Update contacts. This is where some contacts are destroyed.
-	if (step.dt > 0.0f) {
-		b2Timer timer;
-		m_contactManager.Collide();
-		m_profile.collide = timer.GetMilliseconds();
-	}
-
-	// Integrate velocities, solve velocity constraints, and integrate positions.
-	if (m_stepComplete && step.dt > 0.0f)
-	{
-		b2Timer timer;
-		
-		for (b2ParticleSystem* p = m_particleSystemList; p; p = p->GetNext()) {
-			p->Solve(step); // Particle Simulation
-		}
-		
-		Solve(step);
-		m_profile.solve = timer.GetMilliseconds();
-	}
-
-	// Handle TOI events.
-	if (m_continuousPhysics && step.dt > 0.0f)
-	{
-		b2Timer timer;
-		SolveTOI(step);
-		m_profile.solveTOI = timer.GetMilliseconds();
-	}
-
-	if (step.dt > 0.0f)
-	{
-		m_inv_dt0 = step.inv_dt;
-	}
-
-	if (m_clearForces)
-	{
+	if (m_clearForces) {
 		ClearForces();
 	}
 
 	m_locked = false;
-
 	m_profile.step = stepTimer.GetMilliseconds();
 }
 
