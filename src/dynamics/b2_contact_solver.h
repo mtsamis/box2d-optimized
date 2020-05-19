@@ -32,8 +32,7 @@ class b2Body;
 class b2StackAllocator;
 struct b2ContactPositionConstraint;
 
-struct b2VelocityConstraintPoint
-{
+struct b2VelocityConstraintPoint {
 	b2Vec2 rA;
 	b2Vec2 rB;
 	float normalImpulse;
@@ -43,8 +42,7 @@ struct b2VelocityConstraintPoint
 	float velocityBias;
 };
 
-struct b2ContactVelocityConstraint
-{
+struct b2ContactVelocityConstraint {
 	b2VelocityConstraintPoint points[b2_maxManifoldPoints];
 	b2Vec2 normal;
 	b2Mat22 normalMass;
@@ -60,8 +58,7 @@ struct b2ContactVelocityConstraint
 	b2Manifold* manifold;
 };
 
-struct b2ContactSolverDef
-{
+struct b2ContactSolverDef {
 	b2TimeStep step;
 	b2Contact** contacts;
 	int32 count;
@@ -74,7 +71,6 @@ class b2ContactSolver
 {
 public:
 	b2ContactSolver();
-	b2ContactSolver(b2ContactSolverDef* def);
 	~b2ContactSolver();
 
 	void Initialize(b2ContactSolverDef* def);

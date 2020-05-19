@@ -484,7 +484,8 @@ void b2Island::SolveTOI(const b2TimeStep& subStep, int32 toiIndexA, int32 toiInd
 	contactSolverDef.step = subStep;
 	contactSolverDef.positions = m_positions;
 	contactSolverDef.velocities = m_velocities;
-	b2ContactSolver contactSolver(&contactSolverDef);
+	b2ContactSolver contactSolver;
+	contactSolver.Initialize(&contactSolverDef);
 
 	// Solve position constraints.
 	for (int32 i = 0; i < subStep.positionIterations; ++i)
