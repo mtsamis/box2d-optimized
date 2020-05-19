@@ -522,6 +522,7 @@ void b2Body::AddContact(b2Contact* c) {
 		m_contactCapacity *= 2;
 		b2Contact** newList = (b2Contact**) b2Alloc(m_contactCapacity * sizeof(b2Contact*));
 		memcpy(newList, m_contactList, m_contactCount * sizeof(b2Contact*));
+		b2Free(m_contactList);
 		m_contactList = newList;
 	}
 
