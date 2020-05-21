@@ -568,6 +568,81 @@ int main() {
 
   class : public b2Benchmark {
     virtual void InitBenchmark() override {
+      name = "Big mobile";
+      simulationSteps = 1000;
+    }
+
+    virtual void InitWorld(b2World* world) override {
+      b2Body* ground;
+
+		  // Create ground body.
+		  {
+			  b2BodyDef bodyDef;
+			  bodyDef.position.Set(0.0f, 20.0f);
+			  ground = world->CreateBody(&bodyDef);
+		  }
+
+		  const float a = 0.25f;
+		  b2Vec2 h(0.0f, a);
+
+		  b2Body* root = AddNode(world, ground, b2Vec2_zero, 0, 200.0f, a);
+
+		  b2RevoluteJointDef jointDef;
+		  jointDef.bodyA = ground;
+		  jointDef.bodyB = root;
+		  jointDef.localAnchorA.SetZero();
+		  jointDef.localAnchorB = h;
+		  world->CreateJoint(&jointDef);
+	  }
+
+	  b2Body* AddNode(b2World* world, b2Body* parent, const b2Vec2& localAnchor, int32 depth, float offset, float a) {
+		  const float density = 20.0f;
+		  const int32 maxDepth = 11;
+
+		  b2Vec2 h(0.0f, a);
+
+		  b2Vec2 p = parent->GetPosition() + localAnchor - h;
+
+		  b2BodyDef bodyDef;
+		  bodyDef.type = b2_dynamicBody;
+		  bodyDef.position = p;
+		  b2Body* body = world->CreateBody(&bodyDef);
+
+		  b2PolygonShape shape;
+		  shape.SetAsBox(0.25f * a, a);
+		  body->CreateFixture(&shape, density + p.x * 0.02f);
+
+		  if (depth == maxDepth) {
+			  return body;
+		  }
+
+		  shape.SetAsBox(offset, 0.25f * a, b2Vec2(0, -a), 0.0f);
+		  body->CreateFixture(&shape, density);
+
+		  b2Vec2 a1 = b2Vec2(offset, -a);
+		  b2Vec2 a2 = b2Vec2(-offset, -a);
+		  b2Body* body1 = AddNode(world, body, a1, depth + 1, 0.5f * offset, a);
+		  b2Body* body2 = AddNode(world, body, a2, depth + 1, 0.5f * offset, a);
+
+		  b2RevoluteJointDef jointDef;
+		  jointDef.bodyA = body;
+		  jointDef.localAnchorB = h;
+
+		  jointDef.localAnchorA = a1;
+		  jointDef.bodyB = body1;
+		  world->CreateJoint(&jointDef);
+
+		  jointDef.localAnchorA = a2;
+		  jointDef.bodyB = body2;
+		  world->CreateJoint(&jointDef);
+
+		  return body;
+	  }
+  } b12;
+  benchmarks.insert(benchmarks.begin(), &b12);
+
+  class : public b2Benchmark {
+    virtual void InitBenchmark() override {
       name = "Slow explosion";
       simulationSteps = 1000;
     }
