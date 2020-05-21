@@ -565,33 +565,6 @@ int main() {
     }
   } b11;
   benchmarks.insert(benchmarks.begin(), &b11);
-  
-  class : public b2Benchmark {
-    virtual void InitBenchmark() override {
-      name = "Exponential";
-      simulationSteps = 100;
-    }
-    
-    virtual void InitWorld(b2World* world) override {
-		  {
-			  float x = 1;
-        
-			  for (int32 j = 0; j < 500; ++j) {
-				  x *= 2;
-				    
-				  b2BodyDef bd;
-				  bd.position = {x, 0.0f};
-				  bd.linearVelocity = {2.0f, 0.0f};
-			    bd.type = b2_dynamicBody;
-			    b2Body* body = world->CreateBody(&bd);
-      		b2CircleShape shape;
-      		shape.m_radius = 1;
-      		body->CreateFixture(&shape, 1.0f);
-			  }
-		  }
-    }
-  } b12;
-  benchmarks.insert(benchmarks.begin(), &b12);
 
   class : public b2Benchmark {
     virtual void InitBenchmark() override {
