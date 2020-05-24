@@ -65,13 +65,6 @@ void b2ContactManager::Collide() {
 	// Update awake contacts.
 	b2Contact* c = m_contactList;
 	while (c) {
-		if ((c->m_flags & b2Contact::e_persistFlag) == 0) {
-			b2Contact* cNuke = c;
-			c = cNuke->GetNext();
-			Destroy(cNuke);
-			continue;
-		}
-
 		b2Fixture* fixtureA = c->GetFixtureA();
 		b2Fixture* fixtureB = c->GetFixtureB();
 		b2Body* bodyA = fixtureA->GetBody();
@@ -118,6 +111,16 @@ void b2ContactManager::Collide() {
 void b2ContactManager::FindNewContacts() {
 	// TODO move update to world?
 	m_broadPhase.UpdateAndQuery(this);
+
+	b2Contact* c = m_contactList;
+	while (c) {
+		b2Contact* cNuke = c;
+		c = c->GetNext();
+
+		if ((cNuke->m_flags & b2Contact::e_persistFlag) == 0) {
+			Destroy(cNuke);
+		}
+	}
 }
 
 b2Contact* b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {

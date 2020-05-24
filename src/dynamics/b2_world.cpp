@@ -1094,23 +1094,22 @@ void b2World::Step(float dt, int32 velocityIterations, int32 positionIterations,
 
 	b2TimeStep step;
 	step.dt = dt;
-	step.velocityIterations	= velocityIterations;
+	step.inv_dt = (dt > 0.0f)? 1.0f / dt : 0.0f;
+  step.velocityIterations	= velocityIterations;
 	step.positionIterations = positionIterations;
 	step.particleIterations = particleIterations;
 	step.dtRatio = m_inv_dt0 * dt;
 	step.warmStarting = m_warmStarting;
-	
+
+	// Update contacts. This is where some contacts are destroyed.
+  {
+	  b2Timer timer;
+	  m_contactManager.Collide();
+	  m_profile.collide = timer.GetMilliseconds();
+  }
+
 	if (dt > 0.0f) {
-		step.inv_dt = 1.0f / dt;
-
-		// Update contacts. This is where some contacts are destroyed.
-	  {
-		  b2Timer timer;
-		  m_contactManager.Collide();
-		  m_profile.collide = timer.GetMilliseconds();
-	  }
-
-	  // Integrate velocities, solve velocity constraints, and integrate positions.
+		// Integrate velocities, solve velocity constraints, and integrate positions.
 	  if (m_stepComplete) {
 		  b2Timer timer;
 
@@ -1130,8 +1129,6 @@ void b2World::Step(float dt, int32 velocityIterations, int32 positionIterations,
 	  }
 
 		m_inv_dt0 = step.inv_dt;
-	} else {
-		step.inv_dt = 0.0f;
 	}
 
 	if (m_clearForces) {
