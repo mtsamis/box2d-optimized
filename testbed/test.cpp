@@ -306,7 +306,7 @@ void Test::Step(Settings& settings)
 
 	m_world->SetAllowSleeping(settings.m_enableSleep);
 	m_world->SetWarmStarting(settings.m_enableWarmStarting);
-	m_world->SetContinuousPhysics(false);
+	m_world->SetContinuousPhysics(settings.m_enableContinuous);
 	m_world->SetSubStepping(settings.m_enableSubStepping);
 
 	m_pointCount = 0;

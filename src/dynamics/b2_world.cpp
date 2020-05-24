@@ -655,8 +655,6 @@ void b2World::Solve(const b2TimeStep& step)
 	}
 }
 
-#include <iostream>
-
 struct b2HeapNode {
 	float toi;
 	b2Contact* c;
@@ -690,7 +688,6 @@ class b2TOIMinHeap {
 };
 
 b2TOIMinHeap::b2TOIMinHeap(int32 initialCapacity, b2StackAllocator* stackAllocator) {
-	b2Assert(count > 0);
 	m_count = 0;
 	m_capacity = initialCapacity;
 	m_heap = (b2HeapNode*) stackAllocator->Allocate(m_capacity * sizeof(b2HeapNode));
