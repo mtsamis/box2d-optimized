@@ -88,6 +88,8 @@ b2World::~b2World()
 			f->Destroy(&m_blockAllocator);
 			f = fNext;
 		}
+		
+		b2Free(b->m_contactList);
 
 		b = bNext;
 	}
@@ -202,6 +204,8 @@ void b2World::DestroyBody(b2Body* b)
 	for (int32 i = 0; i < b->GetContactCount(); ++i) {
 		m_contactManager.Destroy(b->GetContact(i));
 	}
+	
+	b2Free(b->m_contactList);
 	
 	b->m_contactCount = 0;
 
