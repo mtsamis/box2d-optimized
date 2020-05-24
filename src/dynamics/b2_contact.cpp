@@ -103,7 +103,6 @@ b2Contact::b2Contact(b2Fixture* fA, b2Fixture* fB, b2EvaluateFunction* evaluateF
 	m_prev = nullptr;
 	m_next = nullptr;
 
-	m_toiCount = 0;
 	m_toiIndex = -1;
 
 	m_friction = b2MixFriction(m_fixtureA->m_friction, m_fixtureB->m_friction);
@@ -191,10 +190,6 @@ void b2Contact::Update(b2ContactListener* listener) {
 }
 
 float b2Contact::CalculateTOI() {
-  if (m_toiCount > b2_maxSubSteps) {
-    return 1.0f;
-  }
-
 	b2Fixture* fA = GetFixtureA();
 	b2Fixture* fB = GetFixtureB();
 

@@ -176,7 +176,6 @@ protected:
 
 	uint32 m_flags;
 
-	int32 m_toiCount;
 	int32 m_toiIndex;
 
 	float m_friction;

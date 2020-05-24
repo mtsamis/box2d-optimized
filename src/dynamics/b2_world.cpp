@@ -657,6 +657,7 @@ void b2World::Solve(const b2TimeStep& step)
 
 struct b2HeapNode {
 	float toi;
+	int toiCount;
 	b2Contact* c;
 };
 
@@ -667,9 +668,10 @@ class b2TOIMinHeap {
 	b2TOIMinHeap(int32 initialCapacity, b2StackAllocator* stackAllocator);
 	~b2TOIMinHeap();
 
-	b2HeapNode Min();
+	b2HeapNode& Min();
 	b2HeapNode DeleteMin();
-	void Insert(b2Contact* c, float toi);
+	void Insert(b2Contact* c);
+	void Update(b2Contact* c);
 	b2HeapNode Delete(int32 idx);
 	void SetKey(int32 idx, float toi);
 	void HeapifyDown(int32 idx);
@@ -684,25 +686,23 @@ class b2TOIMinHeap {
 	int32 m_count;
 	int32 m_capacity;
 	b2HeapNode* m_heap;
-	b2StackAllocator* m_stackAllocator;
 };
 
 b2TOIMinHeap::b2TOIMinHeap(int32 initialCapacity, b2StackAllocator* stackAllocator) {
 	m_count = 0;
 	m_capacity = initialCapacity;
-	m_heap = (b2HeapNode*) stackAllocator->Allocate(m_capacity * sizeof(b2HeapNode));
-	m_stackAllocator = stackAllocator;
+	m_heap = (b2HeapNode*) b2Alloc(m_capacity * sizeof(b2HeapNode));
 }
 
 b2TOIMinHeap::~b2TOIMinHeap() {
-	m_stackAllocator->Free(m_heap);
+	b2Free(m_heap);
 }
 
 bool b2TOIMinHeap::IsEmpty() {
 	return m_count == 0;
 }
 
-b2HeapNode b2TOIMinHeap::Min() {
+b2HeapNode& b2TOIMinHeap::Min() {
 	b2Assert(m_count > 0);
 	return m_heap[0];
 }
@@ -711,19 +711,27 @@ b2HeapNode b2TOIMinHeap::DeleteMin() {
 	return Delete(0);
 }
 
-void b2TOIMinHeap::Insert(b2Contact* c, float toi) {
-	if (m_count == m_capacity) {
-		// TODO dynamic resize
-		__builtin_abort();
-	}
+void b2TOIMinHeap::Insert(b2Contact* c) {
+	float toi = c->CalculateTOI();
 
-	int32 idx = m_count;
-	m_heap[idx].c = c;
-	m_heap[idx].toi = toi;
-	c->m_toiIndex = idx;
-	m_count++;
-	
-	HeapifyUp(idx);
+	if (toi < 1.0f) {
+	  if (m_count == m_capacity) {
+    	m_capacity *= 2;
+	    b2HeapNode* oldHeap = m_heap;
+    	m_heap = (b2HeapNode*) b2Alloc(m_capacity * sizeof(b2HeapNode));
+    	memcpy(m_heap, oldHeap, m_count * sizeof(b2HeapNode));
+    	b2Free(oldHeap);
+	  }
+
+	  int32 idx = m_count;
+	  m_heap[idx].c = c;
+	  m_heap[idx].toi = toi;
+	  m_heap[idx].toiCount = 0;
+	  c->m_toiIndex = idx;
+	  m_count++;
+
+	  HeapifyUp(idx);
+	}
 }
 
 b2HeapNode b2TOIMinHeap::Delete(int32 idx) {
@@ -745,6 +753,19 @@ b2HeapNode b2TOIMinHeap::Delete(int32 idx) {
 	}
 
 	return ret;
+}
+
+void b2TOIMinHeap::Update(b2Contact* c) {
+  int32 idx = c->m_toiIndex;
+  float toi;
+  
+  if (m_heap[idx].toiCount > b2_maxSubSteps) {
+    toi = 1.0f;
+  } else {
+    toi = c->CalculateTOI();
+  }
+
+  SetKey(idx, toi);
 }
 
 void b2TOIMinHeap::SetKey(int32 idx, float toi) {
@@ -811,12 +832,8 @@ struct b2TOIQueryWrapper {
 		b2Contact* c = m_contactManager->QueryCallback(m_currentQueryFixture, fixture);
 	  
 	  if (c != nullptr && c->m_toiIndex == -1) {
-	    float toi = c->CalculateTOI();
-
-	    if (toi < 1.0f) {
-  	    m_heap->Insert(c, toi);
-  	  }
-	  }
+	    m_heap->Insert(c);
+  	}
 	}
 
   b2Fixture* m_currentQueryFixture;
@@ -842,7 +859,6 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 			// Invalidate TOI
 			c->m_flags &= ~b2Contact::e_islandFlag;
 			c->m_toiIndex = -1;
-		  c->m_toiCount = 0;
 		}
 	}
 
@@ -856,6 +872,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
       if (toi < 1.0f) {
 		    heap[i].c = c;
 	      heap[i].toi = toi;
+	      heap[i].toiCount = 0;
 
 		    ++i;
 		  }
@@ -872,7 +889,8 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 	// Find TOI events and solve them.
 	while (!heap.IsEmpty()) {
 		// Find the first TOI.
-		b2HeapNode min = heap.Min();
+		b2HeapNode& min = heap.Min();
+		++min.toiCount;
 		b2Contact* minContact = min.c;
 		float minAlpha = min.toi;
 
@@ -896,13 +914,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 
 		// The TOI contact likely has some new contact points.
 		minContact->Update(m_contactManager.m_contactListener);
-		++minContact->m_toiCount;
-
-    if (minContact->m_toiCount > b2_maxSubSteps) {
-		  heap.SetKey(minContact->m_toiIndex, 1.0f);
-		} else {
-		  heap.SetKey(minContact->m_toiIndex, minContact->CalculateTOI());
-		}
+		heap.Update(minContact);
 
 		// Is the contact solid?
 		if (minContact->IsEnabled() == false || minContact->IsTouching() == false) {
@@ -1043,14 +1055,10 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 				b2Contact* contact = body->GetContact(i);
         
         if ((contact->m_flags & b2Contact::e_persistFlag) != 0) {
-          float toi = contact->CalculateTOI();
-          
           if (contact->m_toiIndex == -1) {
-            if (toi < 1.0f) {
-              heap.Insert(contact, toi);
-            }
+            heap.Insert(contact);
           } else {
-            heap.SetKey(contact->m_toiIndex, toi);
+            heap.Update(contact);
           }
         }
         
