@@ -178,7 +178,6 @@ protected:
 
 	int32 m_toiCount;
 	int32 m_toiIndex;
-	float m_toi;
 
 	float m_friction;
 	float m_restitution;

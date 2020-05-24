@@ -260,7 +260,5 @@ float b2Contact::CalculateTOI() {
 		alpha = 1.0f;
 	}
 
-	m_toi = alpha;
-
 	return alpha;
 }

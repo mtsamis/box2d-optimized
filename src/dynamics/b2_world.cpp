@@ -843,7 +843,6 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 			c->m_flags &= ~b2Contact::e_islandFlag;
 			c->m_toiIndex = -1;
 		  c->m_toiCount = 0;
-			c->m_toi = 1.0f;
 		}
 	}
 
@@ -873,8 +872,9 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 	// Find TOI events and solve them.
 	while (!heap.IsEmpty()) {
 		// Find the first TOI.
-		b2Contact* minContact = heap.Min().c;
-		float minAlpha = minContact->m_toi;
+		b2HeapNode min = heap.Min();
+		b2Contact* minContact = min.c;
+		float minAlpha = min.toi;
 
 		if (minContact == nullptr || 1.0f - 10.0f * b2_epsilon < minAlpha) {
 			// No more TOI events. Done!
@@ -900,7 +900,6 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 
     if (minContact->m_toiCount > b2_maxSubSteps) {
 		  heap.SetKey(minContact->m_toiIndex, 1.0f);
-		  minContact->m_toi = 1.0f;
 		} else {
 		  heap.SetKey(minContact->m_toiIndex, minContact->CalculateTOI());
 		}
