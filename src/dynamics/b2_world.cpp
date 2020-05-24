@@ -1135,7 +1135,7 @@ struct b2WorldQueryWrapper
 	b2QueryCallback* callback;
 };
 
-void b2World::QueryAABB(b2QueryCallback* callback, const b2AABB& aabb) const
+void b2World::QueryAABB(b2QueryCallback* callback, const b2AABB& aabb)
 {
 	b2WorldQueryWrapper wrapper;
 	wrapper.broadPhase = &m_contactManager.m_broadPhase;
@@ -1168,7 +1168,7 @@ struct b2WorldRayCastWrapper
 	b2RayCastCallback* callback;
 };
 
-void b2World::RayCast(b2RayCastCallback* callback, const b2Vec2& point1, const b2Vec2& point2) const
+void b2World::RayCast(b2RayCastCallback* callback, const b2Vec2& point1, const b2Vec2& point2)
 {
 	b2WorldRayCastWrapper wrapper;
 	wrapper.broadPhase = &m_contactManager.m_broadPhase;
