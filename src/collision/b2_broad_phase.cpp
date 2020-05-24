@@ -98,6 +98,7 @@ b2BroadPhase::b2BroadPhase(int32 initialCapacity) : m_map(initialCapacity) {
 
 	m_count = 0;
 	m_capacity = initialCapacity;
+	m_needsRebuild = false;
 
 	m_root = nullptr;
 	m_rootDynamic = nullptr;
@@ -122,19 +123,16 @@ bool b2BroadPhase::Add(b2Fixture* fixture) {
 	
 	// check if we need to resize the node pool
 	if (m_count >= m_capacity) {
-		m_capacity = (int) (m_capacity * 2.0f);
-		
+		m_capacity *= 2;
+
 		b2TreeNode* oldNodes = m_nodes;
 		// allocate twice the capacity; the extra nodes are used to build the tree
 		m_nodes = (b2TreeNode*) b2Alloc(m_capacity * 2 * sizeof(b2TreeNode));
-		
-		for (int32 i = 0; i < m_count; i++) {
-			m_nodes[i] = oldNodes[i];
-		}
-		
+		memcpy(m_nodes, oldNodes, m_count * sizeof(b2TreeNode));
+
 		b2Free(oldNodes);
 		b2Free(m_links);
-		
+
 		m_links = (b2TreeNode**) b2Alloc(m_capacity * sizeof(b2TreeNode*));
 	}
 	
@@ -168,9 +166,13 @@ bool b2BroadPhase::Add(b2Fixture* fixture) {
 	if (m_count >= m_map.m_mapCapacity * 3 / 4) {
 		m_map.Grow();
 	}
-	
-	// TODO Add to tree
-	
+
+	m_needsRebuild = true;
+
+	if (fixture->GetBody()->GetType() == b2_staticBody) {
+	  m_rootStatic = nullptr;
+	}
+
 	return true;
 }
 
@@ -183,10 +185,15 @@ bool b2BroadPhase::Update(b2Fixture* fixture) {
 	}
 	
 	int32 idx = (*src)->value;
+	fixture->UpdateAABB();
 	m_nodes[idx].aabb = fixture->GetAABB();
-	
-	// TODO UpdateTree
-	
+
+	m_needsRebuild = true;
+
+	if (fixture->GetBody()->GetType() == b2_staticBody) {
+	  m_rootStatic = nullptr;
+	}
+
 	return true;
 }
 
@@ -212,14 +219,118 @@ bool b2BroadPhase::Remove(b2Fixture* fixture) {
 	b2Assert(*lastMapNode != nullptr);
 
 	(*lastMapNode)->value = nodeIdx;
-	
-	// TODO Remove from tree
-	
+
 	// remove from the bucket of the hash table
 	*src = forRemoval->next;
 	b2Free(forRemoval);
+
+	m_needsRebuild = true;
+
+	if (fixture->GetBody()->GetType() == b2_staticBody) {
+	  m_rootStatic = nullptr;
+	}
 	
 	return true;
+}
+
+void b2BroadPhase::Build() {
+	// (m_count == 0) -> root = rootStatic = rootDynamic = nullptr
+  int32 staticGroup = 0;
+
+	for (int32 i = 0; i < m_count; i++) {
+		m_links[i] = &m_nodes[i];
+		b2Fixture* f = m_links[i]->fixture;
+
+		if (f->GetBody()->GetType() == b2_staticBody) {
+		  b2Swap(m_links[i], m_links[staticGroup]);
+		  staticGroup++;
+		}
+	}
+
+  if (staticGroup <= m_count / 8) {
+    staticGroup = 0;
+    m_rootStatic = nullptr;
+  } else if (m_rootStatic == nullptr) {
+    m_treeAllocator = m_nodes + m_capacity;
+	  m_rootStatic = Build(0, staticGroup);
+  }
+
+  m_treeAllocator = m_nodes + m_capacity + staticGroup;
+	m_rootDynamic = Build(staticGroup, m_count);
+
+  if (m_rootDynamic == nullptr) {
+    m_root = m_rootStatic;
+  } else if (m_rootStatic == nullptr) {
+    m_root = m_rootDynamic;
+  } else {
+    m_root = &m_treeMergeNode;
+    m_root->left = m_rootStatic;
+    m_root->right = m_rootDynamic;
+    m_root->aabb.Combine(m_rootStatic->aabb, m_rootDynamic->aabb);
+  }
+
+  m_needsRebuild = false;
+}
+
+b2TreeNode* b2BroadPhase::Build(int32 start, int32 end) {
+	int count = end - start;
+  int32 group0;
+
+  if (count == 0) {
+    return nullptr;
+  } else if (count == 1) {
+		return m_links[start];
+	} else if (count == 2) {
+	  group0 = start + 1;
+	} else {
+		b2Vec2 c = GetCenter2(m_links[start]->aabb);
+		float minx = c.x, maxx = minx;
+		float miny = c.y, maxy = miny;
+
+		for (int32 i = start + 1; i < end; i++) {
+			c = GetCenter2(m_links[i]->aabb);
+
+			minx = b2Min(minx, c.x);
+			miny = b2Min(miny, c.y);
+			maxx = b2Max(maxx, c.x);
+			maxy = b2Max(maxy, c.y);
+		}
+
+    if (b2Abs(maxx - minx) < b2_epsilon && b2Abs(maxy - miny) < b2_epsilon) {
+      // If all the centers coincide then we have a degenerate O(n^2) collision case
+      // This is quite bad for the physics pipeline, but we can help with this special handling
+		  group0 = (start + end) / 2;
+    } else {
+      bool splitX = (maxx - minx) > (maxy - miny);
+		  float mid = splitX? (minx + maxx) / 2 : (miny + maxy) / 2;
+  	  group0 = start;
+
+      for (int32 i = start; i < end; i++) {
+			  b2AABB aabb = m_links[i]->aabb;
+			  float nodeMid = splitX? (aabb.lowerBound.x + aabb.upperBound.x) : (aabb.lowerBound.y + aabb.upperBound.y);
+
+			  if (nodeMid < mid) {
+				  b2Swap(m_links[i], m_links[group0++]);
+			  }
+		  }
+
+		  // prevent a degenrate tree with O(n) height
+		  // while this will degrade tree quality but linear height is even worse
+		  int32 lim = b2Max(count / 16, 1);
+		  if (group0 < start + lim) {
+			  group0 = start + lim;
+			} else if (group0 > end - lim) {
+  		  group0 = end - lim;
+			}
+    }
+	}
+
+	b2TreeNode* cur = m_treeAllocator++;
+	cur->left = Build(start, group0);
+	cur->right = Build(group0, end);
+	cur->aabb.Combine(cur->left->aabb, cur->right->aabb);
+
+  return cur;
 }
 
 int32 b2BroadPhase::GetTreeHeight() const {
@@ -238,10 +349,9 @@ int32 b2BroadPhase::ComputeHeight(b2TreeNode* node) const {
 }
 
 void b2BroadPhase::ShiftOrigin(const b2Vec2& newOrigin) {
-	for (int32 i = 0; i < m_count; ++i) {
+	// Shift all b2TreeNodes: leaf nodes, internal nodes and some unused nodes as well
+	for (int32 i = 0; i < m_capacity * 2; ++i) {
 		m_nodes[i].aabb.lowerBound -= newOrigin;
 		m_nodes[i].aabb.upperBound -= newOrigin;
 	}
-
-	// TODO Update tree
 }

@@ -87,13 +87,13 @@ public:
 	/// Query an AABB for overlapping proxies. The callback class
 	/// is called for each proxy that overlaps the supplied AABB.
 	template <typename T>
-	void Query(T* callback, const b2AABB& aabb) const;
+	void Query(T* callback, const b2AABB& aabb);
 	
 	template <typename T>
-	void QueryAll(T* callback) const;
+	void QueryAll(T* callback);
 	
 	template <typename T, typename UnaryPredicate>
-	void QueryAll(T* callback, UnaryPredicate predicate) const;
+	void QueryAll(T* callback, UnaryPredicate predicate);
 	
 	template <typename T>
 	void UpdateAndQuery(T* callback);
@@ -106,7 +106,7 @@ public:
 	/// @param input the ray-cast input data. The ray extends from p1 to p1 + maxFraction * (p2 - p1).
 	/// @param callback a callback class that is called for each proxy that is hit by the ray.
 	template <typename T>
-	void RayCast(T* callback, const b2RayCastInput& input) const;
+	void RayCast(T* callback, const b2RayCastInput& input);
 	
 	/// Get the height of the embedded tree.
 	int32 GetTreeHeight() const;
@@ -117,15 +117,17 @@ public:
 	/// The shift formula is: position -= newOrigin
 	/// @param newOrigin the new origin with respect to the old origin
 	void ShiftOrigin(const b2Vec2& newOrigin);
-	
-	void MarkRebuild();
-	
+
 private:
+  void EnsureBuiltTree();
 	int32 ComputeHeight(b2TreeNode* node) const;
 	b2Vec2 GetCenter2(const b2AABB& aabb);
 
+	void Build();
+  b2TreeNode* Build(int32 start, int32 end);
+
 	template <typename T>
-	b2TreeNode* UpdateAndQuery(T* callback, int32 start, int32 end, b2TreeNode** collision, int32 ccount);
+	b2TreeNode* BuildAndQuery(T* callback, int32 start, int32 end, b2TreeNode** collision, int32 ccount);
 
 	template <typename T>
 	void QueryAABB(T* callback, const b2AABB& aabb, b2TreeNode* root) const;
@@ -147,10 +149,13 @@ private:
 
 	int32 m_capacity;
 	int32 m_count;
+	bool m_needsRebuild;
 };
 
-inline void b2BroadPhase::MarkRebuild() {
-	
+inline void b2BroadPhase::EnsureBuiltTree() {
+  if (m_needsRebuild) {
+    Build();
+  }
 }
 
 inline int32 b2BroadPhase::GetCount() const {
@@ -164,44 +169,40 @@ inline b2Vec2 b2BroadPhase::GetCenter2(const b2AABB& aabb) {
 
 template <typename T>
 void b2BroadPhase::UpdateAndQuery(T* callback) {
-	if (m_count == 0) {
-	  m_root = nullptr;
-	  m_rootDynamic = nullptr;
-	  m_rootStatic = nullptr;
-		return;
-	}
+	b2Assert(callback);
 
-  int32 group0 = 0;
+	// (m_count == 0) -> root = rootStatic = rootDynamic = nullptr
+  int32 staticGroup = 0;
 
 	for (int32 i = 0; i < m_count; i++) {
 		m_links[i] = &m_nodes[i];
 		b2Fixture* f = m_links[i]->fixture;
 
-		if (f->GetBody()->GetType() != b2_staticBody) {
-			f->UpdateAABB();
+		if (f->GetBody()->GetType() == b2_staticBody) {
+		  b2Swap(m_links[i], m_links[staticGroup]);
+		  staticGroup++;
+		} else {
+		  f->UpdateAABB();
 			m_links[i]->aabb = f->GetAABB();
-		  b2Swap(m_links[i], m_links[group0]);
-		  group0++;
 		}
 	}
-	
-  if (group0 > m_count - m_count / 8) {
-    group0 = m_count;
+
+  if (staticGroup <= m_count / 8) {
+    staticGroup = 0;
+    m_rootStatic = nullptr;
+  } else if (m_rootStatic == nullptr) {
+    m_treeAllocator = m_nodes + m_capacity;
+	  m_rootStatic = Build(0, staticGroup);
   }
 
 	b2TreeNode* temp[m_count];
-
-  m_treeAllocator = m_nodes + m_capacity;
-	m_rootDynamic = UpdateAndQuery(callback, 0, group0, temp, 0);
-
-  if (m_rootStatic == nullptr) {
-    m_rootStatic = UpdateAndQuery((T*) nullptr, group0, m_count, temp, 0);
-  }
+  m_treeAllocator = m_nodes + m_capacity + staticGroup;
+	m_rootDynamic = BuildAndQuery(callback, staticGroup, m_count, temp, 0);
 
   if (m_rootStatic != nullptr) {
     int32 staticCollisionCount = 0;
 
-    for (int32 i = 0; i < group0; i++) {
+    for (int32 i = staticGroup; i < m_count; i++) {
       if (b2TestOverlap(m_rootStatic->aabb, m_links[i]->aabb)) {
         temp[staticCollisionCount++] = m_links[i];
       }
@@ -220,19 +221,19 @@ void b2BroadPhase::UpdateAndQuery(T* callback) {
     m_root->right = m_rootDynamic;
     m_root->aabb.Combine(m_rootStatic->aabb, m_rootDynamic->aabb);
   }
+
+	m_needsRebuild = false;
 }
 
 template <typename T>
-b2TreeNode* b2BroadPhase::UpdateAndQuery(T* callback, int32 start, int32 end, b2TreeNode** collision, int32 ccount) {
+b2TreeNode* b2BroadPhase::BuildAndQuery(T* callback, int32 start, int32 end, b2TreeNode** collision, int32 ccount) {
 	int count = end - start;
 
   if (count == 0) {
     return nullptr;
   } else if (count == 1) {
-    if (callback != nullptr) {
-		  for (int32 i = 0; i < ccount; ++i) {
-			  callback->QueryCallback(m_links[start]->fixture, collision[i]->fixture);
-		  }
+    for (int32 i = 0; i < ccount; ++i) {
+		  callback->QueryCallback(m_links[start]->fixture, collision[i]->fixture);
 		}
 
 		return m_links[start];
@@ -242,20 +243,18 @@ b2TreeNode* b2BroadPhase::UpdateAndQuery(T* callback, int32 start, int32 end, b2
 	  b2TreeNode* n1 = m_links[start];
 	  b2TreeNode* n2 = m_links[start + 1];
 
-	  if (callback != nullptr) {
-		  for (int32 i = 0; i < ccount; ++i) {
-	      if (b2TestOverlap(n1->aabb, collision[i]->aabb)) {
-    			callback->QueryCallback(n1->fixture, collision[i]->fixture);
-	      }
+	  for (int32 i = 0; i < ccount; ++i) {
+	    if (b2TestOverlap(n1->aabb, collision[i]->aabb)) {
+        callback->QueryCallback(n1->fixture, collision[i]->fixture);
+	    }
 
-	      if (b2TestOverlap(n2->aabb, collision[i]->aabb)) {
-    			callback->QueryCallback(n2->fixture, collision[i]->fixture);
-	      }
-		  }
-
-		  if (b2TestOverlap(n1->aabb, n2->aabb)) {
-        callback->QueryCallback(n1->fixture, n2->fixture);
-      }
+	    if (b2TestOverlap(n2->aabb, collision[i]->aabb)) {
+    	  callback->QueryCallback(n2->fixture, collision[i]->fixture);
+	    }
+    }
+    
+		if (b2TestOverlap(n1->aabb, n2->aabb)) {
+      callback->QueryCallback(n1->fixture, n2->fixture);
     }
 
 	  b2TreeNode* cur = m_treeAllocator++;
@@ -284,18 +283,15 @@ b2TreeNode* b2BroadPhase::UpdateAndQuery(T* callback, int32 start, int32 end, b2
     if (b2Abs(maxx - minx) < b2_epsilon && b2Abs(maxy - miny) < b2_epsilon) {
       // If all the centers coincide then we have a degenerate O(n^2) collision case
       // This is quite bad for the physics pipeline, but we can help with this special handling
-
-		  if (callback != nullptr) {
-		    for (int32 i = start; i < end; i++) {
-		      for (int32 j = i + 1; j < end; ++j) {
-			      callback->QueryCallback(m_links[i]->fixture, m_links[j]->fixture);
-		      }
-
-		      for (int32 i = 0; i < ccount; ++i) {
-			      callback->QueryCallback(m_links[i]->fixture, collision[i]->fixture);
-		      }
+		  for (int32 i = start; i < end; i++) {
+		    for (int32 j = i + 1; j < end; ++j) {
+			    callback->QueryCallback(m_links[i]->fixture, m_links[j]->fixture);
 		    }
-      }
+
+		    for (int32 i = 0; i < ccount; ++i) {
+			    callback->QueryCallback(m_links[i]->fixture, collision[i]->fixture);
+		    }
+		  }
       
 		  // TODO create a valid subtree here
 		  return m_links[start];
@@ -321,6 +317,8 @@ b2TreeNode* b2BroadPhase::UpdateAndQuery(T* callback, int32 start, int32 end, b2
 
 		  // prevent a degenrate tree with O(n) height
 		  // while this will degrade tree quality but linear height is even worse
+		  // Because the detection algorithm may require O(n*height) stack memory
+		  // in the worst case this prevents some potential stack overflow errors
 		  int32 lim = b2Max(count / 16, 1);
 		  if (group0 < start + lim || group0 > end - lim) {
 			  if (group0 < start + lim) {
@@ -342,45 +340,47 @@ b2TreeNode* b2BroadPhase::UpdateAndQuery(T* callback, int32 start, int32 end, b2
 		  }
     }
 
-    int32 leftCapacity = callback != nullptr? b2Min(ccount + count, m_count) : 0;
+    int32 leftCapacity = b2Min(ccount + count, m_count);
+
+    // ccount + count > 0 because count > 0
+    // m_count > 0
+    b2Assert(leftCapacity > 0);
 
 		b2TreeNode* left[leftCapacity];
 	  b2TreeNode** right = collision;
 	  int32 leftCount = 0;
 	  int32 rightCount = 0;
 
-    if (callback != nullptr) {
-	    for (int32 i = 0; i < ccount; ++i) {
-		    if (b2TestOverlap(leftAABB, collision[i]->aabb)) {
-			    left[leftCount++] = collision[i];
-		    }
+    for (int32 i = 0; i < ccount; ++i) {
+		  if (b2TestOverlap(leftAABB, collision[i]->aabb)) {
+		   left[leftCount++] = collision[i];
+		  }
 
-		    if (b2TestOverlap(rightAABB, collision[i]->aabb)) {
-			    right[rightCount++] = collision[i];
+		  if (b2TestOverlap(rightAABB, collision[i]->aabb)) {
+		   right[rightCount++] = collision[i];
+		  }
+	  }
+
+    if (b2TestOverlap(leftAABB, rightAABB)) {
+	    if (group0 - start < end - group0) {
+		    for (int32 i = start; i < group0; ++i) {
+		      if (b2TestOverlap(rightAABB, m_links[i]->aabb)) {
+		        right[rightCount++] = m_links[i];
+		      }
+		    }
+	    } else {
+		    for (int32 i = group0; i < end; ++i) {
+			    if (b2TestOverlap(leftAABB, m_links[i]->aabb)) {
+			      left[leftCount++] = m_links[i];
+			    }
 		    }
 	    }
-
-      if (b2TestOverlap(leftAABB, rightAABB)) {
-	      if (group0 - start < end - group0) {
-		      for (int32 i = start; i < group0; ++i) {
-			      if (b2TestOverlap(rightAABB, m_links[i]->aabb)) {
-				      right[rightCount++] = m_links[i];
-			      }
-		      }
-	      } else {
-		      for (int32 i = group0; i < end; ++i) {
-			      if (b2TestOverlap(leftAABB, m_links[i]->aabb)) {
-				      left[leftCount++] = m_links[i];
-			      }
-		      }
-	      }
-      }
     }
 
 	  b2TreeNode* cur = m_treeAllocator++;
 	  cur->aabb.Combine(leftAABB, rightAABB);
-	  cur->left = UpdateAndQuery(callback, start, group0, left, leftCount);
-	  cur->right = UpdateAndQuery(callback, group0, end, right, rightCount);
+	  cur->left = BuildAndQuery(callback, start, group0, left, leftCount);
+	  cur->right = BuildAndQuery(callback, group0, end, right, rightCount);
 
 	  return cur;
 	}
@@ -401,6 +401,8 @@ void b2BroadPhase::RemoveAll(UnaryPredicate predicate) {
 			Remove(f);
 		}
 	}
+
+  m_needsRebuild = true;
 }
 
 inline void b2BroadPhase::UpdateAll() {
@@ -409,10 +411,6 @@ inline void b2BroadPhase::UpdateAll() {
 
 template <typename UnaryPredicate>
 inline void b2BroadPhase::UpdateAll(UnaryPredicate predicate) {
-	if (m_count == 0) {
-		return;
-	}
-
 	for (int32 i = 0; i < m_count; i++) {
 		b2Fixture* f = m_nodes[i].fixture;
 		
@@ -421,19 +419,23 @@ inline void b2BroadPhase::UpdateAll(UnaryPredicate predicate) {
 			m_nodes[i].aabb = f->GetAABB();
 		}
 	}
+
+  m_needsRebuild = true;
 }
 
 template <typename T>
-inline void b2BroadPhase::QueryAll(T* callback) const {
+inline void b2BroadPhase::QueryAll(T* callback) {
 	QueryAll(callback, [](b2Fixture* fixture) { return true; });
 }
 
 template <typename T, typename UnaryPredicate>
-inline void b2BroadPhase::QueryAll(T* callback, UnaryPredicate predicate) const {
+inline void b2BroadPhase::QueryAll(T* callback, UnaryPredicate predicate) {
 	if (m_count == 0) {
 		return;
 	}
-	
+
+	EnsureBuiltTree();
+
 	b2TreeNode* temp[m_count];
 	int ccount = 0;
 	
@@ -451,10 +453,6 @@ inline void b2BroadPhase::QueryAll(T* callback, UnaryPredicate predicate) const 
 
 template <typename T>
 inline void b2BroadPhase::QueryAll(T* callback, const b2TreeNode* root, b2TreeNode** collision, int ccount) const {
-  if (ccount == 0) {
-    return;
-  } 
-  
 	if (root->IsLeaf()) {
     for (int32 i = 0; i < ccount; ++i) {
 			callback->QueryCallback(root->fixture, collision[i]->fixture);
@@ -489,8 +487,9 @@ inline void b2BroadPhase::QueryAll(T* callback, const b2TreeNode* root, b2TreeNo
 }
 
 template <typename T>
-inline void b2BroadPhase::Query(T* callback, const b2AABB& aabb) const {
+inline void b2BroadPhase::Query(T* callback, const b2AABB& aabb) {
 	if (m_count > 0) {
+		EnsureBuiltTree();
 		QueryAABB(callback, aabb, m_root);
 	}
 }
@@ -511,8 +510,9 @@ void b2BroadPhase::QueryAABB(T* callback, const b2AABB& aabb, b2TreeNode* root) 
 }
 
 template <typename T>
-inline void b2BroadPhase::RayCast(T* callback, const b2RayCastInput& input) const
-{
+inline void b2BroadPhase::RayCast(T* callback, const b2RayCastInput& input) {
+	EnsureBuiltTree();
+
 	b2Vec2 p1 = input.p1;
 	b2Vec2 p2 = input.p2;
 	b2Vec2 r = p2 - p1;
