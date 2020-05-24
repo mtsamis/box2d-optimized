@@ -840,7 +840,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 
 		for (b2Contact* c = m_contactManager.m_contactList; c; c = c->m_next) {
 			// Invalidate TOI
-			c->m_flags &= ~(b2Contact::e_toiFlag | b2Contact::e_islandFlag);
+			c->m_flags &= ~b2Contact::e_islandFlag;
 			c->m_toiIndex = -1;
 		  c->m_toiCount = 0;
 			c->m_toi = 1.0f;
@@ -896,7 +896,6 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 
 		// The TOI contact likely has some new contact points.
 		minContact->Update(m_contactManager.m_contactListener);
-		minContact->m_flags &= ~b2Contact::e_toiFlag;
 		++minContact->m_toiCount;
 
     if (minContact->m_toiCount > b2_maxSubSteps) {
@@ -1056,7 +1055,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
           }
         }
         
-				contact->m_flags &= ~(b2Contact::e_toiFlag | b2Contact::e_islandFlag | b2Contact::e_persistFlag);
+				contact->m_flags &= ~(b2Contact::e_islandFlag | b2Contact::e_persistFlag);
 			}
 		}
 

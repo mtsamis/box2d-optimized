@@ -261,7 +261,6 @@ float b2Contact::CalculateTOI() {
 	}
 
 	m_toi = alpha;
-	m_flags |= b2Contact::e_toiFlag;
 
 	return alpha;
 }
