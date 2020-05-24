@@ -796,77 +796,23 @@ void b2TOIMinHeap::Build() {
 	}
 }
 
-float b2World::CalculateTOI(b2Contact* c) {
-	b2Fixture* fA = c->GetFixtureA();
-	b2Fixture* fB = c->GetFixtureB();
+struct b2TOIQueryWrapper {
+	void QueryCallback(b2Fixture* fixture) {
+		b2Contact* c = m_contactManager->QueryCallback(m_currentQueryFixture, fixture);
+	  
+	  if (c != nullptr && c->m_toiIndex == -1) {
+	    float toi = c->CalculateTOI();
 
-	// Is there a sensor?
-	if (fA->IsSensor() || fB->IsSensor()) {
-		return 1.0f;
+	    if (toi < 1.0f) {
+  	    m_heap->Insert(c, toi);
+  	  }
+	  }
 	}
 
-	b2Body* bA = fA->GetBody();
-	b2Body* bB = fB->GetBody();
-
-	b2BodyType typeA = bA->m_type;
-	b2BodyType typeB = bB->m_type;
-	b2Assert(typeA == b2_dynamicBody || typeB == b2_dynamicBody);
-
-	bool activeA = bA->IsAwake() && typeA != b2_staticBody;
-	bool activeB = bB->IsAwake() && typeB != b2_staticBody;
-
-	// Is at least one body active (awake and dynamic or kinematic)?
-	if (activeA == false && activeB == false) {
-		return 1.0f;
-	}
-
-	bool collideA = bA->IsBullet() || typeA != b2_dynamicBody;
-	bool collideB = bB->IsBullet() || typeB != b2_dynamicBody;
-
-	// Are these two non-bullet dynamic bodies?
-	if (collideA == false && collideB == false) {
-		return 1.0f;
-	}
-
-	// Compute the TOI for this contact.
-	// Put the sweeps onto the same time interval.
-	float alpha0 = bA->m_sweep.alpha0;
-
-	if (bA->m_sweep.alpha0 < bB->m_sweep.alpha0) {
-		alpha0 = bB->m_sweep.alpha0;
-		bA->m_sweep.Advance(alpha0);
-	} else if (bB->m_sweep.alpha0 < bA->m_sweep.alpha0) {
-		alpha0 = bA->m_sweep.alpha0;
-		bB->m_sweep.Advance(alpha0);
-	}
-
-	b2Assert(alpha0 < 1.0f);
-
-	// Compute the time of impact in interval [0, minTOI]
-	b2TOIInput input;
-	input.proxyA.Set(fA->GetShape());
-	input.proxyB.Set(fB->GetShape());
-	input.sweepA = bA->m_sweep;
-	input.sweepB = bB->m_sweep;
-	input.tMax = 1.0f;
-
-	b2TOIOutput output;
-	b2TimeOfImpact(&output, &input);
-
-	// Beta is the fraction of the remaining portion of the .
-	float alpha;
-	float beta = output.t;
-	if (output.state == b2TOIOutput::e_touching) {
-		alpha = b2Min(alpha0 + (1.0f - alpha0) * beta, 1.0f);
-	} else {
-		alpha = 1.0f;
-	}
-
-	c->m_toi = alpha;
-	c->m_flags |= b2Contact::e_toiFlag;
-
-	return alpha;
-}
+  b2Fixture* m_currentQueryFixture;
+	b2ContactManager* m_contactManager;
+	b2TOIMinHeap* m_heap;
+};
 
 // Find TOI contacts and solve them.
 void b2World::SolveTOI(const b2TimeStep& step) {

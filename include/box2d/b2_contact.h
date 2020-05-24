@@ -122,6 +122,7 @@ protected:
 	friend class b2ContactManager;
 	friend class b2World;
 	friend class b2TOIMinHeap;
+	friend class b2TOIQueryWrapper;
 	friend class b2ContactSolver;
 	friend class b2Body;
 	friend class b2Fixture;
@@ -160,6 +161,8 @@ protected:
 	b2Contact(b2Fixture* fixtureA, b2Fixture* fixtureB, b2EvaluateFunction* evaluateFunction);
 	
 	void Update(b2ContactListener* listener);
+
+  float CalculateTOI();
 
 	static b2EvaluateFunction* functions[b2Shape::e_typeCount][b2Shape::e_typeCount];
 	
