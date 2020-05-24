@@ -655,6 +655,8 @@ void b2World::Solve(const b2TimeStep& step)
 	}
 }
 
+#include <iostream>
+
 struct b2HeapNode {
 	float toi;
 	b2Contact* c;
@@ -662,18 +664,20 @@ struct b2HeapNode {
 
 class b2TOIMinHeap {
 	friend class b2World;
+	friend class b2TOIQueryWrapper;
 
-	b2TOIMinHeap(int32 count, b2StackAllocator* stackAllocator);
+	b2TOIMinHeap(int32 initialCapacity, b2StackAllocator* stackAllocator);
 	~b2TOIMinHeap();
 
 	b2HeapNode Min();
 	b2HeapNode DeleteMin();
-	void Insert(b2HeapNode node);
+	void Insert(b2Contact* c, float toi);
 	b2HeapNode Delete(int32 idx);
 	void SetKey(int32 idx, float toi);
 	void HeapifyDown(int32 idx);
 	void HeapifyUp(int32 idx);
 	void Build();
+	bool IsEmpty();
 
 	b2HeapNode& operator [] (int32 idx) {
 		return m_heap[idx];
@@ -685,16 +689,20 @@ class b2TOIMinHeap {
 	b2StackAllocator* m_stackAllocator;
 };
 
-b2TOIMinHeap::b2TOIMinHeap(int32 count, b2StackAllocator* stackAllocator) {
+b2TOIMinHeap::b2TOIMinHeap(int32 initialCapacity, b2StackAllocator* stackAllocator) {
 	b2Assert(count > 0);
-	m_count = count;
-	m_capacity = m_count * 3;
+	m_count = 0;
+	m_capacity = initialCapacity;
 	m_heap = (b2HeapNode*) stackAllocator->Allocate(m_capacity * sizeof(b2HeapNode));
 	m_stackAllocator = stackAllocator;
 }
 
 b2TOIMinHeap::~b2TOIMinHeap() {
 	m_stackAllocator->Free(m_heap);
+}
+
+bool b2TOIMinHeap::IsEmpty() {
+	return m_count == 0;
 }
 
 b2HeapNode b2TOIMinHeap::Min() {
@@ -706,14 +714,16 @@ b2HeapNode b2TOIMinHeap::DeleteMin() {
 	return Delete(0);
 }
 
-void b2TOIMinHeap::Insert(b2HeapNode node) {
+void b2TOIMinHeap::Insert(b2Contact* c, float toi) {
 	if (m_count == m_capacity) {
 		// TODO dynamic resize
 		__builtin_abort();
 	}
 
 	int32 idx = m_count;
-	m_heap[idx] = node;
+	m_heap[idx].c = c;
+	m_heap[idx].toi = toi;
+	c->m_toiIndex = idx;
 	m_count++;
 	
 	HeapifyUp(idx);
@@ -727,13 +737,13 @@ b2HeapNode b2TOIMinHeap::Delete(int32 idx) {
 	m_count--;
 	
 	if (idx != m_count) {
-		m_heap[idx] = m_heap[m_count - 1];
-		int32 parent = idx / 2;
+		m_heap[idx] = m_heap[m_count];
+		int32 parent = (idx - 1) / 2;
 		
-		if (m_heap[idx].toi < m_heap[parent].toi) {
-			HeapifyUp(idx);
-		} else {
+		if (idx == 0 || m_heap[parent].toi < m_heap[idx].toi) {
 			HeapifyDown(idx);
+		} else {
+			HeapifyUp(idx);
 		}
 	}
 
@@ -744,12 +754,13 @@ void b2TOIMinHeap::SetKey(int32 idx, float toi) {
 	b2Assert(idx >= 0 && idx < m_count);
 
 	bool up = toi < m_heap[idx].toi;
+	bool down = toi > m_heap[idx].toi;
 	
 	m_heap[idx].toi = toi;
 
 	if (up) {
 		HeapifyUp(idx);
-	} else {
+	} else if (down) {
 		HeapifyDown(idx);
 	}
 }
@@ -757,8 +768,8 @@ void b2TOIMinHeap::SetKey(int32 idx, float toi) {
 void b2TOIMinHeap::HeapifyDown(int32 idx) {
 	while (true) {
 		int32 minIdx = idx;
-		int32 left = 2 * idx;
-		int32 right = 2 * idx + 1;
+		int32 left = 2 * idx + 1;
+		int32 right = 2 * idx + 2;
 		
 		if (left < m_count && m_heap[left].toi < m_heap[minIdx].toi) {
 			minIdx = left;
@@ -779,11 +790,9 @@ void b2TOIMinHeap::HeapifyDown(int32 idx) {
 }
 
 void b2TOIMinHeap::HeapifyUp(int32 idx) {
-	float toi = m_heap[idx].toi;
-	idx /= 2;
+	int32 parent;
 	
-	while (idx > 0 && toi < m_heap[idx].toi) {
-		int32 parent = idx / 2;
+	while (idx > 0 && m_heap[idx].toi < m_heap[parent = (idx - 1) / 2].toi) {
 		b2Swap(m_heap[idx].c->m_toiIndex, m_heap[parent].c->m_toiIndex);
 		b2Swap(m_heap[idx], m_heap[parent]);
 		idx = parent;
@@ -835,53 +844,40 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 		for (b2Contact* c = m_contactManager.m_contactList; c; c = c->m_next) {
 			// Invalidate TOI
 			c->m_flags &= ~(b2Contact::e_toiFlag | b2Contact::e_islandFlag);
-			c->m_toiCount = 0;
+			c->m_toiIndex = -1;
+		  c->m_toiCount = 0;
 			c->m_toi = 1.0f;
 		}
 	}
 
 	b2TOIMinHeap heap(m_contactManager.m_contactCount, &m_stackAllocator);
 	int32 i = 0;
-	for (b2Contact* c = m_contactManager.m_contactList; c; c = c->m_next) {
-		heap[i].c = c;
-		heap[i].toi = CalculateTOI(c);
 
-		++i;
+	for (b2Contact* c = m_contactManager.m_contactList; c; c = c->m_next) {
+    if (c->IsEnabled()) {
+		  float toi = c->CalculateTOI();
+
+      if (toi < 1.0f) {
+		    heap[i].c = c;
+	      heap[i].toi = toi;
+
+		    ++i;
+		  }
+		}
 	}
 
+  heap.m_count = i;
 	heap.Build();
 
+  b2TOIQueryWrapper toiCallback;
+  toiCallback.m_contactManager = &m_contactManager;
+  toiCallback.m_heap = &heap;
+
 	// Find TOI events and solve them.
-	for (;;) {
+	while (!heap.IsEmpty()) {
 		// Find the first TOI.
-		b2Contact* minContact = nullptr;
-		float minAlpha = 1.0f;
-
-		for (b2Contact* c = m_contactManager.m_contactList; c; c = c->m_next) {
-			// Is this contact disabled?
-			if (c->IsEnabled() == false) {
-				continue;
-			}
-
-			// Prevent excessive sub-stepping.
-			if (c->m_toiCount > b2_maxSubSteps) {
-				continue;
-			}
-
-			float alpha = 1.0f;
-			if (c->m_flags & b2Contact::e_toiFlag) {
-				// This contact has a valid cached TOI.
-				alpha = c->m_toi;
-			} else {
-				alpha = CalculateTOI(c);
-			}
-
-			if (alpha < minAlpha) {
-				// This is the minimum TOI found so far.
-				minContact = c;
-				minAlpha = alpha;
-			}
-		}
+		b2Contact* minContact = heap.Min().c;
+		float minAlpha = minContact->m_toi;
 
 		if (minContact == nullptr || 1.0f - 10.0f * b2_epsilon < minAlpha) {
 			// No more TOI events. Done!
@@ -905,6 +901,13 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 		minContact->Update(m_contactManager.m_contactListener);
 		minContact->m_flags &= ~b2Contact::e_toiFlag;
 		++minContact->m_toiCount;
+
+    if (minContact->m_toiCount > b2_maxSubSteps) {
+		  heap.SetKey(minContact->m_toiIndex, 1.0f);
+		  minContact->m_toi = 1.0f;
+		} else {
+		  heap.SetKey(minContact->m_toiIndex, minContact->CalculateTOI());
+		}
 
 		// Is the contact solid?
 		if (minContact->IsEnabled() == false || minContact->IsTouching() == false) {
@@ -947,10 +950,13 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 					}
 
 					// Has this contact already been added to the island?
-					if (contact->m_flags & b2Contact::e_islandFlag)
-					{
+					if (contact->m_flags & b2Contact::e_islandFlag) {
 						continue;
 					}
+					
+			    if ((contact->m_flags & b2Contact::e_persistFlag) == 0) {
+			      continue;
+			    }
 
 					// Only add static, kinematic, or bullet bodies.
 					b2Body* bA = contact->GetFixtureA()->GetBody();
@@ -1040,21 +1046,43 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 			// Invalidate all contact TOIs on this displaced body.
 			for (int32 i = 0; i < body->GetContactCount(); ++i) {
 				b2Contact* contact = body->GetContact(i);
-				contact->m_flags &= ~(b2Contact::e_toiFlag | b2Contact::e_islandFlag);
+        
+        if ((contact->m_flags & b2Contact::e_persistFlag) != 0) {
+          float toi = contact->CalculateTOI();
+          
+          if (contact->m_toiIndex == -1) {
+            if (toi < 1.0f) {
+              heap.Insert(contact, toi);
+            }
+          } else {
+            heap.SetKey(contact->m_toiIndex, toi);
+          }
+        }
+        
+				contact->m_flags &= ~(b2Contact::e_toiFlag | b2Contact::e_islandFlag | b2Contact::e_persistFlag);
 			}
 		}
 
 		// Commit fixture proxy movements to the broad-phase so that new contacts are created.
 		// Also, some contacts can be destroyed.
-		// TODO replace with efficient
-		m_contactManager.FindNewContacts();
-		RemoveDeadContacts();
+		for (int32 i = 0; i < island.m_bodyCount; ++i) {
+			b2Body* body = island.m_bodies[i];
+
+			if (body->m_type == b2_dynamicBody) {
+			  for (b2Fixture* f = body->GetFixtureList(); f; f = f->GetNext()) {
+          toiCallback.m_currentQueryFixture = f;
+			    m_contactManager.m_broadPhase.Query(&toiCallback, f->GetAABB());
+			  }
+			}
+    }
 
 		if (m_subStepping) {
 			m_stepComplete = false;
 			break;
 		}
 	}
+	
+	RemoveDeadContacts();
 }
 
 void b2World::Step(float dt, int32 velocityIterations, int32 positionIterations, int32 particleIterations)
