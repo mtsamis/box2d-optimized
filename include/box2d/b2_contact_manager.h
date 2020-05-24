@@ -38,7 +38,7 @@ public:
 	b2ContactManager();
 
 	// Broad-phase callback.
-	void QueryCallback(b2Fixture* proxyUserDataA, b2Fixture* proxyUserDataB);
+	b2Contact* QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB);
 
 	void FindNewContacts();
 

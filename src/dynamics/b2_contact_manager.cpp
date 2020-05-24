@@ -120,13 +120,13 @@ void b2ContactManager::FindNewContacts() {
 	m_broadPhase.UpdateAndQuery(this);
 }
 
-void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
+b2Contact* b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 	b2Body* bodyA = fixtureA->GetBody();
 	b2Body* bodyB = fixtureB->GetBody();
 	
 	// Are the fixtures on the same body?
 	if (bodyA == bodyB) {
-		return;
+		return nullptr;
 	}
 	
 	// Does a contact already exist?
@@ -140,24 +140,24 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 			// persist the contact
 			c->m_flags |= b2Contact::e_persistFlag;
 
-			return;
+			return c;
 		}
 	}
 
 	// Does a joint override collision? Is at least one body dynamic?
 	if (bodyB->ShouldCollide(bodyA) == false) {
-		return;
+		return nullptr;
 	}
 
 	// Check user filtering.
 	if (m_contactFilter && m_contactFilter->ShouldCollide(fixtureA, fixtureB) == false) {
-		return;
+		return nullptr;
 	}
 
 	// Call the factory.
 	b2Contact* c = b2Contact::Create(fixtureA, fixtureB, m_allocator);
 	if (c == nullptr) {
-		return;
+		return nullptr;
 	}
 
 	// Insert into the world.
@@ -172,4 +172,6 @@ void b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB) {
 	bodyB->AddContact(c);
 
 	++m_contactCount;
+	
+	return c;
 }
