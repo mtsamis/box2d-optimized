@@ -862,7 +862,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 		}
 	}
 
-	b2TOIMinHeap heap(m_contactManager.m_contactCount, &m_stackAllocator);
+	b2TOIMinHeap heap(m_contactManager.m_contactCount * 3 / 2, &m_stackAllocator);
 	int32 i = 0;
 
 	for (b2Contact* c = m_contactManager.m_contactList; c; c = c->m_next) {
@@ -1047,7 +1047,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 			
 			// Synchronize fixtures
 			for (b2Fixture* f = body->GetFixtureList(); f; f = f->GetNext()) {
-				m_contactManager.m_broadPhase.Update(f);
+				m_contactManager.m_broadPhase.UpdateNoRebuild(f);
 			}
 
 			// Invalidate all contact TOIs on this displaced body.

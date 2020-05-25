@@ -30,8 +30,9 @@
 struct b2TreeNode {
 	b2TreeNode* left;
 	b2TreeNode* right;
-	b2AABB aabb;
+	b2TreeNode* parent;
 	b2Fixture* fixture;
+	b2AABB aabb;
 	
 	bool IsLeaf() const {
 	  return left == nullptr;
@@ -69,11 +70,14 @@ public:
 
 	/// Destroy the tree, freeing the node pool.
 	~b2BroadPhase();
-	
+
 	bool Add(b2Fixture* fixture);
+
 	bool Update(b2Fixture* fixture);
+	bool UpdateNoRebuild(b2Fixture* fixture);
+
 	bool Remove(b2Fixture* fixture);
-	
+
 	void UpdateAll();
 	
 	template <typename UnaryPredicate>
@@ -217,11 +221,14 @@ void b2BroadPhase::UpdateAndQuery(T* callback) {
     m_root = m_rootDynamic;
   } else {
     m_root = &m_treeMergeNode;
+    m_root->aabb.Combine(m_rootStatic->aabb, m_rootDynamic->aabb);
     m_root->left = m_rootStatic;
     m_root->right = m_rootDynamic;
-    m_root->aabb.Combine(m_rootStatic->aabb, m_rootDynamic->aabb);
+    m_rootStatic->parent = m_root;
+    m_rootDynamic->parent = m_root;
   }
 
+  m_root->parent = nullptr;
 	m_needsRebuild = false;
 }
 
@@ -258,9 +265,11 @@ b2TreeNode* b2BroadPhase::BuildAndQuery(T* callback, int32 start, int32 end, b2T
     }
 
 	  b2TreeNode* cur = m_treeAllocator++;
-	  cur->left = n1;
-	  cur->right = n2;
 	  cur->aabb.Combine(n1->aabb, n2->aabb);
+    cur->left = n1;
+	  cur->right = n2;
+    n1->parent = cur;
+    n2->parent = cur;
 
 		return cur;
 	} else {
@@ -381,6 +390,8 @@ b2TreeNode* b2BroadPhase::BuildAndQuery(T* callback, int32 start, int32 end, b2T
 	  cur->aabb.Combine(leftAABB, rightAABB);
 	  cur->left = BuildAndQuery(callback, start, group0, left, leftCount);
 	  cur->right = BuildAndQuery(callback, group0, end, right, rightCount);
+    cur->left->parent = cur;
+    cur->right->parent = cur;
 
 	  return cur;
 	}

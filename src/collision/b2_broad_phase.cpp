@@ -145,6 +145,7 @@ bool b2BroadPhase::Add(b2Fixture* fixture) {
 	
 	leaf->left = nullptr;
 	leaf->right = nullptr;
+	leaf->parent = nullptr;
 	leaf->aabb = fixture->GetAABB();
 	leaf->fixture = fixture;
 	
@@ -193,6 +194,27 @@ bool b2BroadPhase::Update(b2Fixture* fixture) {
 	if (fixture->GetBody()->GetType() == b2_staticBody) {
 	  m_rootStatic = nullptr;
 	}
+
+	return true;
+}
+
+bool b2BroadPhase::UpdateNoRebuild(b2Fixture* fixture) {
+	b2MapNode** src = m_map.Get(fixture);
+
+	if (*src == nullptr) {
+		// nothing to update
+		return false;
+	}
+
+	int32 idx = (*src)->value;
+	fixture->UpdateAABB();
+	m_nodes[idx].aabb = fixture->GetAABB();
+
+  b2TreeNode* node = m_nodes[idx].parent;
+  while (node) {
+    node->aabb.Combine(node->left->aabb, node->right->aabb);
+    node = node->parent;
+  }
 
 	return true;
 }
@@ -264,11 +286,14 @@ void b2BroadPhase::Build() {
     m_root = m_rootDynamic;
   } else {
     m_root = &m_treeMergeNode;
+    m_root->aabb.Combine(m_rootStatic->aabb, m_rootDynamic->aabb);
     m_root->left = m_rootStatic;
     m_root->right = m_rootDynamic;
-    m_root->aabb.Combine(m_rootStatic->aabb, m_rootDynamic->aabb);
+    m_rootStatic->parent = m_root;
+    m_rootDynamic->parent = m_root;
   }
 
+  m_root->parent = nullptr;
   m_needsRebuild = false;
 }
 
@@ -328,6 +353,8 @@ b2TreeNode* b2BroadPhase::Build(int32 start, int32 end) {
 	b2TreeNode* cur = m_treeAllocator++;
 	cur->left = Build(start, group0);
 	cur->right = Build(group0, end);
+  cur->left->parent = cur;
+  cur->right->parent = cur;
 	cur->aabb.Combine(cur->left->aabb, cur->right->aabb);
 
   return cur;
