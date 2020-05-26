@@ -24,6 +24,7 @@
 #define B2_STACK_ALLOCATOR_H
 
 #include "b2_settings.h"
+#include <cstring>
 
 const int32 b2_stackSize = 100 * 1024;	// 100k
 const int32 b2_maxStackEntries = 32;
@@ -41,10 +42,14 @@ struct b2StackEntry
 class b2StackAllocator
 {
 public:
+	// sizeof(void*) must be a power of 2
+	enum { ALIGN_MASK = sizeof(void*) - 1 };
+
 	b2StackAllocator();
 	~b2StackAllocator();
 
 	void* Allocate(int32 size);
+	void* Reallocate(void* p, int32 size);
 	void Free(void* p);
 
 	int32 GetMaxAllocation() const;

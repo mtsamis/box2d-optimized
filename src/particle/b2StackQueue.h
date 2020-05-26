@@ -28,6 +28,7 @@ public:
 
 	b2StackQueue(b2StackAllocator *allocator, int32 capacity)
 	{
+	  capacity = b2Max(capacity, 32);
 		m_allocator = allocator;
 		m_buffer = (T*) m_allocator->Allocate(sizeof(T) * capacity);
 		m_front = 0;
@@ -42,33 +43,20 @@ public:
 
 	void Push(const T &item)
 	{
-		if (m_back >= m_capacity)
-		{
-			for (int32 i = m_front; i < m_back; i++)
-			{
-				m_buffer[i - m_front] = m_buffer[i];
-			}
-			m_back -= m_front;
-			m_front = 0;
-			if (m_back >= m_capacity)
-			{
-				if (m_capacity > 0)
-				{
-					m_capacity *= 2;
-				}
-				else
-				{
-					m_capacity = 1;
-				}
-				
-				// TODO
-				// m_buffer = (T*) m_allocator->Reallocate(m_buffer,
-				//										sizeof(T) * m_capacity);
-				
-				m_allocator->Free(m_buffer);
-				m_buffer = (T*) m_allocator->Allocate(sizeof(T) * m_capacity);
+		if (m_back >= m_capacity) {
+			if (m_front > m_capacity / 4) {
+			  for (int32 i = m_front; i < m_back; i++) {
+				  m_buffer[i - m_front] = m_buffer[i];
+			  }
+
+			  m_back -= m_front;
+			  m_front = 0;
+			} else {
+			  m_capacity *= 2;
+				m_buffer = (T*) m_allocator->Reallocate(m_buffer, sizeof(T) * m_capacity);
 			}
 		}
+
 		m_buffer[m_back] = item;
 		m_back++;
 	}

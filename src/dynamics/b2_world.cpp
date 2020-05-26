@@ -665,7 +665,7 @@ class b2TOIMinHeap {
 	friend class b2World;
 	friend class b2TOIQueryWrapper;
 
-	b2TOIMinHeap(int32 initialCapacity, b2StackAllocator* stackAllocator);
+	b2TOIMinHeap(int32 initialCapacity);
 	~b2TOIMinHeap();
 
 	b2HeapNode& Min();
@@ -688,7 +688,7 @@ class b2TOIMinHeap {
 	b2HeapNode* m_heap;
 };
 
-b2TOIMinHeap::b2TOIMinHeap(int32 initialCapacity, b2StackAllocator* stackAllocator) {
+b2TOIMinHeap::b2TOIMinHeap(int32 initialCapacity) {
 	m_count = 0;
 	m_capacity = initialCapacity;
 	m_heap = (b2HeapNode*) b2Alloc(m_capacity * sizeof(b2HeapNode));
@@ -862,7 +862,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 		}
 	}
 
-	b2TOIMinHeap heap(m_contactManager.m_contactCount * 3 / 2, &m_stackAllocator);
+	b2TOIMinHeap heap(m_contactManager.m_contactCount * 3 / 2);
 	int32 i = 0;
 
 	for (b2Contact* c = m_contactManager.m_contactList; c; c = c->m_next) {
