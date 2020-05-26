@@ -15,8 +15,8 @@
 * misrepresented as being the original software.
 * 3. This notice may not be removed or altered from any source distribution.
 */
-#include "b2FreeList.h"
-#include "b2IntrusiveList.h"
+#include "box2d/b2_free_list.h"
+#include "box2d/b2_intrusive_list.h"
 #include "box2d/b2_settings.h"
 
 /// Allocate an item from the freelist.

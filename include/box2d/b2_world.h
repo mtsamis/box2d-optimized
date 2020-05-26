@@ -29,8 +29,7 @@
 #include "b2_stack_allocator.h"
 #include "b2_time_step.h"
 #include "b2_world_callbacks.h"
-
-#include "../../src/particle/b2ParticleSystem.h"
+#include "b2_particle_system.h"
 
 struct b2AABB;
 struct b2BodyDef;

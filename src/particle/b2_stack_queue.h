@@ -27,7 +27,7 @@ class b2StackQueue
 public:
 
 	b2StackQueue(b2StackAllocator *allocator, int32 capacity)
-	{
+	{ 
 	  capacity = b2Max(capacity, 32);
 		m_allocator = allocator;
 		m_buffer = (T*) m_allocator->Allocate(sizeof(T) * capacity);

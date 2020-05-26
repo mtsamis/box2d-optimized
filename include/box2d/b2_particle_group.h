@@ -18,7 +18,7 @@
 #ifndef B2_PARTICLE_GROUP
 #define B2_PARTICLE_GROUP
 
-#include "b2Particle.h"
+#include "b2_particle.h"
 
 class b2Shape;
 class b2World;

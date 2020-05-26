@@ -21,10 +21,10 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <new>
-#include "b2IntrusiveList.h"
-#include "b2FreeList.h"
-#include "box2d/b2_settings.h"
-#include "b2TrackedBlock.h"
+#include "b2_intrusive_list.h"
+#include "b2_free_list.h"
+#include "b2_settings.h"
+#include "b2_tracked_block.h"
 
 /// Freelist based allocator for fixed sized items from slabs (memory
 /// preallocated from the heap).

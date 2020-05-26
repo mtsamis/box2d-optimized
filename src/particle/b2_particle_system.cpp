@@ -15,9 +15,8 @@
 * misrepresented as being the original software.
 * 3. This notice may not be removed or altered from any source distribution.
 */
-#include "b2ParticleSystem.h"
-#include "b2ParticleGroup.h"
-#include "b2VoronoiDiagram.h"
+#include "box2d/b2_particle_system.h"
+#include "box2d/b2_particle_group.h"
 #include "box2d/b2_block_allocator.h"
 #include "box2d/b2_world.h"
 #include "box2d/b2_world_callbacks.h"
@@ -26,6 +25,8 @@
 #include "box2d/b2_shape.h"
 #include "box2d/b2_edge_shape.h"
 #include <algorithm>
+
+#include "b2_voronoi_diagram.h"
 
 static const uint32 xTruncBits = 12;
 static const uint32 yTruncBits = 12;

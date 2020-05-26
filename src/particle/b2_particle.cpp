@@ -15,7 +15,7 @@
 * misrepresented as being the original software.
 * 3. This notice may not be removed or altered from any source distribution.
 */
-#include "b2Particle.h"
+#include "box2d/b2_particle.h"
 #include "box2d/b2_draw.h"
 
 #define B2PARTICLECOLOR_BITS_PER_COMPONENT (sizeof(uint8) << 3)

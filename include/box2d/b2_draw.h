@@ -24,7 +24,7 @@
 #define B2_DRAW_H
 
 #include "b2_math.h"
-#include "../../src/particle/b2Particle.h"
+#include "b2_particle.h"
 
 /// Color for debug drawing. Each value has the range [0,1].
 struct b2Color

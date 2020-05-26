@@ -15,8 +15,8 @@
 * misrepresented as being the original software.
 * 3. This notice may not be removed or altered from any source distribution.
 */
-#include "b2VoronoiDiagram.h"
-#include "b2StackQueue.h"
+#include "b2_voronoi_diagram.h"
+#include "b2_stack_queue.h"
 #include "box2d/b2_collision.h"
 
 b2VoronoiDiagram::b2VoronoiDiagram(

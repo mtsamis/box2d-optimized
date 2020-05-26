@@ -15,8 +15,8 @@
 * misrepresented as being the original software.
 * 3. This notice may not be removed or altered from any source distribution.
 */
-#include "b2ParticleGroup.h"
-#include "b2ParticleSystem.h"
+#include "box2d/b2_particle_group.h"
+#include "box2d/b2_particle_system.h"
 #include "box2d/b2_world.h"
 
 #if LIQUIDFUN_EXTERNAL_LANGUAGE_API

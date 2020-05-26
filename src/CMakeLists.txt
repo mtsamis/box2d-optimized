@@ -39,19 +39,14 @@ set(BOX2D_SOURCE_FILES
 	dynamics/b2_world.cpp
 	dynamics/b2_world_callbacks.cpp
 	rope/b2_rope.cpp
-	particle/b2Particle.cpp
-	particle/b2ParticleGroup.cpp
-	particle/b2VoronoiDiagram.cpp
-	particle/b2ParticleSystem.cpp
-	particle/b2StackQueue.h
-	particle/b2VoronoiDiagram.h
-	particle/b2GrowableBuffer.h
-	particle/b2IntrusiveList.h
-	particle/b2SlabAllocator.h
-	particle/b2FreeList.cpp
-	particle/b2FreeList.h
-	particle/b2TrackedBlock.cpp
-	particle/b2TrackedBlock.h)
+	particle/b2_particle.cpp
+	particle/b2_particle_group.cpp
+	particle/b2_particle_system.cpp
+	particle/b2_stack_queue.h
+	particle/b2_free_list.cpp
+	particle/b2_voronoi_diagram.cpp
+	particle/b2_voronoi_diagram.h
+	particle/b2_tracked_block.cpp)
 
 set(BOX2D_HEADER_FILES
 	../include/box2d/b2_block_allocator.h
@@ -90,9 +85,14 @@ set(BOX2D_HEADER_FILES
 	../include/box2d/b2_wheel_joint.h
 	../include/box2d/b2_world.h
 	../include/box2d/b2_world_callbacks.h
-	../include/box2d/b2ParticleGroup.h
-	../include/box2d/b2Particle.h
-	../include/box2d/b2ParticleSystem.h
+	../include/box2d/b2_growable_buffer.h
+	../include/box2d/b2_intrusive_list.h
+	../include/box2d/b2_slab_allocator.h
+	../include/box2d/b2_free_list.h
+	../include/box2d/b2_tracked_block.h
+	../include/box2d/b2_particle_group.h
+	../include/box2d/b2_particle.h
+	../include/box2d/b2_particle_system.h
 	../include/box2d/box2d.h)
 
 add_library(box2d STATIC ${BOX2D_SOURCE_FILES} ${BOX2D_HEADER_FILES})
