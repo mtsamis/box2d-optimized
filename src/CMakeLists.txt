@@ -43,9 +43,6 @@ set(BOX2D_SOURCE_FILES
 	particle/b2ParticleGroup.cpp
 	particle/b2VoronoiDiagram.cpp
 	particle/b2ParticleSystem.cpp
-	particle/b2ParticleGroup.h
-	particle/b2Particle.h
-	particle/b2ParticleSystem.h
 	particle/b2StackQueue.h
 	particle/b2VoronoiDiagram.h
 	particle/b2GrowableBuffer.h
@@ -93,6 +90,9 @@ set(BOX2D_HEADER_FILES
 	../include/box2d/b2_wheel_joint.h
 	../include/box2d/b2_world.h
 	../include/box2d/b2_world_callbacks.h
+	../include/box2d/b2ParticleGroup.h
+	../include/box2d/b2Particle.h
+	../include/box2d/b2ParticleSystem.h
 	../include/box2d/box2d.h)
 
 add_library(box2d STATIC ${BOX2D_SOURCE_FILES} ${BOX2D_HEADER_FILES})

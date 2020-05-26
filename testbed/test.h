@@ -26,9 +26,6 @@
 #include "box2d/box2d.h"
 #include "draw.h"
 
-#include "../src/particle/b2Particle.h"
-#include "../src/particle/b2ParticleGroup.h"
-
 #include <stdlib.h>
 
 struct Settings;

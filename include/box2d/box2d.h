@@ -43,6 +43,10 @@
 #include "b2_world.h"
 #include "b2_world_callbacks.h"
 
+#include "b2_particle.h"
+#include "b2_particleGroup.h"
+#include "b2_particleSystem.h"
+
 #include "b2_distance_joint.h"
 #include "b2_friction_joint.h"
 #include "b2_gear_joint.h"
