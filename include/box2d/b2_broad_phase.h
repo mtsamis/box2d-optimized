@@ -175,8 +175,14 @@ template <typename T>
 void b2BroadPhase::UpdateAndQuery(T* callback) {
 	b2Assert(callback);
 
-	// (m_count == 0) -> root = rootStatic = rootDynamic = nullptr
-  int32 staticGroup = 0;
+	m_needsRebuild = false;
+
+	if (m_count == 0) {
+	  m_root = m_rootStatic = m_rootDynamic = nullptr;
+	  return;
+	}
+
+	int32 staticGroup = 0;
 
 	for (int32 i = 0; i < m_count; i++) {
 		m_links[i] = &m_nodes[i];
@@ -229,7 +235,6 @@ void b2BroadPhase::UpdateAndQuery(T* callback) {
   }
 
   m_root->parent = nullptr;
-	m_needsRebuild = false;
 }
 
 template <typename T>

@@ -256,7 +256,13 @@ bool b2BroadPhase::Remove(b2Fixture* fixture) {
 }
 
 void b2BroadPhase::Build() {
-	// (m_count == 0) -> root = rootStatic = rootDynamic = nullptr
+	m_needsRebuild = false;
+
+	if (m_count == 0) {
+	  m_root = m_rootStatic = m_rootDynamic = nullptr;
+	  return;
+	}
+
   int32 staticGroup = 0;
 
 	for (int32 i = 0; i < m_count; i++) {
@@ -294,7 +300,6 @@ void b2BroadPhase::Build() {
   }
 
   m_root->parent = nullptr;
-  m_needsRebuild = false;
 }
 
 b2TreeNode* b2BroadPhase::Build(int32 start, int32 end) {
