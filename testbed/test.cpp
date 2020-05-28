@@ -148,9 +148,50 @@ public:
 	b2Fixture* m_fixture;
 };
 
+class QueryCallback2 : public b2QueryCallback
+{
+public:
+	QueryCallback2(b2ParticleSystem* particleSystem,
+				   const b2Shape* shape, const b2Vec2& velocity)
+	{
+		m_particleSystem = particleSystem;
+		m_shape = shape;
+		m_velocity = velocity;
+	}
+
+	bool ReportFixture(b2Fixture* fixture)
+	{
+		B2_NOT_USED(fixture);
+		return false;
+	}
+
+	bool ReportParticle(const b2ParticleSystem* particleSystem, int32 index)
+	{
+		if (particleSystem != m_particleSystem)
+			return false;
+
+		b2Transform xf;
+		xf.SetIdentity();
+		b2Vec2 p = m_particleSystem->GetPositionBuffer()[index];
+		if (m_shape->TestPoint(xf, p))
+		{
+			b2Vec2& v = m_particleSystem->GetVelocityBuffer()[index];
+			v = m_velocity;
+		}
+		return true;
+	}
+
+	b2ParticleSystem* m_particleSystem;
+	const b2Shape* m_shape;
+	b2Vec2 m_velocity;
+};
+
 void Test::MouseDown(const b2Vec2& p)
 {
 	m_mouseWorld = p;
+	m_mouseTracing = true;
+	m_mouseTracerPosition = p;
+	m_mouseTracerVelocity = b2Vec2_zero;
 	
 	if (m_mouseJoint != NULL)
 	{
@@ -215,6 +256,8 @@ void Test::ShiftMouseDown(const b2Vec2& p)
 
 void Test::MouseUp(const b2Vec2& p)
 {
+	m_mouseTracing = false;
+
 	if (m_mouseJoint)
 	{
 		m_world->DestroyJoint(m_mouseJoint);
@@ -387,6 +430,23 @@ void Test::Step(Settings& settings)
 
 		c.Set(0.8f, 0.8f, 0.8f);
 		g_debugDraw.DrawSegment(m_mouseWorld, m_bombSpawnPoint, c);
+	}
+
+	if (m_mouseTracing && !m_mouseJoint)
+	{
+		float32 delay = 0.1f;
+		b2Vec2 acceleration = 2 / delay * (1 / delay * (m_mouseWorld - m_mouseTracerPosition) - m_mouseTracerVelocity);
+		m_mouseTracerVelocity += timeStep * acceleration;
+		m_mouseTracerPosition += timeStep * m_mouseTracerVelocity;
+		b2CircleShape shape;
+		shape.m_p = m_mouseTracerPosition;
+		shape.m_radius = 2;
+		QueryCallback2 callback(m_particleSystem, &shape, m_mouseTracerVelocity);
+		b2AABB aabb;
+		b2Transform xf;
+		xf.SetIdentity();
+		shape.ComputeAABB(&aabb, xf);
+		m_world->QueryAABB(&callback, aabb);
 	}
 
 	if (settings.m_drawContactPoints)

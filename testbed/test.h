@@ -129,6 +129,9 @@ protected:
 	b2ParticleSystem* m_particleSystem;
 	b2Body* m_bomb;
 	b2MouseJoint* m_mouseJoint;
+	bool m_mouseTracing;
+	b2Vec2 m_mouseTracerPosition;
+	b2Vec2 m_mouseTracerVelocity;
 	b2Vec2 m_bombSpawnPoint;
 	bool m_bombSpawning;
 	b2Vec2 m_mouseWorld;
