@@ -307,8 +307,7 @@ b2TreeNode* b2BroadPhase::BuildAndQuery(T* callback, int32 start, int32 end, b2T
 		    }
 		  }
       
-		  // TODO create a valid subtree here
-		  return m_links[start];
+		  return Build(start, end);
     } else {
       bool splitX = (maxx - minx) > (maxy - miny);
 		  float mid = splitX? (minx + maxx) / 2 : (miny + maxy) / 2;
