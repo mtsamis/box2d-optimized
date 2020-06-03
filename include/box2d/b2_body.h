@@ -63,15 +63,22 @@ struct b2BodyDef
 		angle = 0.0f;
 		linearVelocity.Set(0.0f, 0.0f);
 		angularVelocity = 0.0f;
+
+#ifdef ENABLE_DAMPING
 		linearDamping = 0.0f;
 		angularDamping = 0.0f;
+#endif // ENABLE_DAMPING
+
 		allowSleep = true;
 		awake = true;
 		fixedRotation = false;
 		bullet = false;
 		type = b2_staticBody;
 		enabled = true;
+
+#ifdef ENABLE_GRAVITY_SCALE
 		gravityScale = 1.0f;
+#endif // ENABLE_GRAVITY_SCALE
 	}
 
 	/// The body type: static, kinematic, or dynamic.
@@ -91,6 +98,7 @@ struct b2BodyDef
 	/// The angular velocity of the body.
 	float angularVelocity;
 
+#ifdef ENABLE_DAMPING
 	/// Linear damping is use to reduce the linear velocity. The damping parameter
 	/// can be larger than 1.0f but the damping effect becomes sensitive to the
 	/// time step when the damping parameter is large.
@@ -102,6 +110,7 @@ struct b2BodyDef
 	/// time step when the damping parameter is large.
 	/// Units are 1/time
 	float angularDamping;
+#endif // ENABLE_DAMPING
 
 	/// Set this flag to false if this body should never fall asleep. Note that
 	/// this increases CPU usage.
@@ -125,8 +134,10 @@ struct b2BodyDef
 	/// Use this to store application specific body data.
 	void* userData;
 
+#ifdef ENABLE_GRAVITY_SCALE
 	/// Scale the gravity applied to this body.
 	float gravityScale;
+#endif // ENABLE_GRAVITY_SCALE
 };
 
 /// A rigid body. These are created via b2World::CreateBody.
@@ -292,6 +303,7 @@ public:
 	/// @return the world velocity of a point.
 	b2Vec2 GetLinearVelocityFromLocalPoint(const b2Vec2& localPoint) const;
 
+#ifdef ENABLE_DAMPING
 	/// Get the linear damping of the body.
 	float GetLinearDamping() const;
 
@@ -303,12 +315,15 @@ public:
 
 	/// Set the angular damping of the body.
 	void SetAngularDamping(float angularDamping);
+#endif // ENABLE_DAMPING
 
+#ifdef ENABLE_GRAVITY_SCALE
 	/// Get the gravity scale of the body.
 	float GetGravityScale() const;
 
 	/// Set the gravity scale of the body.
 	void SetGravityScale(float scale);
+#endif // ENABLE_GRAVITY_SCALE
 
 	/// Set the type of this body. This may alter the mass and velocity.
 	void SetType(b2BodyType type);
@@ -477,9 +492,14 @@ private:
 	// Rotational inertia about the center of mass.
 	float m_I, m_invI;
 
+#ifdef ENABLE_DAMPING
 	float m_linearDamping;
 	float m_angularDamping;
+#endif // ENABLE_DAMPING
+
+#ifdef ENABLE_GRAVITY_SCALE
 	float m_gravityScale;
+#endif // ENABLE_GRAVITY_SCALE
 
 	float m_sleepTime;
 
@@ -603,6 +623,7 @@ inline b2Vec2 b2Body::GetLinearVelocityFromLocalPoint(const b2Vec2& localPoint) 
 	return GetLinearVelocityFromWorldPoint(GetWorldPoint(localPoint));
 }
 
+#ifdef ENABLE_DAMPING
 inline float b2Body::GetLinearDamping() const
 {
 	return m_linearDamping;
@@ -622,7 +643,9 @@ inline void b2Body::SetAngularDamping(float angularDamping)
 {
 	m_angularDamping = angularDamping;
 }
+#endif // ENABLE_DAMPING
 
+#ifdef ENABLE_GRAVITY_SCALE
 inline float b2Body::GetGravityScale() const
 {
 	return m_gravityScale;
@@ -632,6 +655,7 @@ inline void b2Body::SetGravityScale(float scale)
 {
 	m_gravityScale = scale;
 }
+#endif // ENABLE_GRAVITY_SCALE
 
 inline void b2Body::SetBullet(bool flag)
 {

@@ -32,8 +32,11 @@ b2Body::b2Body(const b2BodyDef* bd, b2World* world)
 	b2Assert(bd->linearVelocity.IsValid());
 	b2Assert(b2IsValid(bd->angle));
 	b2Assert(b2IsValid(bd->angularVelocity));
+
+#ifdef ENABLE_DAMPING
 	b2Assert(b2IsValid(bd->angularDamping) && bd->angularDamping >= 0.0f);
 	b2Assert(b2IsValid(bd->linearDamping) && bd->linearDamping >= 0.0f);
+#endif // ENABLE_DAMPING
 
 	m_flags = 0;
 
@@ -82,9 +85,14 @@ b2Body::b2Body(const b2BodyDef* bd, b2World* world)
 	m_linearVelocity = bd->linearVelocity;
 	m_angularVelocity = bd->angularVelocity;
 
+#ifdef ENABLE_DAMPING
 	m_linearDamping = bd->linearDamping;
 	m_angularDamping = bd->angularDamping;
+#endif // ENABLE_DAMPING
+
+#ifdef ENABLE_GRAVITY_SCALE
 	m_gravityScale = bd->gravityScale;
+#endif // ENABLE_GRAVITY_SCALE
 
 	m_force.SetZero();
 	m_torque = 0.0f;
@@ -540,14 +548,22 @@ void b2Body::Dump()
 	b2Dump("  bd.angle = %.15lef;\n", m_sweep.a);
 	b2Dump("  bd.linearVelocity.Set(%.15lef, %.15lef);\n", m_linearVelocity.x, m_linearVelocity.y);
 	b2Dump("  bd.angularVelocity = %.15lef;\n", m_angularVelocity);
+
+#ifdef ENABLE_DAMPING
 	b2Dump("  bd.linearDamping = %.15lef;\n", m_linearDamping);
 	b2Dump("  bd.angularDamping = %.15lef;\n", m_angularDamping);
+#endif // ENABLE_DAMPING
+
 	b2Dump("  bd.allowSleep = bool(%d);\n", m_flags & e_autoSleepFlag);
 	b2Dump("  bd.awake = bool(%d);\n", m_flags & e_awakeFlag);
 	b2Dump("  bd.fixedRotation = bool(%d);\n", m_flags & e_fixedRotationFlag);
 	b2Dump("  bd.bullet = bool(%d);\n", m_flags & e_bulletFlag);
 	b2Dump("  bd.enabled = bool(%d);\n", m_flags & e_enabledFlag);
+
+#ifdef ENABLE_GRAVITY_SCALE
 	b2Dump("  bd.gravityScale = %.15lef;\n", m_gravityScale);
+#endif // ENABLE_GRAVITY_SCALE
+
 	b2Dump("  bodies[%d] = m_world->CreateBody(&bd);\n", m_islandIndex);
 	b2Dump("\n");
 	for (b2Fixture* f = m_fixtureList; f; f = f->m_next)

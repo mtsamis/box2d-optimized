@@ -90,6 +90,10 @@ typedef unsigned long long uint64;
 
 /********** LIQUID_END ************/
 
+#define ENABLE_DAMPING
+#define ENABLE_GRAVITY_SCALE
+#define ENABLE_LIMIT_VELOCITY
+
 #define	b2_maxFloat		FLT_MAX
 #define	b2_epsilon		FLT_EPSILON
 #define b2_pi			3.14159265359f
@@ -152,6 +156,7 @@ typedef unsigned long long uint64;
 /// prevent overshoot.
 #define b2_maxAngularCorrection		(8.0f / 180.0f * b2_pi)
 
+#ifdef ENABLE_LIMIT_VELOCITY
 /// The maximum linear velocity of a body. This limit is very large and is used
 /// to prevent numerical problems. You shouldn't need to adjust this.
 #define b2_maxTranslation			2.0f
@@ -161,6 +166,7 @@ typedef unsigned long long uint64;
 /// to prevent numerical problems. You shouldn't need to adjust this.
 #define b2_maxRotation				(0.5f * b2_pi)
 #define b2_maxRotationSquared		(b2_maxRotation * b2_maxRotation)
+#endif // ENABLE_LIMIT_VELOCITY
 
 /// This scale factor controls how fast overlap is resolved. Ideally this would be 1 so
 /// that overlap is removed in one time step. However using values close to 1 often lead

@@ -191,14 +191,22 @@ void b2Island::SolveOrphan(b2Body* b, const b2TimeStep& step, const b2Vec2& grav
 	float w = b->m_angularVelocity;
 
 	if (b->m_type == b2_dynamicBody) {
+#ifdef ENABLE_GRAVITY_SCALE
 		v += h * b->m_invMass * (b->m_gravityScale * b->m_mass * gravity + b->m_force);
+#else
+		v += h * b->m_invMass * (b->m_mass * gravity + b->m_force);
+#endif // ENABLE_GRAVITY_SCALE
+
 		w += h * b->m_invI * b->m_torque;
 
 		// Apply damping.
-		v /= (1.0f + h * b->m_linearDamping);
-		w /= (1.0f + h * b->m_angularDamping);
+#ifdef ENABLE_DAMPING
+ 		v /= (1.0f + h * b->m_linearDamping);
+ 		w /= (1.0f + h * b->m_angularDamping);
+#endif // ENABLE_DAMPING
 	}
 
+#ifdef ENABLE_LIMIT_VELOCITY
 	// Check for large velocities
 	b2Vec2 translation = h * v;
 	if (b2Dot(translation, translation) > b2_maxTranslationSquared) {
@@ -211,6 +219,7 @@ void b2Island::SolveOrphan(b2Body* b, const b2TimeStep& step, const b2Vec2& grav
 		float ratio = b2_maxRotation / b2Abs(rotation);
 		w *= ratio;
 	}
+#endif // ENABLE_LIMIT_VELOCITY
 
 	// Integrate
 	b->m_sweep.c += h * v;
@@ -255,7 +264,11 @@ void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSl
 		if (b->m_type == b2_dynamicBody)
 		{
 			// Integrate velocities.
-			v += h * b->m_invMass * (b->m_gravityScale * b->m_mass * gravity + b->m_force);
+#ifdef ENABLE_GRAVITY_SCALE
+  		v += h * b->m_invMass * (b->m_gravityScale * b->m_mass * gravity + b->m_force);
+#else
+  		v += h * b->m_invMass * (b->m_mass * gravity + b->m_force);
+#endif // ENABLE_GRAVITY_SCALE
 			w += h * b->m_invI * b->m_torque;
 
 			// Apply damping.
@@ -265,8 +278,10 @@ void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSl
 			// v2 = exp(-c * dt) * v1
 			// Pade approximation:
 			// v2 = v1 * 1 / (1 + c * dt)
-			v /= (1.0f + h * b->m_linearDamping);
-			w /= (1.0f + h * b->m_angularDamping);
+#ifdef ENABLE_DAMPING
+  		v /= (1.0f + h * b->m_linearDamping);
+  		w /= (1.0f + h * b->m_angularDamping);
+#endif // ENABLE_DAMPING
 		}
 
 		m_positions[i].c = c;
@@ -340,6 +355,7 @@ void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSl
 		b2Vec2 v = m_velocities[i].v;
 		float w = m_velocities[i].w;
 
+#ifdef ENABLE_LIMIT_VELOCITY
 		// Check for large velocities
 		b2Vec2 translation = h * v;
 		if (b2Dot(translation, translation) > b2_maxTranslationSquared)
@@ -354,6 +370,7 @@ void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSl
 			float ratio = b2_maxRotation / b2Abs(rotation);
 			w *= ratio;
 		}
+#endif // ENABLE_LIMIT_VELOCITY
 
 		// Integrate
 		c += h * v;
@@ -559,6 +576,7 @@ void b2Island::SolveTOI(const b2TimeStep& subStep, int32 toiIndexA, int32 toiInd
 		b2Vec2 v = m_velocities[i].v;
 		float w = m_velocities[i].w;
 
+#ifdef ENABLE_LIMIT_VELOCITY
 		// Check for large velocities
 		b2Vec2 translation = h * v;
 		if (b2Dot(translation, translation) > b2_maxTranslationSquared)
@@ -573,6 +591,7 @@ void b2Island::SolveTOI(const b2TimeStep& subStep, int32 toiIndexA, int32 toiInd
 			float ratio = b2_maxRotation / b2Abs(rotation);
 			w *= ratio;
 		}
+#endif // ENABLE_LIMIT_VELOCITY
 
 		// Integrate
 		c += h * v;
