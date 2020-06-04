@@ -43,9 +43,11 @@
 #include "b2_world.h"
 #include "b2_world_callbacks.h"
 
+#ifdef ENABLE_LIQUID
 #include "b2_particle.h"
 #include "b2_particle_group.h"
 #include "b2_particle_system.h"
+#endif // ENABLE_LIQUID
 
 #include "b2_distance_joint.h"
 #include "b2_friction_joint.h"

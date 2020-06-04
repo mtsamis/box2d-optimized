@@ -95,11 +95,16 @@ void b2ContactManager::Collide() {
 		c->m_flags &= ~(b2Contact::e_islandFlag | b2Contact::e_persistFlag | b2Contact::e_filterFlag);
 
 		// TODO this checks can probably be removed with some extra code in b2_body
+#ifdef ENABLE_SLEEPING
 		bool activeA = bodyA->IsAwake() && bodyA->m_type != b2_staticBody;
 		bool activeB = bodyB->IsAwake() && bodyB->m_type != b2_staticBody;
+    bool active = (activeA || activeB);
+#else
+    bool active = (bodyA->m_type != b2_staticBody) || (bodyB->m_type != b2_staticBody);
+#endif // ENABLE_SLEEPING
 
 		// At least one body must be awake and it must be dynamic or kinematic.
-		if (activeA == true || activeB == true) {
+		if (active) {
 			// The contact persists.
 			c->Update(m_contactListener);
 		}

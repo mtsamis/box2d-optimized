@@ -230,6 +230,7 @@ void b2Island::SolveOrphan(b2Body* b, const b2TimeStep& step, const b2Vec2& grav
 
 	b->SynchronizeTransform();
 
+#ifdef ENABLE_SLEEPING
 	if (allowSleep) {
 		const float linTolSqr = b2_linearSleepTolerance * b2_linearSleepTolerance;
 		const float angTolSqr = b2_angularSleepTolerance * b2_angularSleepTolerance;
@@ -246,6 +247,7 @@ void b2Island::SolveOrphan(b2Body* b, const b2TimeStep& step, const b2Vec2& grav
 		  }
 		}
 	}
+#endif // ENABLE_SLEEPING
 }
 
 void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSleep) {
@@ -438,7 +440,8 @@ void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSl
 	if (m_contactCount > 0) {
 		Report(contactSolver.m_velocityConstraints);	
 	}
-	
+
+#ifdef ENABLE_SLEEPING
 	if (allowSleep)
 	{
 		float minSleepTime = b2_maxFloat;
@@ -477,6 +480,7 @@ void b2Island::Solve(const b2TimeStep& step, const b2Vec2& gravity, bool allowSl
 			}
 		}
 	}
+#endif // ENABLE_SLEEPING
 }
 
 void b2Island::SolveTOI(const b2TimeStep& subStep, int32 toiIndexA, int32 toiIndexB)

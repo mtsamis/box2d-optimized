@@ -58,7 +58,10 @@ struct b2BodyDef
 	/// This constructor sets the body definition default values.
 	b2BodyDef()
 	{
+#ifdef ENABLE_USER_DATA
 		userData = nullptr;
+#endif // ENABLE_USER_DATA
+
 		position.Set(0.0f, 0.0f);
 		angle = 0.0f;
 		linearVelocity.Set(0.0f, 0.0f);
@@ -69,8 +72,11 @@ struct b2BodyDef
 		angularDamping = 0.0f;
 #endif // ENABLE_DAMPING
 
+#ifdef ENABLE_SLEEPING
 		allowSleep = true;
 		awake = true;
+#endif // ENABLE_SLEEPING
+
 		fixedRotation = false;
 		bullet = false;
 		type = b2_staticBody;
@@ -112,12 +118,14 @@ struct b2BodyDef
 	float angularDamping;
 #endif // ENABLE_DAMPING
 
+#ifdef ENABLE_SLEEPING
 	/// Set this flag to false if this body should never fall asleep. Note that
 	/// this increases CPU usage.
 	bool allowSleep;
 
 	/// Is this body initially awake or sleeping?
 	bool awake;
+#endif // ENABLE_SLEEPING
 
 	/// Should this body be prevented from rotating? Useful for characters.
 	bool fixedRotation;
@@ -131,8 +139,10 @@ struct b2BodyDef
 	/// Does this body start out enabled?
 	bool enabled;
 
+#ifdef ENABLE_USER_DATA
 	/// Use this to store application specific body data.
 	void* userData;
+#endif // ENABLE_USER_DATA
 
 #ifdef ENABLE_GRAVITY_SCALE
 	/// Scale the gravity applied to this body.
@@ -211,6 +221,37 @@ public:
 	/// Get the angular velocity.
 	/// @return the angular velocity in radians/second.
 	float GetAngularVelocity() const;
+
+	/// Apply a force at a world point. If the force is not
+	/// applied at the center of mass, it will generate a torque and
+	/// affect the angular velocity. This wakes up the body.
+	/// @param force the world force vector, usually in Newtons (N).
+	/// @param point the world position of the point of application.
+	void ApplyForce(const b2Vec2& force, const b2Vec2& point);
+
+	/// Apply a force to the center of mass. This wakes up the body.
+	/// @param force the world force vector, usually in Newtons (N).
+	void ApplyForceToCenter(const b2Vec2& force);
+
+	/// Apply a torque. This affects the angular velocity
+	/// without affecting the linear velocity of the center of mass.
+	/// @param torque about the z-axis (out of the screen), usually in N-m.
+	void ApplyTorque(float torque);
+
+	/// Apply an impulse at a point. This immediately modifies the velocity.
+	/// It also modifies the angular velocity if the point of application
+	/// is not at the center of mass. This wakes up the body.
+	/// @param impulse the world impulse vector, usually in N-seconds or kg-m/s.
+	/// @param point the world position of the point of application.
+	void ApplyLinearImpulse(const b2Vec2& impulse, const b2Vec2& point);
+
+	/// Apply an impulse to the center of mass. This immediately modifies the velocity.
+	/// @param impulse the world impulse vector, usually in N-seconds or kg-m/s.
+	void ApplyLinearImpulseToCenter(const b2Vec2& impulse);
+
+	/// Apply an angular impulse.
+	/// @param impulse the angular impulse in units of kg*m*m/s
+	void ApplyAngularImpulse(float impulse);
 
 	/// Apply a force at a world point. If the force is not
 	/// applied at the center of mass, it will generate a torque and
@@ -337,6 +378,7 @@ public:
 	/// Is this body treated like a bullet for continuous collision detection?
 	bool IsBullet() const;
 
+#ifdef ENABLE_SLEEPING
 	/// You can disable sleeping on this body. If you disable sleeping, the
 	/// body will be woken.
 	void SetSleepingAllowed(bool flag);
@@ -352,6 +394,7 @@ public:
 	/// Get the sleeping state of this body.
 	/// @return true if the body is awake.
 	bool IsAwake() const;
+#endif // ENABLE_SLEEPING
 
 	/// Allow a body to be disabled. A disabled body is not simulated and cannot
 	/// be collided with or woken up.
@@ -397,11 +440,13 @@ public:
 	b2Body* GetNext();
 	const b2Body* GetNext() const;
 
+#ifdef ENABLE_USER_DATA
 	/// Get the user data pointer that was provided in the body definition.
 	void* GetUserData() const;
 
 	/// Set the user data. Use this to store your application specific data.
 	void SetUserData(void* data);
+#endif // ENABLE_USER_DATA
 
 	/// Get the parent world of this body.
 	b2World* GetWorld();
@@ -483,6 +528,7 @@ private:
 	int32 m_fixtureCount;
 
 	b2JointEdge* m_jointList;
+
 	b2Contact** m_contactList;
 	int32 m_contactCount;
 	int32 m_contactCapacity;
@@ -501,9 +547,13 @@ private:
 	float m_gravityScale;
 #endif // ENABLE_GRAVITY_SCALE
 
+#ifdef ENABLE_SLEEPING
 	float m_sleepTime;
+#endif // ENABLE_SLEEPING
 
+#ifdef ENABLE_USER_DATA
 	void* m_userData;
+#endif // ENABLE_USER_DATA
 };
 
 inline b2BodyType b2Body::GetType() const
@@ -545,7 +595,7 @@ inline void b2Body::SetLinearVelocity(const b2Vec2& v)
 
 	if (b2Dot(v,v) > 0.0f)
 	{
-		SetAwake(true);
+  	SET_AWAKE_OR_NONE(this);
 	}
 
 	m_linearVelocity = v;
@@ -565,7 +615,7 @@ inline void b2Body::SetAngularVelocity(float w)
 
 	if (w * w > 0.0f)
 	{
-		SetAwake(true);
+  	SET_AWAKE_OR_NONE(this);
 	}
 
 	m_angularVelocity = w;
@@ -674,6 +724,7 @@ inline bool b2Body::IsBullet() const
 	return (m_flags & e_bulletFlag) == e_bulletFlag;
 }
 
+#ifdef ENABLE_SLEEPING
 inline void b2Body::SetAwake(bool flag)
 {
 	if (flag)
@@ -697,16 +748,6 @@ inline bool b2Body::IsAwake() const
 	return (m_flags & e_awakeFlag) == e_awakeFlag;
 }
 
-inline bool b2Body::IsEnabled() const
-{
-	return (m_flags & e_enabledFlag) == e_enabledFlag;
-}
-
-inline bool b2Body::IsFixedRotation() const
-{
-	return (m_flags & e_fixedRotationFlag) == e_fixedRotationFlag;
-}
-
 inline void b2Body::SetSleepingAllowed(bool flag)
 {
 	if (flag)
@@ -724,6 +765,18 @@ inline bool b2Body::IsSleepingAllowed() const
 {
 	return (m_flags & e_autoSleepFlag) == e_autoSleepFlag;
 }
+#endif // ENABLE_SLEEPING
+
+inline bool b2Body::IsEnabled() const
+{
+	return (m_flags & e_enabledFlag) == e_enabledFlag;
+}
+
+inline bool b2Body::IsFixedRotation() const
+{
+	return (m_flags & e_fixedRotationFlag) == e_fixedRotationFlag;
+}
+
 
 inline b2Fixture* b2Body::GetFixtureList()
 {
@@ -767,6 +820,7 @@ inline const b2Body* b2Body::GetNext() const
 	return m_next;
 }
 
+#ifdef ENABLE_USER_DATA
 inline void b2Body::SetUserData(void* data)
 {
 	m_userData = data;
@@ -776,18 +830,49 @@ inline void* b2Body::GetUserData() const
 {
 	return m_userData;
 }
+#endif // ENABLE_USER_DATA
 
-inline void b2Body::ApplyForce(const b2Vec2& force, const b2Vec2& point, bool wake)
+#ifdef ENABLE_SLEEPING
+#define WAKE_PARAM_OR_NONE , bool wake
+#define SET_AWAKE_IF_NOT() if (wake && (m_flags & e_awakeFlag) == 0) { SET_AWAKE_OR_NONE(this); }
+
+inline void b2Body::ApplyForce(const b2Vec2& force, const b2Vec2& point) {
+  ApplyForce(force, point, true);
+}
+
+inline void b2Body::ApplyForceToCenter(const b2Vec2& force) {
+  ApplyForceToCenter(force, true);
+}
+
+inline void b2Body::ApplyTorque(float torque) {
+  ApplyTorque(torque, true);
+}
+
+inline void b2Body::ApplyLinearImpulse(const b2Vec2& impulse, const b2Vec2& point) {
+  ApplyLinearImpulse(impulse, point, true);
+}
+
+inline void b2Body::ApplyLinearImpulseToCenter(const b2Vec2& impulse) {
+  ApplyLinearImpulseToCenter(impulse, true);
+}
+
+inline void b2Body::ApplyAngularImpulse(float impulse) {
+  ApplyAngularImpulse(impulse, true);
+}
+
+#else
+#define WAKE_PARAM_OR_NONE
+#define SET_AWAKE_IF_NOT()
+#endif // ENABLE_SLEEPING
+
+inline void b2Body::ApplyForce(const b2Vec2& force, const b2Vec2& point WAKE_PARAM_OR_NONE)
 {
 	if (m_type != b2_dynamicBody)
 	{
 		return;
 	}
 
-	if (wake && (m_flags & e_awakeFlag) == 0)
-	{
-		SetAwake(true);
-	}
+	SET_AWAKE_IF_NOT()
 
 	// Don't accumulate a force if the body is sleeping.
 	if (m_flags & e_awakeFlag)
@@ -797,17 +882,14 @@ inline void b2Body::ApplyForce(const b2Vec2& force, const b2Vec2& point, bool wa
 	}
 }
 
-inline void b2Body::ApplyForceToCenter(const b2Vec2& force, bool wake)
+inline void b2Body::ApplyForceToCenter(const b2Vec2& force WAKE_PARAM_OR_NONE)
 {
 	if (m_type != b2_dynamicBody)
 	{
 		return;
 	}
 
-	if (wake && (m_flags & e_awakeFlag) == 0)
-	{
-		SetAwake(true);
-	}
+	SET_AWAKE_IF_NOT()
 
 	// Don't accumulate a force if the body is sleeping
 	if (m_flags & e_awakeFlag)
@@ -816,17 +898,14 @@ inline void b2Body::ApplyForceToCenter(const b2Vec2& force, bool wake)
 	}
 }
 
-inline void b2Body::ApplyTorque(float torque, bool wake)
+inline void b2Body::ApplyTorque(float torque WAKE_PARAM_OR_NONE)
 {
 	if (m_type != b2_dynamicBody)
 	{
 		return;
 	}
 
-	if (wake && (m_flags & e_awakeFlag) == 0)
-	{
-		SetAwake(true);
-	}
+  SET_AWAKE_IF_NOT()
 
 	// Don't accumulate a force if the body is sleeping
 	if (m_flags & e_awakeFlag)
@@ -835,17 +914,14 @@ inline void b2Body::ApplyTorque(float torque, bool wake)
 	}
 }
 
-inline void b2Body::ApplyLinearImpulse(const b2Vec2& impulse, const b2Vec2& point, bool wake)
+inline void b2Body::ApplyLinearImpulse(const b2Vec2& impulse, const b2Vec2& point WAKE_PARAM_OR_NONE)
 {
 	if (m_type != b2_dynamicBody)
 	{
 		return;
 	}
 
-	if (wake && (m_flags & e_awakeFlag) == 0)
-	{
-		SetAwake(true);
-	}
+	SET_AWAKE_IF_NOT()
 
 	// Don't accumulate velocity if the body is sleeping
 	if (m_flags & e_awakeFlag)
@@ -855,17 +931,14 @@ inline void b2Body::ApplyLinearImpulse(const b2Vec2& impulse, const b2Vec2& poin
 	}
 }
 
-inline void b2Body::ApplyLinearImpulseToCenter(const b2Vec2& impulse, bool wake)
+inline void b2Body::ApplyLinearImpulseToCenter(const b2Vec2& impulse WAKE_PARAM_OR_NONE)
 {
 	if (m_type != b2_dynamicBody)
 	{
 		return;
 	}
 
-	if (wake && (m_flags & e_awakeFlag) == 0)
-	{
-		SetAwake(true);
-	}
+  SET_AWAKE_IF_NOT()
 
 	// Don't accumulate velocity if the body is sleeping
 	if (m_flags & e_awakeFlag)
@@ -874,17 +947,14 @@ inline void b2Body::ApplyLinearImpulseToCenter(const b2Vec2& impulse, bool wake)
 	}
 }
 
-inline void b2Body::ApplyAngularImpulse(float impulse, bool wake)
+inline void b2Body::ApplyAngularImpulse(float impulse WAKE_PARAM_OR_NONE)
 {
 	if (m_type != b2_dynamicBody)
 	{
 		return;
 	}
 
-	if (wake && (m_flags & e_awakeFlag) == 0)
-	{
-		SetAwake(true);
-	}
+	SET_AWAKE_IF_NOT()
 
 	// Don't accumulate velocity if the body is sleeping
 	if (m_flags & e_awakeFlag)

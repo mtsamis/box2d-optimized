@@ -139,7 +139,6 @@ int main() {
 		  {
 			  b2BodyDef bd;
 			  bd.type = b2_dynamicBody;
-			  bd.allowSleep = false;
 			  bd.position.Set(0.0f, 10.0f);
 			  b2Body* body = world->CreateBody(&bd);
 

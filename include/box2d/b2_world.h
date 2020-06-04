@@ -93,6 +93,7 @@ public:
 	/// @warning This function is locked during callbacks.
 	void DestroyJoint(b2Joint* joint);
 
+#ifdef ENABLE_LIQUID
 	/// Create a particle system given a definition. No reference to the
 	/// definition is retained.
 	/// @warning This function is locked during callbacks.
@@ -101,6 +102,14 @@ public:
 	/// Destroy a particle system.
 	/// @warning This function is locked during callbacks.
 	void DestroyParticleSystem(b2ParticleSystem* p);
+
+	/// Get the world particle-system list. With the returned body, use
+	/// b2ParticleSystem::GetNext to get the next particle-system in the world
+	/// list. A NULL particle-system indicates the end of the list.
+	/// @return the head of the world particle-system list.
+	b2ParticleSystem* GetParticleSystemList();
+	const b2ParticleSystem* GetParticleSystemList() const;
+#endif // ENABLE_LIQUID
 
 	/// Take a time step. This performs collision detection, integration,
 	/// and constraint solution.
@@ -168,13 +177,6 @@ public:
 	/// @return the head of the world joint list.
 	b2Joint* GetJointList();
 	const b2Joint* GetJointList() const;
-
-	/// Get the world particle-system list. With the returned body, use
-	/// b2ParticleSystem::GetNext to get the next particle-system in the world
-	/// list. A NULL particle-system indicates the end of the list.
-	/// @return the head of the world particle-system list.
-	b2ParticleSystem* GetParticleSystemList();
-	const b2ParticleSystem* GetParticleSystemList() const;
 
 	/// Get the world contact list. With the returned contact, use b2Contact::GetNext to get
 	/// the next contact in the world list. A nullptr contact indicates the end of the list.
@@ -331,6 +333,7 @@ inline const b2Contact* b2World::GetContactList() const
 	return m_contactManager.m_contactList;
 }
 
+#ifdef ENABLE_LIQUID
 inline b2ParticleSystem* b2World::GetParticleSystemList()
 {
 	return m_particleSystemList;
@@ -340,6 +343,7 @@ inline const b2ParticleSystem* b2World::GetParticleSystemList() const
 {
 	return m_particleSystemList;
 }
+#endif // ENABLE_LIQUID
 
 inline int32 b2World::GetBodyCount() const
 {

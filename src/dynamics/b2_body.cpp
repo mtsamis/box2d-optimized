@@ -48,6 +48,8 @@ b2Body::b2Body(const b2BodyDef* bd, b2World* world)
 	{
 		m_flags |= e_fixedRotationFlag;
 	}
+
+#ifdef ENABLE_SLEEPING
 	if (bd->allowSleep)
 	{
 		m_flags |= e_autoSleepFlag;
@@ -56,6 +58,8 @@ b2Body::b2Body(const b2BodyDef* bd, b2World* world)
 	{
 		m_flags |= e_awakeFlag;
 	}
+#endif // ENABLE_SLEEPING
+
 	if (bd->enabled)
 	{
 		m_flags |= e_enabledFlag;
@@ -97,7 +101,9 @@ b2Body::b2Body(const b2BodyDef* bd, b2World* world)
 	m_force.SetZero();
 	m_torque = 0.0f;
 
+#ifdef ENABLE_SLEEPING
 	m_sleepTime = 0.0f;
+#endif // ENABLE_SLEEPING
 
 	m_type = bd->type;
 
@@ -107,7 +113,9 @@ b2Body::b2Body(const b2BodyDef* bd, b2World* world)
 	m_I = 0.0f;
 	m_invI = 0.0f;
 
+#ifdef ENABLE_USER_DATA
 	m_userData = bd->userData;
+#endif // ENABLE_USER_DATA
 
 	m_fixtureList = nullptr;
 	m_fixtureCount = 0;
@@ -146,7 +154,7 @@ void b2Body::SetType(b2BodyType type)
 		UpdateAABBs();
 	}
 
-	SetAwake(true);
+	SET_AWAKE_OR_NONE(this);
 
 	m_force.SetZero();
 	m_torque = 0.0f;

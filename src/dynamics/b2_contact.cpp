@@ -77,6 +77,7 @@ b2Contact* b2Contact::Create(b2Fixture* fixtureA, b2Fixture* fixtureB, b2BlockAl
 }
 
 void b2Contact::Destroy(b2Contact* contact, b2BlockAllocator* allocator) {
+#ifdef ENABLE_SLEEPING
 	b2Fixture* fixtureA = contact->m_fixtureA;
 	b2Fixture* fixtureB = contact->m_fixtureB;
 
@@ -87,6 +88,7 @@ void b2Contact::Destroy(b2Contact* contact, b2BlockAllocator* allocator) {
 		fixtureA->GetBody()->SetAwake(true);
 		fixtureB->GetBody()->SetAwake(true);
 	}
+#endif // ENABLE_SLEEPING
 
 	allocator->Free(contact, sizeof(b2Contact));
 }
@@ -162,10 +164,12 @@ void b2Contact::Update(b2ContactListener* listener) {
 			}
 		}
 
+#ifdef ENABLE_SLEEPING
 		if (touching != wasTouching) {
 			bodyA->SetAwake(true);
 			bodyB->SetAwake(true);
 		}
+#endif // ENABLE_SLEEPING
 	}
 
 	if (touching) {
@@ -205,11 +209,16 @@ float b2Contact::CalculateTOI() {
 	b2BodyType typeB = bB->m_type;
 	b2Assert(typeA == b2_dynamicBody || typeB == b2_dynamicBody);
 
+#ifdef ENABLE_SLEEPING
 	bool activeA = bA->IsAwake() && typeA != b2_staticBody;
 	bool activeB = bB->IsAwake() && typeB != b2_staticBody;
+	bool active = activeA && activeB;
+#else
+	bool active = (typeA != b2_staticBody) && (typeB != b2_staticBody);
+#endif // ENABLE_SLEEPING
 
 	// Is at least one body active (awake and dynamic or kinematic)?
-	if (activeA == false && activeB == false) {
+	if (active == false) {
 		return 1.0f;
 	}
 

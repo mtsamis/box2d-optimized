@@ -93,6 +93,15 @@ typedef unsigned long long uint64;
 #define ENABLE_DAMPING
 #define ENABLE_GRAVITY_SCALE
 #define ENABLE_LIMIT_VELOCITY
+#define ENABLE_SLEEPING
+#define ENABLE_USER_DATA
+#define ENABLE_LIQUID
+
+#ifdef ENABLE_SLEEPING
+#define SET_AWAKE_OR_NONE(PTR) PTR->SetAwake(true);
+#else
+#define SET_AWAKE_OR_NONE(PTR)
+#endif // ENABLE_SLEEPING
 
 #define	b2_maxFloat		FLT_MAX
 #define	b2_epsilon		FLT_EPSILON

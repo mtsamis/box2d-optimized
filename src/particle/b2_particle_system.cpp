@@ -28,6 +28,8 @@
 
 #include "b2_voronoi_diagram.h"
 
+#ifdef ENABLE_LIQUID
+
 static const uint32 xTruncBits = 12;
 static const uint32 yTruncBits = 12;
 static const uint32 tagBits = 8u * sizeof(uint32);
@@ -3008,7 +3010,7 @@ void b2ParticleSystem::SolvePressure(const b2TimeStep& step)
 		float32 h = m_accumulationBuffer[a] + pressurePerWeight * w;
 		b2Vec2 f = velocityPerPressure * w * m * h * n;
 		m_velocityBuffer.data[a] -= GetParticleInvMass() * f;
-		b->ApplyLinearImpulse(f, p, true);
+		b->ApplyLinearImpulse(f, p);
 	}
 	for (int32 k = 0; k < m_contactBuffer.GetCount(); k++)
 	{
@@ -3047,7 +3049,7 @@ void b2ParticleSystem::SolveDamping(const b2TimeStep& step)
 				b2Max(linearDamping * w, b2Min(- quadraticDamping * vn, 0.5f));
 			b2Vec2 f = damping * m * vn * n;
 			m_velocityBuffer.data[a] += GetParticleInvMass() * f;
-			b->ApplyLinearImpulse(-f, p, true);
+			b->ApplyLinearImpulse(-f, p);
 		}
 	}
 	for (int32 k = 0; k < m_contactBuffer.GetCount(); k++)
@@ -3191,7 +3193,7 @@ void b2ParticleSystem::SolveRigidDamping()
 				ApplyDamping(
 					invMassA, invInertiaA, tangentDistanceA,
 					true, aGroup, a, f, n);
-				b->ApplyLinearImpulse(-f * n, p, true);
+				b->ApplyLinearImpulse(-f * n, p);
 			}
 		}
 	}
@@ -3264,7 +3266,7 @@ void b2ParticleSystem::SolveExtraDamping()
 			{
 				b2Vec2 f = 0.5f * m * vn * n;
 				m_velocityBuffer.data[a] += GetParticleInvMass() * f;
-				b->ApplyLinearImpulse(-f, p, true);
+				b->ApplyLinearImpulse(-f, p);
 			}
 		}
 	}
@@ -3441,7 +3443,7 @@ void b2ParticleSystem::SolveViscous()
 					   m_velocityBuffer.data[a];
 			b2Vec2 f = viscousStrength * m * w * v;
 			m_velocityBuffer.data[a] += GetParticleInvMass() * f;
-			b->ApplyLinearImpulse(-f, p, true);
+			b->ApplyLinearImpulse(-f, p);
 		}
 	}
 	for (int32 k = 0; k < m_contactBuffer.GetCount(); k++)
@@ -4434,3 +4436,5 @@ b2ParticleSystem::b2ExceptionType b2ParticleSystem::IsBufCopyValid(
 }
 
 #endif // LIQUIDFUN_EXTERNAL_LANGUAGE_API
+
+#endif // ENABLE_LIQUID

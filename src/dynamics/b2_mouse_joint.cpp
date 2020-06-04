@@ -57,7 +57,7 @@ void b2MouseJoint::SetTarget(const b2Vec2& target)
 {
 	if (target != m_targetA)
 	{
-		m_bodyB->SetAwake(true);
+    SET_AWAKE_OR_NONE(m_bodyB);
 		m_targetA = target;
 	}
 }

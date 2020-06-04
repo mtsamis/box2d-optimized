@@ -178,7 +178,9 @@ void b2Fixture::SetSensor(bool sensor)
 {
 	if (sensor != m_isSensor)
 	{
+#ifdef ENABLE_SLEEPING
 		m_body->SetAwake(true);
+#endif // ENABLE_SLEEPING
 		m_isSensor = sensor;
 	}
 }

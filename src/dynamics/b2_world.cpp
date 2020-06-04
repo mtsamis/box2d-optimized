@@ -94,10 +94,11 @@ b2World::~b2World()
 		b = bNext;
 	}
 	
-	while (m_particleSystemList)
-	{
+#ifdef ENABLE_LIQUID
+	while (m_particleSystemList) {
 		DestroyParticleSystem(m_particleSystemList);
 	}
+#endif // ENABLE_LIQUID
 }
 
 void b2World::SetDestructionListener(b2DestructionListener* listener)
@@ -348,8 +349,8 @@ void b2World::DestroyJoint(b2Joint* j)
 	b2Body* bodyB = j->m_bodyB;
 
 	// Wake up connected bodies.
-	bodyA->SetAwake(true);
-	bodyB->SetAwake(true);
+  SET_AWAKE_OR_NONE(bodyA);
+  SET_AWAKE_OR_NONE(bodyB);
 
 	// Remove from body 1.
 	if (j->m_edgeA.prev)
@@ -410,6 +411,7 @@ void b2World::DestroyJoint(b2Joint* j)
 	}
 }
 
+#ifdef ENABLE_LIQUID
 b2ParticleSystem* b2World::CreateParticleSystem(const b2ParticleSystemDef* def)
 {
 	b2Assert(IsLocked() == false);
@@ -461,6 +463,7 @@ void b2World::DestroyParticleSystem(b2ParticleSystem* p)
 	p->~b2ParticleSystem();
 	m_blockAllocator.Free(p, sizeof(b2ParticleSystem));
 }
+#endif // ENABLE_LIQUID
 
 //
 void b2World::SetAllowSleeping(bool flag)
@@ -475,7 +478,7 @@ void b2World::SetAllowSleeping(bool flag)
 	{
 		for (b2Body* b = m_bodyListHead; b; b = b->m_next)
 		{
-			b->SetAwake(true);
+			SET_AWAKE_OR_NONE(b);
 		}
 	}
 }
@@ -520,9 +523,12 @@ void b2World::Solve(const b2TimeStep& step)
 			continue;
 		}
 
+
+#ifdef ENABLE_SLEEPING
 		if (seed->IsAwake() == false || seed->IsEnabled() == false) {
 			continue;
 		}
+#endif // ENABLE_SLEEPING
 
 		// The seed can be dynamic or kinematic.
 		if (seed->GetType() == b2_staticBody) {
@@ -927,8 +933,8 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 			continue;
 		}
 
-		bA->SetAwake(true);
-		bB->SetAwake(true);
+    SET_AWAKE_OR_NONE(bA);
+    SET_AWAKE_OR_NONE(bB);
 
 		// Build the island
 		island.Clear();
@@ -1018,7 +1024,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 					other->m_flags |= b2Body::e_islandFlag;
 
 					if (other->m_type != b2_staticBody) {
-						other->SetAwake(true);
+						SET_AWAKE_OR_NONE(other);
 					}
 
 					island.Add(other);
@@ -1121,9 +1127,11 @@ void b2World::Step(float dt, int32 velocityIterations, int32 positionIterations,
 	  if (m_stepComplete) {
 		  b2Timer timer;
 
+#ifdef ENABLE_LIQUID
 		  for (b2ParticleSystem* p = m_particleSystemList; p; p = p->GetNext()) {
 			  p->Solve(step); // Particle Simulation
 		  }
+#endif // ENABLE_LIQUID
 
 		  Solve(step);
 		  m_profile.solve = timer.GetMilliseconds();
@@ -1173,12 +1181,14 @@ void b2World::QueryAABB(b2QueryCallback* callback, const b2AABB& aabb)
 	wrapper.broadPhase = &m_contactManager.m_broadPhase;
 	wrapper.callback = callback;
 	m_contactManager.m_broadPhase.Query(&wrapper, aabb);
-	
+
+#ifdef ENABLE_LIQUID
 	for (b2ParticleSystem* p = m_particleSystemList; p; p = p->GetNext()) {
 		if (callback->ShouldQueryParticleSystem(p)) {
 			p->QueryAABB(callback, aabb);
 		}
 	}
+#endif // ENABLE_LIQUID
 }
 
 struct b2WorldRayCastWrapper
@@ -1210,12 +1220,14 @@ void b2World::RayCast(b2RayCastCallback* callback, const b2Vec2& point1, const b
 	input.p1 = point1;
 	input.p2 = point2;
 	m_contactManager.m_broadPhase.RayCast(&wrapper, input);
-	
+
+#ifdef ENABLE_LIQUID
 	for (b2ParticleSystem* p = m_particleSystemList; p; p = p->GetNext()) {
 		if (callback->ShouldQueryParticleSystem(p)) {
 			p->RayCast(callback, point1, point2);
 		}
 	}
+#endif // ENABLE_LIQUID
 }
 
 void b2World::DrawShape(b2Fixture* fixture, const b2Transform& xf, const b2Color& color)
@@ -1269,6 +1281,7 @@ void b2World::DrawShape(b2Fixture* fixture, const b2Transform& xf, const b2Color
 	}
 }
 
+#ifdef ENABLE_LIQUID
 void b2World::DrawParticleSystem(const b2ParticleSystem& system)
 {
 	int32 particleCount = system.GetParticleCount();
@@ -1287,6 +1300,7 @@ void b2World::DrawParticleSystem(const b2ParticleSystem& system)
 		}
 	}
 }
+#endif // ENABLE_LIQUID
 
 void b2World::DebugDraw()
 {
@@ -1321,10 +1335,14 @@ void b2World::DebugDraw()
 				{
 					DrawShape(f, xf, b2Color(0.5f, 0.5f, 0.9f));
 				}
+				
+#ifdef ENABLE_SLEEPING
 				else if (b->IsAwake() == false)
 				{
 					DrawShape(f, xf, b2Color(0.6f, 0.6f, 0.6f));
 				}
+#endif // ENABLE_SLEEPING
+
 				else
 				{
 					DrawShape(f, xf, b2Color(0.9f, 0.7f, 0.7f));
@@ -1333,6 +1351,7 @@ void b2World::DebugDraw()
 		}
 	}
 	
+#ifdef ENABLE_LIQUID
 	if (flags & b2Draw::e_particleBit)
 	{
 		for (b2ParticleSystem* p = m_particleSystemList; p; p = p->GetNext())
@@ -1340,6 +1359,7 @@ void b2World::DebugDraw()
 			DrawParticleSystem(*p);
 		}
 	}
+#endif // ENABLE_LIQUID
 	
 	if (flags & b2Draw::e_jointBit)
 	{

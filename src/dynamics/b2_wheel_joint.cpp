@@ -521,8 +521,8 @@ void b2WheelJoint::EnableLimit(bool flag)
 {
 	if (flag != m_enableLimit)
 	{
-		m_bodyA->SetAwake(true);
-		m_bodyB->SetAwake(true);
+		SET_AWAKE_OR_NONE(m_bodyA);
+		SET_AWAKE_OR_NONE(m_bodyB);
 		m_enableLimit = flag;
 		m_lowerImpulse = 0.0f;
 		m_upperImpulse = 0.0f;
@@ -544,8 +544,8 @@ void b2WheelJoint::SetLimits(float lower, float upper)
 	b2Assert(lower <= upper);
 	if (lower != m_lowerTranslation || upper != m_upperTranslation)
 	{
-		m_bodyA->SetAwake(true);
-		m_bodyB->SetAwake(true);
+		SET_AWAKE_OR_NONE(m_bodyA);
+		SET_AWAKE_OR_NONE(m_bodyB);
 		m_lowerTranslation = lower;
 		m_upperTranslation = upper;
 		m_lowerImpulse = 0.0f;
@@ -562,8 +562,8 @@ void b2WheelJoint::EnableMotor(bool flag)
 {
 	if (flag != m_enableMotor)
 	{
-		m_bodyA->SetAwake(true);
-		m_bodyB->SetAwake(true);
+		SET_AWAKE_OR_NONE(m_bodyA);
+		SET_AWAKE_OR_NONE(m_bodyB);
 		m_enableMotor = flag;
 	}
 }
@@ -572,8 +572,8 @@ void b2WheelJoint::SetMotorSpeed(float speed)
 {
 	if (speed != m_motorSpeed)
 	{
-		m_bodyA->SetAwake(true);
-		m_bodyB->SetAwake(true);
+		SET_AWAKE_OR_NONE(m_bodyA);
+		SET_AWAKE_OR_NONE(m_bodyB);
 		m_motorSpeed = speed;
 	}
 }
@@ -582,8 +582,8 @@ void b2WheelJoint::SetMaxMotorTorque(float torque)
 {
 	if (torque != m_maxMotorTorque)
 	{
-		m_bodyA->SetAwake(true);
-		m_bodyB->SetAwake(true);
+		SET_AWAKE_OR_NONE(m_bodyA);
+		SET_AWAKE_OR_NONE(m_bodyB);
 		m_maxMotorTorque = torque;
 	}
 }
