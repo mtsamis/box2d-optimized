@@ -74,7 +74,11 @@ struct b2ManifoldPoint
 {
 	b2Vec2 localPoint;		///< usage depends on manifold type
 	float normalImpulse;	///< the non-penetration impulse
+
+#ifdef ENABLE_FRICTION
 	float tangentImpulse;	///< the friction impulse
+#endif // ENABLE_FRICTION
+
 	b2ContactID id;			///< uniquely identifies a contact point between two shapes
 };
 

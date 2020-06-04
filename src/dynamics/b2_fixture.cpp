@@ -32,7 +32,10 @@
 
 b2Fixture::b2Fixture()
 {
+#ifdef ENABLE_USER_DATA
 	m_userData = nullptr;
+#endif // ENABLE_USER_DATA
+
 	m_body = nullptr;
 	m_next = nullptr;
 	m_shape = nullptr;
@@ -44,9 +47,17 @@ b2Fixture::b2Fixture()
 
 void b2Fixture::Create(b2BlockAllocator* allocator, b2Body* body, const b2FixtureDef* def)
 {
+#ifdef ENABLE_USER_DATA
 	m_userData = def->userData;
+#endif // ENABLE_USER_DATA
+	
+#ifdef ENABLE_FRICTION
 	m_friction = def->friction;
+#endif // ENABLE_FRICTION
+
+#ifdef ENABLE_RESTITUTION
 	m_restitution = def->restitution;
+#endif // ENABLE_RESTITUTION
 
 	m_body = body;
 	m_next = nullptr;
@@ -188,8 +199,15 @@ void b2Fixture::SetSensor(bool sensor)
 void b2Fixture::Dump(int32 bodyIndex)
 {
 	b2Dump("    b2FixtureDef fd;\n");
+
+#ifdef ENABLE_FRICTION
 	b2Dump("    fd.friction = %.15lef;\n", m_friction);
+#endif // ENABLE_FRICTION
+
+#ifdef ENABLE_RESTITUTION
 	b2Dump("    fd.restitution = %.15lef;\n", m_restitution);
+#endif // ENABLE_RESTITUTION
+
 	b2Dump("    fd.density = %.15lef;\n", m_density);
 	b2Dump("    fd.isSensor = bool(%d);\n", m_isSensor);
 	b2Dump("    fd.filter.categoryBits = uint16(%d);\n", m_filter.categoryBits);

@@ -63,9 +63,19 @@ struct b2FixtureDef
 	b2FixtureDef()
 	{
 		shape = nullptr;
+
+#ifdef ENABLE_USER_DATA
 		userData = nullptr;
+#endif // ENABLE_USER_DATA
+
+#ifdef ENABLE_FRICTION
 		friction = 0.2f;
+#endif // ENABLE_FRICTION
+
+#ifdef ENABLE_RESTITUTION
 		restitution = 0.0f;
+#endif // ENABLE_RESTITUTION
+
 		density = 0.0f;
 		isSensor = false;
 	}
@@ -73,15 +83,21 @@ struct b2FixtureDef
 	/// The shape, this must be set. The shape will be cloned, so you
 	/// can create the shape on the stack.
 	const b2Shape* shape;
-
+	
+#ifdef ENABLE_USER_DATA
 	/// Use this to store application specific fixture data.
 	void* userData;
+#endif // ENABLE_USER_DATA
 
+#ifdef ENABLE_FRICTION
 	/// The friction coefficient, usually in the range [0,1].
 	float friction;
+#endif // ENABLE_FRICTION
 
+#ifdef ENABLE_RESTITUTION
 	/// The restitution (elasticity) usually in the range [0,1].
 	float restitution;
+#endif // ENABLE_RESTITUTION
 
 	/// The density, usually in kg/m^2.
 	float density;
@@ -140,12 +156,14 @@ public:
 	b2Fixture* GetNext();
 	const b2Fixture* GetNext() const;
 
+#ifdef ENABLE_USER_DATA
 	/// Get the user data that was assigned in the fixture definition. Use this to
 	/// store your application specific data.
 	void* GetUserData() const;
 
 	/// Set the user data. Use this to store your application specific data.
 	void SetUserData(void* data);
+#endif // ENABLE_USER_DATA
 	
 	uint32 GetId();
 	
@@ -174,19 +192,23 @@ public:
 	/// Get the density of this fixture.
 	float GetDensity() const;
 
+#ifdef ENABLE_FRICTION
 	/// Get the coefficient of friction.
 	float GetFriction() const;
 
 	/// Set the coefficient of friction. This will _not_ change the friction of
 	/// existing contacts.
 	void SetFriction(float friction);
+#endif // ENABLE_FRICTION
 
+#ifdef ENABLE_RESTITUTION
 	/// Get the coefficient of restitution.
 	float GetRestitution() const;
 
 	/// Set the coefficient of restitution. This will _not_ change the restitution of
 	/// existing contacts.
 	void SetRestitution(float restitution);
+#endif // ENABLE_RESTITUTION
 	
 	void UpdateAABB();
 	
@@ -220,14 +242,21 @@ protected:
 	b2Shape* m_shape;
 	b2AABB m_aabb;
 	
+#ifdef ENABLE_FRICTION
 	float m_friction;
+#endif // ENABLE_FRICTION
+
+#ifdef ENABLE_RESTITUTION
 	float m_restitution;
+#endif // ENABLE_RESTITUTION
 	
 	b2Filter m_filter;
 
 	bool m_isSensor;
 
+#ifdef ENABLE_USER_DATA
 	void* m_userData;
+#endif // ENABLE_USER_DATA
 	
 	uint32 m_id;
 };
@@ -257,6 +286,7 @@ inline const b2Filter& b2Fixture::GetFilterData() const
 	return m_filter;
 }
 
+#ifdef ENABLE_USER_DATA
 inline void* b2Fixture::GetUserData() const
 {
 	return m_userData;
@@ -266,6 +296,7 @@ inline void b2Fixture::SetUserData(void* data)
 {
 	m_userData = data;
 }
+#endif // ENABLE_USER_DATA
 
 inline uint32 b2Fixture::GetId()
 {
@@ -303,6 +334,7 @@ inline float b2Fixture::GetDensity() const
 	return m_density;
 }
 
+#ifdef ENABLE_FRICTION
 inline float b2Fixture::GetFriction() const
 {
 	return m_friction;
@@ -312,7 +344,9 @@ inline void b2Fixture::SetFriction(float friction)
 {
 	m_friction = friction;
 }
+#endif // ENABLE_FRICTION
 
+#ifdef ENABLE_RESTITUTION
 inline float b2Fixture::GetRestitution() const
 {
 	return m_restitution;
@@ -322,6 +356,7 @@ inline void b2Fixture::SetRestitution(float restitution)
 {
 	m_restitution = restitution;
 }
+#endif // ENABLE_RESTITUTION
 
 inline bool b2Fixture::TestPoint(const b2Vec2& p) const
 {

@@ -91,9 +91,18 @@ void b2ContactSolver::Initialize(b2ContactSolverDef* def) {
 		b2ContactVelocityConstraint* vc = m_velocityConstraints + i;
 		b2ContactPositionConstraint* pc = m_positionConstraints + i;
 
+#ifdef ENABLE_FRICTION
 		vc->friction = contact->m_friction;
+#endif // ENABLE_FRICTION
+
+#ifdef ENABLE_RESTITUTION
 		vc->restitution = contact->m_restitution;
+#endif // ENABLE_RESTITUTION
+
+#ifdef ENABLE_TANGENT_SPEED
 		vc->tangentSpeed = contact->m_tangentSpeed;
+#endif // ENABLE_TANGENT_SPEED
+
 		vc->indexA = bodyA->m_islandIndex;
 		vc->indexB = bodyB->m_islandIndex;
 		vc->invMassA = bodyA->m_invMass;
@@ -124,10 +133,16 @@ void b2ContactSolver::Initialize(b2ContactSolverDef* def) {
 	
 			if (m_step.warmStarting) {
 				vcp->normalImpulse = m_step.dtRatio * cp->normalImpulse;
+
+#ifdef ENABLE_FRICTION
 				vcp->tangentImpulse = m_step.dtRatio * cp->tangentImpulse;
+#endif // ENABLE_FRICTION
 			} else {
 				vcp->normalImpulse = 0.0f;
+
+#ifdef ENABLE_FRICTION
 				vcp->tangentImpulse = 0.0f;
+#endif // ENABLE_FRICTION
 			}
 
 			pc->localPoints[j] = cp->localPoint;
@@ -188,21 +203,27 @@ void b2ContactSolver::InitializeVelocityConstraints() {
 
 			float rnA = b2Cross(vcp->rA, vc->normal);
 			float rnB = b2Cross(vcp->rB, vc->normal);
+
+			float kNormal = mA + mB + iA * rnA * rnA + iB * rnB * rnB;
+			vcp->normalMass = kNormal > 0.0f ? 1.0f / kNormal : 0.0f;
+
+#ifdef ENABLE_FRICTION
 			float rtA = b2Cross(vcp->rA, tangent);
 			float rtB = b2Cross(vcp->rB, tangent);
 
-			float kNormal = mA + mB + iA * rnA * rnA + iB * rnB * rnB;
 			float kTangent = mA + mB + iA * rtA * rtA + iB * rtB * rtB;
-
-			vcp->normalMass = kNormal > 0.0f ? 1.0f / kNormal : 0.0f;
 			vcp->tangentMass = kTangent > 0.0f ? 1.0f /  kTangent : 0.0f;
+#endif // ENABLE_FRICTION
 
+#ifdef ENABLE_RESTITUTION
 			// Setup a velocity bias for restitution.
 			vcp->velocityBias = 0.0f;
+
 			float vRel = b2Dot(vc->normal, vB + b2Cross(wB, vcp->rB) - (vA + b2Cross(wA, vcp->rA)));
 			if (vRel < -b2_velocityThreshold) {
 				vcp->velocityBias = -vc->restitution * vRel;
 			}
+#endif // ENABLE_RESTITUTION
 		}
 
 		// If we have two points, then prepare the block solver.
@@ -258,7 +279,11 @@ void b2ContactSolver::WarmStart() {
 
 		for (int32 j = 0; j < pointCount; ++j) {
 			b2VelocityConstraintPoint* vcp = vc->points + j;
+#ifdef ENABLE_FRICTION
 			b2Vec2 P = vcp->normalImpulse * normal + vcp->tangentImpulse * tangent;
+#else
+			b2Vec2 P = vcp->normalImpulse * normal;
+#endif // ENABLE_FRICTION
 			wA -= iA * b2Cross(vcp->rA, P);
 			vA -= mA * P;
 			wB += iB * b2Cross(vcp->rB, P);
@@ -292,10 +317,11 @@ void b2ContactSolver::SolveVelocityConstraints()
 		float wB = m_velocities[indexB].w;
 
 		b2Vec2 normal = vc->normal;
-		b2Vec2 tangent = b2Cross(normal, 1.0f);
 
 		b2Assert(pointCount == 1 || pointCount == 2);
 
+#ifdef ENABLE_FRICTION
+		b2Vec2 tangent = b2Cross(normal, 1.0f);
 		// Solve tangent constraints first because non-penetration is more important
 		// than friction.
 		for (int32 j = 0; j < pointCount; ++j)
@@ -324,6 +350,7 @@ void b2ContactSolver::SolveVelocityConstraints()
 			vB += mB * P;
 			wB += iB * b2Cross(vcp->rB, P);
 		}
+#endif // ENABLE_FRICTION
 
 		// Solve normal constraints
 		if (pointCount == 1 || g_blockSolve == false)
@@ -337,7 +364,12 @@ void b2ContactSolver::SolveVelocityConstraints()
 
 				// Compute normal impulse
 				float vn = b2Dot(dv, normal);
+
+#ifdef ENABLE_RESTITUTION
 				float lambda = -vcp->normalMass * (vn - vcp->velocityBias);
+#else
+				float lambda = -vcp->normalMass * vn;
+#endif // ENABLE_RESTITUTION
 
 				// b2Clamp the accumulated impulse
 				float newImpulse = b2Max(vcp->normalImpulse + lambda, 0.0f);
@@ -403,8 +435,14 @@ void b2ContactSolver::SolveVelocityConstraints()
 			float vn2 = b2Dot(dv2, normal);
 
 			b2Vec2 b;
+
+#ifdef ENABLE_RESTITUTION
 			b.x = vn1 - cp1->velocityBias;
 			b.y = vn2 - cp2->velocityBias;
+#else
+			b.x = vn1;
+			b.y = vn2;
+#endif // ENABLE_RESTITUTION
 
 			// Compute b'
 			b -= b2Mul(vc->K, a);
@@ -452,8 +490,14 @@ void b2ContactSolver::SolveVelocityConstraints()
 					vn1 = b2Dot(dv1, normal);
 					vn2 = b2Dot(dv2, normal);
 
+#ifdef ENABLE_RESTITUTION
 					b2Assert(b2Abs(vn1 - cp1->velocityBias) < k_errorTol);
 					b2Assert(b2Abs(vn2 - cp2->velocityBias) < k_errorTol);
+#else
+					b2Assert(b2Abs(vn1) < k_errorTol);
+					b2Assert(b2Abs(vn2) < k_errorTol);
+#endif // ENABLE_RESTITUTION
+
 #endif
 					break;
 				}
@@ -493,7 +537,12 @@ void b2ContactSolver::SolveVelocityConstraints()
 					// Compute normal velocity
 					vn1 = b2Dot(dv1, normal);
 
+#ifdef ENABLE_RESTITUTION
 					b2Assert(b2Abs(vn1 - cp1->velocityBias) < k_errorTol);
+#else
+					b2Assert(b2Abs(vn1) < k_errorTol);
+#endif // ENABLE_RESTITUTION
+
 #endif
 					break;
 				}
@@ -535,7 +584,12 @@ void b2ContactSolver::SolveVelocityConstraints()
 					// Compute normal velocity
 					vn2 = b2Dot(dv2, normal);
 
+#ifdef ENABLE_RESTITUTION
 					b2Assert(b2Abs(vn2 - cp2->velocityBias) < k_errorTol);
+#else
+					b2Assert(b2Abs(vn2) < k_errorTol);
+#endif // ENABLE_RESTITUTION
+
 #endif
 					break;
 				}
@@ -593,7 +647,10 @@ void b2ContactSolver::StoreImpulses()
 		for (int32 j = 0; j < vc->pointCount; ++j)
 		{
 			manifold->points[j].normalImpulse = vc->points[j].normalImpulse;
+
+#ifdef ENABLE_FRICTION
 			manifold->points[j].tangentImpulse = vc->points[j].tangentImpulse;
+#endif // ENABLE_FRICTION
 		}
 	}
 }

@@ -36,10 +36,16 @@ struct b2VelocityConstraintPoint {
 	b2Vec2 rA;
 	b2Vec2 rB;
 	float normalImpulse;
-	float tangentImpulse;
 	float normalMass;
+
+#ifdef ENABLE_FRICTION
+	float tangentImpulse;
 	float tangentMass;
+#endif // ENABLE_FRICTION
+
+#ifdef ENABLE_RESTITUTION
 	float velocityBias;
+#endif // ENABLE_RESTITUTION
 };
 
 struct b2ContactVelocityConstraint {
@@ -51,9 +57,19 @@ struct b2ContactVelocityConstraint {
 	int32 indexB;
 	float invMassA, invMassB;
 	float invIA, invIB;
+
+#ifdef ENABLE_FRICTION
 	float friction;
+#endif // ENABLE_FRICTION
+
+#ifdef ENABLE_RESTITUTION
 	float restitution;
+#endif // ENABLE_RESTITUTION
+
+#ifdef ENABLE_TANGENT_SPEED
 	float tangentSpeed;
+#endif // ENABLE_TANGENT_SPEED
+
 	int32 pointCount;
 	b2Manifold* manifold;
 };

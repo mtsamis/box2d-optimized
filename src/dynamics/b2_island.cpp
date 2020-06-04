@@ -636,7 +636,10 @@ void b2Island::Report(const b2ContactVelocityConstraint* constraints)
 		for (int32 j = 0; j < vc->pointCount; ++j)
 		{
 			impulse.normalImpulses[j] = vc->points[j].normalImpulse;
+
+#ifdef ENABLE_FRICTION
 			impulse.tangentImpulses[j] = vc->points[j].tangentImpulse;
+#endif // ENABLE_FRICTION
 		}
 
 		m_listener->PostSolve(c, &impulse);

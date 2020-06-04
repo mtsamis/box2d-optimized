@@ -107,10 +107,17 @@ b2Contact::b2Contact(b2Fixture* fA, b2Fixture* fB, b2EvaluateFunction* evaluateF
 
 	m_toiIndex = -1;
 
+#ifdef ENABLE_FRICTION
 	m_friction = b2MixFriction(m_fixtureA->m_friction, m_fixtureB->m_friction);
-	m_restitution = b2MixRestitution(m_fixtureA->m_restitution, m_fixtureB->m_restitution);
+#endif // ENABLE_FRICTION
 
+#ifdef ENABLE_RESTITUTION
+	m_restitution = b2MixRestitution(m_fixtureA->m_restitution, m_fixtureB->m_restitution);
+#endif // ENABLE_RESTITUTION
+
+#ifdef ENABLE_TANGENT_SPEED
 	m_tangentSpeed = 0.0f;
+#endif // ENABLE_TANGENT_SPEED
 }
 
 // Update the contact manifold and touching status.
@@ -150,7 +157,11 @@ void b2Contact::Update(b2ContactListener* listener) {
 		for (int32 i = 0; i < m_manifold.pointCount; ++i) {
 			b2ManifoldPoint* mp2 = m_manifold.points + i;
 			mp2->normalImpulse = 0.0f;
+
+#ifdef ENABLE_FRICTION
 			mp2->tangentImpulse = 0.0f;
+#endif // ENABLE_FRICTION
+
 			b2ContactID id2 = mp2->id;
 
 			for (int32 j = 0; j < oldManifold.pointCount; ++j) {
@@ -158,7 +169,11 @@ void b2Contact::Update(b2ContactListener* listener) {
 
 				if (mp1->id.key == id2.key) {
 					mp2->normalImpulse = mp1->normalImpulse;
+
+#ifdef ENABLE_FRICTION
 					mp2->tangentImpulse = mp1->tangentImpulse;
+#endif // ENABLE_FRICTION
+
 					break;
 				}
 			}

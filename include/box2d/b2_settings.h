@@ -96,6 +96,9 @@ typedef unsigned long long uint64;
 #define ENABLE_SLEEPING
 #define ENABLE_USER_DATA
 #define ENABLE_LIQUID
+#define ENABLE_TANGENT_SPEED
+#define ENABLE_FRICTION
+#define ENABLE_RESTITUTION
 
 #ifdef ENABLE_SLEEPING
 #define SET_AWAKE_OR_NONE(PTR) PTR->SetAwake(true);

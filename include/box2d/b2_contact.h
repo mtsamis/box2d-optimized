@@ -89,6 +89,7 @@ public:
 	b2Fixture* GetFixtureB();
 	const b2Fixture* GetFixtureB() const;
 
+#ifdef ENABLE_FRICTION
 	/// Override the default friction mixture. You can call this in b2ContactListener::PreSolve.
 	/// This value persists until set or reset.
 	void SetFriction(float friction);
@@ -98,7 +99,9 @@ public:
 
 	/// Reset the friction mixture to the default value.
 	void ResetFriction();
+#endif // ENABLE_FRICTION
 
+#ifdef ENABLE_RESTITUTION
 	/// Override the default restitution mixture. You can call this in b2ContactListener::PreSolve.
 	/// The value persists until you set or reset.
 	void SetRestitution(float restitution);
@@ -108,12 +111,15 @@ public:
 
 	/// Reset the restitution to the default value.
 	void ResetRestitution();
+#endif // ENABLE_RESTITUTION
 
+#ifdef ENABLE_TANGENT_SPEED
 	/// Set the desired tangent speed for a conveyor belt behavior. In meters per second.
 	void SetTangentSpeed(float speed);
 
 	/// Get the desired tangent speed. In meters per second.
 	float GetTangentSpeed() const;
+#endif // ENABLE_TANGENT_SPEED
 
 	/// Evaluate this contact with your own manifold and transforms.
 	void Evaluate(b2Manifold* manifold, const b2Transform& xfA, const b2Transform& xfB);
@@ -178,10 +184,17 @@ protected:
 
 	int32 m_toiIndex;
 
+#ifdef ENABLE_FRICTION
 	float m_friction;
-	float m_restitution;
+#endif // ENABLE_FRICTION
 
+#ifdef ENABLE_RESTITUTION
+	float m_restitution;
+#endif // ENABLE_RESTITUTION
+
+#ifdef ENABLE_TANGENT_SPEED
 	float m_tangentSpeed;
+#endif // ENABLE_TANGENT_SPEED
 };
 
 inline b2Manifold* b2Contact::GetManifold() {
@@ -245,6 +258,7 @@ inline void b2Contact::FlagForFiltering() {
 	m_flags |= e_filterFlag;
 }
 
+#ifdef ENABLE_FRICTION
 inline void b2Contact::SetFriction(float friction) {
 	m_friction = friction;
 }
@@ -256,7 +270,9 @@ inline float b2Contact::GetFriction() const {
 inline void b2Contact::ResetFriction() {
 	m_friction = b2MixFriction(m_fixtureA->m_friction, m_fixtureB->m_friction);
 }
+#endif // ENABLE_FRICTION
 
+#ifdef ENABLE_RESTITUTION
 inline void b2Contact::SetRestitution(float restitution) {
 	m_restitution = restitution;
 }
@@ -268,7 +284,9 @@ inline float b2Contact::GetRestitution() const {
 inline void b2Contact::ResetRestitution() {
 	m_restitution = b2MixRestitution(m_fixtureA->m_restitution, m_fixtureB->m_restitution);
 }
+#endif // ENABLE_RESTITUTION
 
+#ifdef ENABLE_TANGENT_SPEED
 inline void b2Contact::SetTangentSpeed(float speed) {
 	m_tangentSpeed = speed;
 }
@@ -276,6 +294,7 @@ inline void b2Contact::SetTangentSpeed(float speed) {
 inline float b2Contact::GetTangentSpeed() const {
 	return m_tangentSpeed;
 }
+#endif // ENABLE_TANGENT_SPEED
 
 inline void b2Contact::Evaluate(b2Manifold* manifold, const b2Transform& xfA, const b2Transform& xfB) {
 	m_evaluateFunction(manifold, m_fixtureA->GetShape(), xfA, m_fixtureB->GetShape(), xfB);
