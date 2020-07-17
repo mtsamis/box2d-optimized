@@ -555,15 +555,15 @@ void b2World::Solve(const b2TimeStep& step)
 			b2Assert(b->IsEnabled() == true);
 			island.Add(b);
 
-			// Make sure the body is awake (without resetting sleep timer).
-			b->m_flags |= b2Body::e_awakeFlag;
-
 			// To keep islands as small as possible, we don't
 			// propagate islands across static bodies.
 			if (b->GetType() == b2_staticBody)
 			{
 				continue;
 			}
+
+			// Make sure the body is awake (without resetting sleep timer).
+			b->m_flags |= b2Body::e_awakeFlag;
 
 			// Search all contacts connected to this body.
 			for (int32 i = 0; i < b->GetContactCount(); ++i) {

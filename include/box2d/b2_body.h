@@ -727,6 +727,11 @@ inline bool b2Body::IsBullet() const
 #ifdef ENABLE_SLEEPING
 inline void b2Body::SetAwake(bool flag)
 {
+	if (m_type == b2_staticBody)
+	{
+		return;
+	}
+
 	if (flag)
 	{
 		m_flags |= e_awakeFlag;
