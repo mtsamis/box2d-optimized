@@ -597,17 +597,20 @@ void b2Body::Dump()
 {
 	int32 bodyIndex = m_islandIndex;
 
+	// %.9g is sufficient to save and load the same value using text
+	// FLT_DECIMAL_DIG == 9
+
 	b2Dump("{\n");
 	b2Dump("  b2BodyDef bd;\n");
 	b2Dump("  bd.type = b2BodyType(%d);\n", m_type);
-	b2Dump("  bd.position.Set(%.15lef, %.15lef);\n", m_xf.p.x, m_xf.p.y);
-	b2Dump("  bd.angle = %.15lef;\n", m_sweep.a);
-	b2Dump("  bd.linearVelocity.Set(%.15lef, %.15lef);\n", m_linearVelocity.x, m_linearVelocity.y);
-	b2Dump("  bd.angularVelocity = %.15lef;\n", m_angularVelocity);
+	b2Dump("  bd.position.Set(%.9g, %.9g);\n", m_xf.p.x, m_xf.p.y);
+	b2Dump("  bd.angle = %.9g;\n", m_sweep.a);
+	b2Dump("  bd.linearVelocity.Set(%.9g, %.9g);\n", m_linearVelocity.x, m_linearVelocity.y);
+	b2Dump("  bd.angularVelocity = %.9g;\n", m_angularVelocity);
 
 #ifdef ENABLE_DAMPING
-	b2Dump("  bd.linearDamping = %.15lef;\n", m_linearDamping);
-	b2Dump("  bd.angularDamping = %.15lef;\n", m_angularDamping);
+	b2Dump("  bd.linearDamping = %.9g;\n", m_linearDamping);
+	b2Dump("  bd.angularDamping = %.9g;\n", m_angularDamping);
 #endif // ENABLE_DAMPING
 
 	b2Dump("  bd.allowSleep = bool(%d);\n", m_flags & e_autoSleepFlag);
@@ -617,7 +620,7 @@ void b2Body::Dump()
 	b2Dump("  bd.enabled = bool(%d);\n", m_flags & e_enabledFlag);
 
 #ifdef ENABLE_GRAVITY_SCALE
-	b2Dump("  bd.gravityScale = %.15lef;\n", m_gravityScale);
+	b2Dump("  bd.gravityScale = %.9g;\n", m_gravityScale);
 #endif // ENABLE_GRAVITY_SCALE
 
 	b2Dump("  bodies[%d] = m_world->CreateBody(&bd);\n", m_islandIndex);
