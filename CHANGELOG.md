@@ -34,3 +34,9 @@
 - Testbed uses dear imgui
 - glad OpenGL loader
 - OpenGL 3.3 required
+
+# Changes for version 2.3.0
+- Polygon creation now computes the convex hull. Vertices no longer need to be ordered.
+- The convex hull code will merge vertices closer than dm_linearSlop. This may lead to failure on very small polygons.
+- Added b2MotorJoint.
+- Bug fixes.
