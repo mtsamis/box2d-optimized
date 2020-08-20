@@ -124,6 +124,8 @@ public:
 
 	int32 GetCount() const;
 
+  void InvalidateStaticBodies();
+
 	/// Shift the world origin. Useful for large worlds.
 	/// The shift formula is: position -= newOrigin
 	/// @param newOrigin the new origin with respect to the old origin
@@ -166,6 +168,11 @@ private:
 	int32 m_count;
 	bool m_needsRebuild;
 };
+
+inline void b2BroadPhase::InvalidateStaticBodies() {
+  m_rootStatic = nullptr;
+  m_needsRebuild = true;
+}
 
 inline void b2BroadPhase::EnsureBuiltTree() {
   if (m_needsRebuild) {

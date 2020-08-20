@@ -129,14 +129,62 @@ b2Body::~b2Body()
 void b2Body::SetType(b2BodyType type)
 {
 	b2Assert(m_world->IsLocked() == false);
-	if (m_world->IsLocked() == true)
-	{
+	if (m_world->IsLocked() == true) {
 		return;
 	}
 
-	if (m_type == type)
-	{
+	if (m_type == type) {
 		return;
+	}
+
+  if (m_type == b2_staticBody || type == b2_staticBody) {
+		m_world->m_contactManager.m_broadPhase.InvalidateStaticBodies();
+	  
+	  // since the world list is split into two groups with static and non static bodies
+	  // If the body type changes we must remove and re-insert the body in the correct group
+	  // Code below is copied from world CreateBody and DestroyBody accordingly
+	  
+	  // Remove world body list.
+	  if (m_prev) {
+		  m_prev->m_next = m_next;
+	  }
+
+	  if (m_next) {
+		  m_next->m_prev = m_prev;
+	  }
+
+	  if (this == m_world->m_bodyListHead) {
+		  m_world->m_bodyListHead = m_next;
+	  }
+
+	  if (this == m_world->m_bodyListTail) {
+		  m_world->m_bodyListTail = m_prev;
+	  }
+	  
+	  // Add to world doubly linked list in the correct group.
+	  if (type == b2_staticBody) {
+	    m_prev = m_world->m_bodyListTail;
+	    m_next = nullptr;
+	    
+	    if (m_world->m_bodyListTail) {
+		    m_world->m_bodyListTail->m_next = this;
+	    } else {
+	      m_world->m_bodyListHead = this;
+	    }
+	    
+	    m_world->m_bodyListTail = this;
+	  } else {
+	    m_prev = nullptr;
+	    m_next = m_world->m_bodyListHead;
+	    
+	    if (m_world->m_bodyListHead) {
+		    m_world->m_bodyListHead->m_prev = this;
+	    } else {
+	      m_world->m_bodyListTail = this;
+	    }
+	    
+	    m_world->	m_bodyListHead = this;
+	  }
 	}
 
 	m_type = type;
