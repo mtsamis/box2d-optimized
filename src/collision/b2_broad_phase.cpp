@@ -103,9 +103,11 @@ b2BroadPhase::b2BroadPhase(int32 initialCapacity) : m_map(initialCapacity) {
 	m_root = nullptr;
 	m_rootDynamic = nullptr;
 	m_rootStatic = nullptr;
+  m_bufferStack = nullptr;
 
 	m_links = (b2TreeNode**) b2Alloc(m_capacity * sizeof(b2TreeNode*));
 	m_nodes = (b2TreeNode*) b2Alloc(m_capacity * 2 * sizeof(b2TreeNode));
+	maxBufferSize = -1;
 }
 
 b2BroadPhase::~b2BroadPhase() {

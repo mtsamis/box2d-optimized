@@ -61,6 +61,13 @@ protected:
 	int32 m_mapCapacity;
 };
 
+struct b2BufferFrame {
+  int32 index;
+  int32 capacity;
+  b2TreeNode** buffer;
+  b2BufferFrame* prev;
+};
+
 class b2BroadPhase {
 public:
 	b2BroadPhase() : b2BroadPhase(32) {}
@@ -149,6 +156,10 @@ private:
 	b2TreeNode* m_rootDynamic;
 	b2TreeNode* m_rootStatic;
 
+  b2BufferFrame* m_bufferStack;
+  int32 currentBufferSize;
+  int32 maxBufferSize;
+
 	b2IntHashTable m_map;
 
 	int32 m_capacity;
@@ -204,11 +215,28 @@ void b2BroadPhase::UpdateAndQuery(T* callback) {
     m_treeAllocator = m_nodes + m_capacity;
 	  m_rootStatic = Build(0, staticGroup);
   }
+  
+  if (maxBufferSize == -1) {
+    maxBufferSize = m_count * 2;
+  }
 
+  m_bufferStack = (b2BufferFrame*) b2Alloc(sizeof(b2BufferFrame));
+  m_bufferStack->capacity = maxBufferSize + m_count / 4;
+  m_bufferStack->index = 0;
+  m_bufferStack->prev = nullptr;
+  m_bufferStack->buffer = (b2TreeNode**) b2Alloc(m_bufferStack->capacity * sizeof(b2TreeNode*));
+  currentBufferSize = 0;
+  maxBufferSize = 0;
+  
 	b2TreeNode* temp[m_count];
   m_treeAllocator = m_nodes + m_capacity + staticGroup;
 	m_rootDynamic = BuildAndQuery(callback, staticGroup, m_count, temp, 0);
 
+  b2Assert(m_bufferStack->prev == nullptr);
+  
+  b2Free(m_bufferStack->buffer);
+  b2Free(m_bufferStack);
+  
   if (m_rootStatic != nullptr) {
     int32 staticCollisionCount = 0;
 
@@ -293,73 +321,60 @@ b2TreeNode* b2BroadPhase::BuildAndQuery(T* callback, int32 start, int32 end, b2T
 
     int32 group0 = start;
     b2AABB leftAABB, rightAABB;
+    
+    leftAABB.lowerBound = {b2_maxFloat, b2_maxFloat};
+		leftAABB.upperBound = {-b2_maxFloat, -b2_maxFloat};
+		rightAABB = leftAABB;
 
-    if (b2Abs(maxx - minx) < b2_epsilon && b2Abs(maxy - miny) < b2_epsilon) {
-      // If all the centers coincide then we have a degenerate O(n^2) collision case
-      // This is quite bad for the physics pipeline, but we can help with this special handling
-		  for (int32 i = start; i < end; i++) {
-		    for (int32 j = i + 1; j < end; ++j) {
-			    callback->QueryCallback(m_links[i]->fixture, m_links[j]->fixture);
-		    }
+    bool splitX = (maxx - minx) > (maxy - miny);
+		float mid = splitX? (minx + maxx) / 2 : (miny + maxy) / 2;
+  
+    for (int32 i = start; i < end; i++) {
+		  b2AABB aabb = m_links[i]->aabb;
+			float nodeMid = splitX? (aabb.lowerBound.x + aabb.upperBound.x) : (aabb.lowerBound.y + aabb.upperBound.y);
 
-		    for (int32 i = 0; i < ccount; ++i) {
-			    callback->QueryCallback(m_links[i]->fixture, collision[i]->fixture);
-		    }
-		  }
-      
-		  return Build(start, end);
-    } else {
-      bool splitX = (maxx - minx) > (maxy - miny);
-		  float mid = splitX? (minx + maxx) / 2 : (miny + maxy) / 2;
-
-		  leftAABB.lowerBound = {b2_maxFloat, b2_maxFloat};
-		  leftAABB.upperBound = {-b2_maxFloat, -b2_maxFloat};
-		  rightAABB = leftAABB;
-
-      for (int32 i = start; i < end; i++) {
-			  b2AABB aabb = m_links[i]->aabb;
-			  float nodeMid = splitX? (aabb.lowerBound.x + aabb.upperBound.x) : (aabb.lowerBound.y + aabb.upperBound.y);
-
-			  if (nodeMid < mid) {
-				  b2Swap(m_links[i], m_links[group0++]);
-				  leftAABB.Combine(aabb);
-			  } else {
-				  rightAABB.Combine(aabb);
-			  }
-		  }
-
-		  // prevent a degenrate tree with O(n) height
-		  // while this will degrade tree quality but linear height is even worse
-		  // Because the detection algorithm may require O(n*height) stack memory
-		  // in the worst case this prevents some potential stack overflow errors
-		  int32 lim = b2Max(count / 16, 1);
-		  if (group0 < start + lim || group0 > end - lim) {
-			  if (group0 < start + lim) {
-			    group0 = start + lim;
-			  } else {
-  			  group0 = end - lim;
-			  }
-
-		    leftAABB = m_links[start]->aabb;
-		    rightAABB = m_links[end - 1]->aabb;
-
-		    for (int32 i = start + 1; i < group0; i++) {
-			    leftAABB.Combine(m_links[i]->aabb);
-			  }
-
-			  for (int32 i = group0; i < end - 1; i++) {
-			    rightAABB.Combine(m_links[i]->aabb);
-			  }
-		  }
+			if (nodeMid < mid) {
+			  b2Swap(m_links[i], m_links[group0++]);
+				leftAABB.Combine(aabb);
+			} else {
+			  rightAABB.Combine(aabb);
+			}
     }
+    
+		// prevent a degenrate tree with O(n) height
+		// while this will degrade tree quality but linear height is even worse
+		int32 lim = b2Max(count / 16, 1);
+		if (group0 < start + lim || group0 > end - lim) {
+		  if (group0 < start + lim) {
+			  group0 = start + lim;
+			} else {
+  		  group0 = end - lim;
+			}
 
-    int32 leftCapacity = b2Min(ccount + count, m_count);
+		  leftAABB = m_links[start]->aabb;
+		  rightAABB = m_links[end - 1]->aabb;
 
-    // ccount + count > 0 because count > 0
-    // m_count > 0
-    b2Assert(leftCapacity > 0);
+		  for (int32 i = start + 1; i < group0; i++) {
+			  leftAABB.Combine(m_links[i]->aabb);
+			}
 
-		b2TreeNode* left[leftCapacity];
+			for (int32 i = group0; i < end - 1; i++) {
+			  rightAABB.Combine(m_links[i]->aabb);
+			}
+		}
+    
+    int leftUpperBound = b2Min(count + ccount, m_count);
+    
+    if (m_bufferStack->index + leftUpperBound >= m_bufferStack->capacity) {
+      b2BufferFrame* newFrame = (b2BufferFrame*) b2Alloc(sizeof(b2BufferFrame));
+      newFrame->capacity = m_bufferStack->capacity;
+      newFrame->index = 0;
+      newFrame->prev = m_bufferStack;
+      newFrame->buffer = (b2TreeNode**) b2Alloc(newFrame->capacity * sizeof(b2TreeNode*));
+      m_bufferStack = newFrame;
+    }
+    
+		b2TreeNode** left = &m_bufferStack->buffer[m_bufferStack->index];
 	  b2TreeNode** right = collision;
 	  int32 leftCount = 0;
 	  int32 rightCount = 0;
@@ -389,10 +404,27 @@ b2TreeNode* b2BroadPhase::BuildAndQuery(T* callback, int32 start, int32 end, b2T
 		    }
 	    }
     }
-
+    
+		m_bufferStack->index += leftCount + group0 - start;
+    currentBufferSize += leftCount + group0 - start;
+    maxBufferSize = b2Max(currentBufferSize, maxBufferSize);
+    
 	  b2TreeNode* cur = m_treeAllocator++;
 	  cur->aabb.Combine(leftAABB, rightAABB);
 	  cur->left = BuildAndQuery(callback, start, group0, left, leftCount);
+
+    currentBufferSize -= leftCount + group0 - start;
+		m_bufferStack->index -= leftCount + group0 - start;
+    
+    if (m_bufferStack->index < 0) {
+      b2BufferFrame* prevFrame = m_bufferStack->prev;
+      
+      b2Free(m_bufferStack->buffer);
+      b2Free(m_bufferStack);
+      m_bufferStack = prevFrame;
+      m_bufferStack->index -= leftCount + group0 - start;
+    }
+    
 	  cur->right = BuildAndQuery(callback, group0, end, right, rightCount);
     cur->left->parent = cur;
     cur->right->parent = cur;
@@ -402,7 +434,6 @@ b2TreeNode* b2BroadPhase::BuildAndQuery(T* callback, int32 start, int32 end, b2T
 }
 
 inline void b2BroadPhase::RemoveAll() {
-	// TODO efficient
 	RemoveAll([](b2Fixture* fixture) { return true; });
 }
 
@@ -412,7 +443,6 @@ void b2BroadPhase::RemoveAll(UnaryPredicate predicate) {
 		b2Fixture* f = m_nodes[i].fixture;
 		
 		if (predicate(f)) {
-			// TODO efficient traversal of the map
 			Remove(f);
 		}
 	}
