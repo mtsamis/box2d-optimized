@@ -36,7 +36,8 @@ public:
   b2Benchmark() : gravity(0.0f, -10.0f) {};
   
   virtual void InitBenchmark() {};
-  virtual void InitWorld(b2World* world) = 0;
+  virtual void InitWorld(b2World* world) { InitWorld(world, defaultSize); };
+  virtual void InitWorld(b2World* world, int32 size) = 0;
   virtual void StepWorld(b2World* world) {};
 
 	b2Vec2 gravity;
@@ -44,8 +45,36 @@ public:
 	int32 velocityIterations = 8;
 	int32 positionIterations = 3;
 	int32 simulationSteps = 500;
+	int32 defaultSize = 0;
 	std::string name = "";
 };
+
+void rangedBenchmark(b2Benchmark* benchmark, int32 startSize, int32 endSize, int32 sizeInc, int32 simulationSteps) {
+  benchmark->InitBenchmark();
+    
+  for (int32 i = startSize; i <= endSize; i += sizeInc) {
+    b2World world(benchmark->gravity);
+    world.SetContinuousPhysics(false);
+
+    benchmark->InitWorld(&world, i);
+
+    using std::chrono::high_resolution_clock;
+	  int64 totalTime = 0;
+      
+	  for (int32 i = 0; i < simulationSteps; ++i) {
+		  auto start = high_resolution_clock::now();
+
+		  world.Step(benchmark->timeStep, benchmark->velocityIterations, benchmark->positionIterations);
+		  benchmark->StepWorld(&world);
+
+	    auto finish = high_resolution_clock::now();
+  	  int64 time = (finish - start).count();
+  	  totalTime += time;
+  	}
+	    
+	  std::cout << world.GetBodyCount() << ", " << (totalTime / 1000000.0f) << std::endl;
+  }
+}
 
 int main() {
   std::vector<b2Benchmark*> benchmarks;
@@ -54,9 +83,10 @@ int main() {
     virtual void InitBenchmark() override {
       name = "Falling squares";
       simulationSteps = 1300;
+      defaultSize = 300;
     }
     
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
       {
 			  b2BodyDef bd;
 			  b2Body* ground = world->CreateBody(&bd);
@@ -72,11 +102,11 @@ int main() {
         b2PolygonShape shape;
 		    shape.SetAsBox(a, a);
 			  
-			  for (int32 j = i; j < 300; ++j) {
+			  for (int32 j = i; j < size; ++j) {
 				  b2BodyDef bd;
 				  bd.type = b2_dynamicBody;
 				  bd.position.x = i * 7 - 30;
-				  bd.position.y = 300 * 2 * a - j * 2 * a;
+				  bd.position.y = 2 * a * (size - j);
 				  
 				  b2Body* body = world->CreateBody(&bd);
 			    body->CreateFixture(&shape, 5.0f);
@@ -90,9 +120,10 @@ int main() {
     virtual void InitBenchmark() override {
       name = "Falling circles";
       simulationSteps = 1300;
+      defaultSize = 300;
     }
     
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
       {
 			  b2BodyDef bd;
 			  b2Body* ground = world->CreateBody(&bd);
@@ -108,11 +139,11 @@ int main() {
         b2CircleShape shape;
 		    shape.m_radius = a / 2;
 			  
-			  for (int32 j = i; j < 300; ++j) {
+			  for (int32 j = i; j < size; ++j) {
 				  b2BodyDef bd;
 				  bd.type = b2_dynamicBody;
 				  bd.position.x = i * 7 + j * 0.25f - 100;
-				  bd.position.y = 300 * 2 * a - j * 2 * a;
+				  bd.position.y = 2 * a * (size - j);
 				  
 				  b2Body* body = world->CreateBody(&bd);
 			    body->CreateFixture(&shape, 5.0f);
@@ -123,12 +154,17 @@ int main() {
   benchmarks.insert(benchmarks.begin(), &b2);
 
   class : public b2Benchmark {
+    int32 m_count = 0;
+    int32 e_count;
+    
     virtual void InitBenchmark() override {
       name = "Tumbler";
       simulationSteps = 1500;
+      defaultSize = 1000;
     }
 
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
+      e_count = size;
       b2Body* ground = NULL;
 		  
 		  {
@@ -165,11 +201,7 @@ int main() {
 		  }
     }
     
-    int32 m_count = 0;
-    
     virtual void StepWorld(b2World* world) override {
-      const int32 e_count = 1000;
-      
       if (m_count < e_count) {
 			  b2BodyDef bd;
 			  bd.type = b2_dynamicBody;
@@ -187,13 +219,15 @@ int main() {
   benchmarks.insert(benchmarks.begin(), &b3);
 
   class : public b2Benchmark {
+    public: 
     virtual void InitBenchmark() override {
       name = "Add pair";
       simulationSteps = 1000;
+      defaultSize = 2000;
       gravity = b2Vec2(0.0f, 0.0f);
     }
     
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
 		  {
 			  b2CircleShape shape;
 			  shape.m_p.SetZero();
@@ -204,11 +238,11 @@ int main() {
 			  float minY = 4.0f;
 			  float maxY = 6.0f;
 			  
-			  for (int32 i = 0; i < 2000; ++i)
+			  for (int32 i = 0; i < size; ++i)
 			  {
 				  b2BodyDef bd;
 				  bd.type = b2_dynamicBody;
-				  bd.position = b2Vec2(minX + (maxX - minX) * i / 2000.0f, minY + (maxY - minY) * (i % 32) / 32.0f);
+				  bd.position = b2Vec2(minX + (maxX - minX) * i / (float) size, minY + (maxY - minY) * (i % 32) / 32.0f);
 				  b2Body* body = world->CreateBody(&bd);
 				  body->CreateFixture(&shape, 0.01f);
 			  }
@@ -232,9 +266,10 @@ int main() {
     virtual void InitBenchmark() override {
       name = "mild n^2";
       simulationSteps = 100;
+      defaultSize = 200;
     }
     
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
 		  {
 			  b2BodyDef bd;
 			  bd.position.Set(0.0f, 0.0f);
@@ -247,7 +282,7 @@ int main() {
 		  }
 
 		  // Table
-		  for (int32 i = 0; i < 200; ++i) {
+		  for (int32 i = 0; i < size; ++i) {
 			  b2BodyDef bd;
 			  bd.type = b2_dynamicBody;
 			  bd.position.Set(-5.0f, 1.0f);
@@ -268,7 +303,7 @@ int main() {
 		  }
 
 		  // Spaceship
-		  for (int32 i = 0; i < 200; ++i) {
+		  for (int32 i = 0; i < size; ++i) {
 			  b2BodyDef bd;
 			  bd.type = b2_dynamicBody;
 			  bd.position.Set(15.0f, 1.0f);
@@ -299,11 +334,12 @@ int main() {
     virtual void InitBenchmark() override {
       name = "n^2";
       simulationSteps = 100;
+      defaultSize = 750;
     }
     
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
 		  {
-        for (int32 j = 0; j < 750; ++j) {
+        for (int32 j = 0; j < size; ++j) {
           b2BodyDef bd;
           bd.type = b2_dynamicBody;
           bd.position = {j * 0.01f, j * 0.01f};
@@ -321,9 +357,10 @@ int main() {
     virtual void InitBenchmark() override {
       name = "Multi-fixture";
       simulationSteps = 500;
+      defaultSize = 100;
     }
     
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
 		  {
 			  b2BodyDef bd;
 			  bd.position.Set(0.0f, 0.0f);
@@ -342,7 +379,7 @@ int main() {
 		  }
 
 		  // Table
-		  for (int32 i = 0; i < 100; ++i) {
+		  for (int32 i = 0; i < size; ++i) {
 			  b2BodyDef bd;
 			  bd.type = b2_dynamicBody;
 			  bd.position.Set(-20.0f + (i % 6) * 7 + i / 10, 1.0f + (i / 6) * 5);
@@ -376,17 +413,18 @@ int main() {
     virtual void InitBenchmark() override {
       name = "Mostly static (single body)";
       simulationSteps = 400;
+      defaultSize = 200;
     }
     
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
 		  {
 			  float a = 0.5f;
 			  b2BodyDef bd;
 			  bd.position.y = -a;
 			  b2Body* ground = world->CreateBody(&bd);
 
-			  int32 N = 200;
-			  int32 M = 200;
+			  int32 N = size;
+			  int32 M = size;
 			  b2Vec2 position;
 			  position.y = 0.0f;
 			  for (int32 j = 0; j < M; ++j) {
@@ -420,14 +458,15 @@ int main() {
     virtual void InitBenchmark() override {
       name = "Mostly static (multi body)";
       simulationSteps = 500;
+      defaultSize = 200;
     }
     
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
 		  {
 			  float a = 0.5f;
 			  
-			  int32 N = 200;
-			  int32 M = 200;
+			  int32 N = size;
+			  int32 M = size;
 			  b2Vec2 position;
 			  position.y = 0.0f;
 			  for (int32 j = 0; j < M; ++j) {
@@ -465,14 +504,15 @@ int main() {
     virtual void InitBenchmark() override {
       name = "Diagonal";
       simulationSteps = 1000;
+      defaultSize = 50;
     }
     
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
 		  {
 			  float a = 0.5f;
 			  
-			  int32 N = 50;
-			  int32 M = 25;
+			  int32 N = size;
+			  int32 M = size / 2;
 			  b2Vec2 position;
 			  position.y = 0.0f;
 			  for (int32 j = 0; j < M; ++j) {
@@ -517,9 +557,10 @@ int main() {
     virtual void InitBenchmark() override {
       name = "Mixed static/dynamic";
       simulationSteps = 400;
+      defaultSize = 6000;
     }
     
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
 		  int32 N = 150;
 		  int32 M = 150;
 		  b2Vec2 cntr = {M / 2.0f, N / 2.0f};
@@ -546,11 +587,11 @@ int main() {
 		  }
 		  
 		  {
-			  for (int32 i = 0; i < 6000; ++i) {
+			  for (int32 i = 0; i < size; ++i) {
           b2BodyDef bd;
 			    bd.type = b2_dynamicBody;
 			    b2Vec2 pos;
-			    float s = i / 6000.0f;
+			    float s = i / (float) size;
 			    pos.x = cosf(s * 30.0f) * (s * 50 + 10);
 			    pos.y = sinf(s * 30.0f) * (s * 50 + 10);
 				  bd.position = pos + cntr;
@@ -566,12 +607,16 @@ int main() {
   benchmarks.insert(benchmarks.begin(), &b11);
 
   class : public b2Benchmark {
+    int32 maxDepth;
+    
     virtual void InitBenchmark() override {
       name = "Big mobile";
       simulationSteps = 1000;
+      defaultSize = 11;
     }
 
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
+      maxDepth = size;
       b2Body* ground;
 
 		  // Create ground body.
@@ -596,7 +641,6 @@ int main() {
 
 	  b2Body* AddNode(b2World* world, b2Body* parent, const b2Vec2& localAnchor, int32 depth, float offset, float a) {
 		  const float density = 20.0f;
-		  const int32 maxDepth = 11;
 
 		  b2Vec2 h(0.0f, a);
 
@@ -644,17 +688,18 @@ int main() {
     virtual void InitBenchmark() override {
       name = "Slow explosion";
       simulationSteps = 1000;
+      defaultSize = 6000;
     }
     
-    virtual void InitWorld(b2World* world) override {
+    virtual void InitWorld(b2World* world, int32 size) override {
 		  world->SetGravity(b2Vec2(0.0f,0.0f));
 		  
 		  {
-			  for (int32 i = 0; i < 6000; ++i) {
+			  for (int32 i = 0; i < size; ++i) {
           b2BodyDef bd;
 			    bd.type = b2_dynamicBody;
 			    b2Vec2 pos;
-			    float s = i / 600.0f;
+			    float s = i * 10 / (float) size;
 			    pos.x = cosf(s * 30.0f) * (s * 30 + 5);
 			    pos.y = sinf(s * 30.0f) * (s * 30 + 5);
 				  bd.position = pos;
