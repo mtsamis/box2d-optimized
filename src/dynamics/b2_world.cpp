@@ -930,6 +930,8 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 			bB->m_sweep = backup2;
 			bA->SynchronizeTransform();
 			bB->SynchronizeTransform();
+			heap.Update(minContact);
+			
 			continue;
 		}
 
@@ -1092,6 +1094,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 	}
 	
 	RemoveDeadContacts();
+	m_contactManager.RemoveDeadContacts();
 }
 
 void b2World::Step(float dt, int32 velocityIterations, int32 positionIterations, int32 particleIterations)

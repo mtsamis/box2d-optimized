@@ -42,6 +42,8 @@ public:
 
 	void FindNewContacts();
 
+	void RemoveDeadContacts();
+
 	void Destroy(b2Contact* c);
 
 	void Collide();

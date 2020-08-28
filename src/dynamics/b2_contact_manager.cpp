@@ -114,10 +114,12 @@ void b2ContactManager::Collide() {
 }
 
 void b2ContactManager::FindNewContacts() {
-	// TODO move update to world?
 	m_broadPhase.UpdateAndQuery(this);
+  RemoveDeadContacts();	
+}
 
-	b2Contact* c = m_contactList;
+void b2ContactManager::RemoveDeadContacts() {
+  b2Contact* c = m_contactList;
 	while (c) {
 		b2Contact* cNuke = c;
 		c = c->GetNext();

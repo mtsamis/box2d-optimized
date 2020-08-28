@@ -213,7 +213,7 @@ float b2Contact::CalculateTOI() {
 	b2Fixture* fB = GetFixtureB();
 
 	// Is there a sensor?
-	if (fA->IsSensor() || fB->IsSensor()) {
+	if (fA->IsSensor() || fB->IsSensor() || IsEnabled() == false) {
 		return 1.0f;
 	}
 
