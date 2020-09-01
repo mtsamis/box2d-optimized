@@ -29,11 +29,20 @@
 b2ContactFilter b2_defaultFilter;
 
 b2ContactManager::b2ContactManager() {
-	m_contactList = nullptr;
 	m_contactCount = 0;
 	m_contactFilter = &b2_defaultFilter;
 	m_contactListener = nullptr;
 	m_allocator = nullptr;
+	
+	m_contactList = (b2Contact*) b2Alloc(1 * sizeof(b2Contact));
+  m_contactList->m_next = m_contactList;
+  m_contactList->m_prev = m_contactList;
+  m_contactList->m_fixtureA = nullptr;
+  m_contactList->m_fixtureB = nullptr;
+}
+
+b2ContactManager::~b2ContactManager() {
+  b2Free(m_contactList);
 }
 
 void b2ContactManager::Destroy(b2Contact* c) {
@@ -41,18 +50,11 @@ void b2ContactManager::Destroy(b2Contact* c) {
 		m_contactListener->EndContact(c);
 	}
 
+  b2Assert(c != m_contactList);
+
 	// Remove from the world.
-	if (c->m_prev) {
-		c->m_prev->m_next = c->m_next;
-	}
-
-	if (c->m_next) {
-		c->m_next->m_prev = c->m_prev;
-	}
-
-	if (c == m_contactList) {
-		m_contactList = c->m_next;
-	}
+	c->m_prev->m_next = c->m_next;
+	c->m_next->m_prev = c->m_prev;
 
 	b2Contact::Destroy(c, m_allocator);
 	--m_contactCount;
@@ -63,8 +65,8 @@ void b2ContactManager::Destroy(b2Contact* c) {
 // contact list.
 void b2ContactManager::Collide() {
 	// Update awake contacts.
-	b2Contact* c = m_contactList;
-	while (c) {
+	b2Contact* c = start();
+	while (c != end()) {
 		b2Fixture* fixtureA = c->GetFixtureA();
 		b2Fixture* fixtureB = c->GetFixtureB();
 		b2Body* bodyA = fixtureA->GetBody();
@@ -119,8 +121,9 @@ void b2ContactManager::FindNewContacts() {
 }
 
 void b2ContactManager::RemoveDeadContacts() {
-  b2Contact* c = m_contactList;
-	while (c) {
+  b2Contact* c = start();
+
+	while (c != end()) {
 		b2Contact* cNuke = c;
 		c = c->GetNext();
 
@@ -171,12 +174,10 @@ b2Contact* b2ContactManager::QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtu
 	}
 
 	// Insert into the world.
-	c->m_prev = nullptr;
-	c->m_next = m_contactList;
-	if (m_contactList != nullptr) {
-		m_contactList->m_prev = c;
-	}
-	m_contactList = c;
+	c->m_prev = m_contactList;
+	c->m_next = m_contactList->m_next;
+	m_contactList->m_next->m_prev = c;
+	m_contactList->m_next = c;
 
 	bodyA->AddContact(c);
 	bodyB->AddContact(c);

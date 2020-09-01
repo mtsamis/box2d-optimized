@@ -25,8 +25,8 @@
 
 #include "b2_broad_phase.h"
 #include "b2_fixture.h"
+#include "b2_contact.h"
 
-class b2Contact;
 class b2ContactFilter;
 class b2ContactListener;
 class b2BlockAllocator;
@@ -36,18 +36,19 @@ class b2ContactManager
 {
 public:
 	b2ContactManager();
+	~b2ContactManager();
 
 	// Broad-phase callback.
 	b2Contact* QueryCallback(b2Fixture* fixtureA, b2Fixture* fixtureB);
 
 	void FindNewContacts();
-
 	void RemoveDeadContacts();
-
 	void Destroy(b2Contact* c);
-
 	void Collide();
-            
+
+	b2Contact* start();
+	b2Contact* end();
+
 	b2BroadPhase m_broadPhase;
 	b2Contact* m_contactList;
 	int32 m_contactCount;
@@ -55,5 +56,13 @@ public:
 	b2ContactListener* m_contactListener;
 	b2BlockAllocator* m_allocator;
 };
+
+inline b2Contact* b2ContactManager::start() {
+  return m_contactList->m_next;
+}
+
+inline b2Contact* b2ContactManager::end() {
+  return m_contactList;
+}
 
 #endif

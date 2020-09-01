@@ -861,7 +861,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 			b->m_sweep.alpha0 = 0.0f;
 		}
 
-		for (b2Contact* c = m_contactManager.m_contactList; c; c = c->m_next) {
+  	for (b2Contact* c = m_contactManager.start(); c != m_contactManager.end(); c = c->GetNext()) {
 			// Invalidate TOI
 			c->m_flags &= ~b2Contact::e_islandFlag;
 			c->m_toiIndex = -1;
@@ -871,7 +871,7 @@ void b2World::SolveTOI(const b2TimeStep& step) {
 	b2TOIMinHeap heap(m_contactManager.m_contactCount * 3 / 2);
 	int32 i = 0;
 
-	for (b2Contact* c = m_contactManager.m_contactList; c; c = c->m_next) {
+	for (b2Contact* c = m_contactManager.start(); c != m_contactManager.end(); c = c->GetNext()) {
     if (c->IsEnabled()) {
 		  float toi = c->CalculateTOI();
 
@@ -1375,8 +1375,7 @@ void b2World::DebugDraw()
 	if (flags & b2Draw::e_pairBit)
 	{
 		b2Color color(0.3f, 0.9f, 0.9f);
-		for (b2Contact* c = m_contactManager.m_contactList; c; c = c->GetNext())
-		{
+  	for (b2Contact* c = m_contactManager.start(); c != m_contactManager.end(); c = c->GetNext()) {
 			b2Fixture* fixtureA = c->GetFixtureA();
 			b2Fixture* fixtureB = c->GetFixtureB();
 			b2Vec2 cA = fixtureA->GetAABB().GetCenter();
