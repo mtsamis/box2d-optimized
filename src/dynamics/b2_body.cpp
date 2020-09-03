@@ -497,11 +497,10 @@ void b2Body::SetTransform(const b2Vec2& position, float angle)
 	m_sweep.c0 = m_sweep.c;
 	m_sweep.a0 = angle;
 
-	/*b2BroadPhase* broadPhase = &m_world->m_contactManager.m_broadPhase;
-	for (b2Fixture* f = m_fixtureList; f; f = f->m_next)
-	{
-		f->Synchronize(broadPhase, m_xf, m_xf);
-	}*/
+  UpdateAABBs();
+  
+	// Check for new contacts the next step
+	m_world->m_newContacts = true;
 }
 
 void b2Body::UpdateAABBs() {
