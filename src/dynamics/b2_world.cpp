@@ -1256,7 +1256,7 @@ void b2World::DrawShape(b2Fixture* fixture, const b2Transform& xf, const b2Color
 			b2Vec2 v2 = b2Mul(xf, edge->m_vertex2);
 			m_debugDraw->DrawSegment(v1, v2, color);
 
-			if (edge->m_hasVertex0 || edge->m_hasVertex3) {
+			if (edge->m_oneSided == false) {
 				m_debugDraw->DrawPoint(v1, 4.0f, color);
 				m_debugDraw->DrawPoint(v2, 4.0f, color);
 			}
