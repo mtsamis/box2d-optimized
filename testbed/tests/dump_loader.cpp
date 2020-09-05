@@ -29,19 +29,13 @@ public:
 
 	DumpLoader()
 	{
-		b2ChainShape chainShape;
-		b2Vec2 vertices[] = {b2Vec2(-5,0), b2Vec2(5,0), b2Vec2(5,5), b2Vec2(4,1), b2Vec2(-4,1), b2Vec2(-5,5)};
-		chainShape.CreateLoop(vertices, 6);
-
-		b2FixtureDef groundFixtureDef;
-		groundFixtureDef.density = 0;
-		groundFixtureDef.shape = &chainShape;
-
 		b2BodyDef groundBodyDef;
 		groundBodyDef.type = b2_staticBody;
 
 		b2Body *groundBody = m_world->CreateBody(&groundBodyDef);
-		b2Fixture *groundBodyFixture = groundBody->CreateFixture(&groundFixtureDef);
+		
+		b2Vec2 vertices[] = {b2Vec2(-5,0), b2Vec2(5,0), b2Vec2(5,5), b2Vec2(4,1), b2Vec2(-4,1), b2Vec2(-5,5)};
+		b2CreateLoop(groundBody, vertices, 6);
 
 		b2CircleShape ballShape;
 		ballShape.m_radius = 1;

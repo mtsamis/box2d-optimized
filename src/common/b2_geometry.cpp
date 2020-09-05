@@ -3,7 +3,7 @@
 #include "box2d/b2_geometry.h"
 #include "box2d/b2_edge_shape.h"
 
-void CreateLinks(b2Body* b, b2FixtureDef* fd, const b2Vec2* vertices, int32 count, bool closed) {
+void CreateLinks(b2Body* b, b2FixtureDef* fd, const b2Vec2* vertices, int32 count, bool closed, const b2Vec2 prevVertex, const b2Vec2 nextVertex) {
 	b2Assert(closed? count >= 3 : count >= 2);
 
 	const b2Shape* oldShape = fd->shape;
@@ -12,36 +12,19 @@ void CreateLinks(b2Body* b, b2FixtureDef* fd, const b2Vec2* vertices, int32 coun
 		// If the code crashes here, it means your vertices are too close together.
 		b2Assert(b2DistanceSquared(vertices[i - 1], vertices[i]) > b2_linearSlop * b2_linearSlop);
 		
+		b2Vec2 v0 = (i > 1)? vertices[i - 2] : prevVertex;
+		b2Vec2 v3 = (i < count - 1)? vertices[i + 1] : nextVertex;
+
 		b2EdgeShape shape;
-		shape.Set(vertices[i - 1], vertices[i]);
+		shape.SetOneSided(v0, vertices[i - 1], vertices[i], v3);
 		
-		if (i > 1) {
-			shape.m_hasVertex0 = true;
-			shape.m_vertex0 = vertices[i - 2];
-		} else if (closed) {
-			shape.m_hasVertex0 = true;
-			shape.m_vertex0 = vertices[count - 1];
-		}
-
-		if (i < count - 1) {
-			shape.m_hasVertex3 = true;
-			shape.m_vertex3 = vertices[i + 1];
-		} else if (closed) {
-			shape.m_hasVertex3 = true;
-			shape.m_vertex3 = vertices[0];
-		}
-
 		fd->shape = &shape;
 		b->CreateFixture(fd);
 	}
 	
 	if (closed) {
 		b2EdgeShape shape;
-		shape.Set(vertices[count - 1], vertices[0]);
-		shape.m_hasVertex0 = true;
-		shape.m_vertex0 = vertices[count - 2];
-		shape.m_hasVertex3 = true;
-		shape.m_vertex3 = vertices[1];
+		shape.SetOneSided(vertices[count - 2], vertices[count - 1], vertices[0], vertices[1]);
 
 		fd->shape = &shape;
 		b->CreateFixture(fd);
@@ -51,19 +34,19 @@ void CreateLinks(b2Body* b, b2FixtureDef* fd, const b2Vec2* vertices, int32 coun
 }
 
 void b2CreateLoop(b2Body* b, b2FixtureDef* fd, const b2Vec2* vertices, int32 count) {
-	CreateLinks(b, fd, vertices, count, true);
+	CreateLinks(b, fd, vertices, count, true, vertices[count - 1], vertices[0]);
 }
 
-void b2CreateChain(b2Body* b, b2FixtureDef* fd, const b2Vec2* vertices, int32 count) {
-	CreateLinks(b, fd, vertices, count, false);
+void b2CreateChain(b2Body* b, b2FixtureDef* fd, const b2Vec2* vertices, int32 count, const b2Vec2& prevVertex, const b2Vec2& nextVertex) {
+	CreateLinks(b, fd, vertices, count, false, prevVertex, nextVertex);
 }
 
 void b2CreateLoop(b2Body* b, const b2Vec2* vertices, int32 count) {
 	b2FixtureDef fd;
-	CreateLinks(b, &fd, vertices, count, true);
+	CreateLinks(b, &fd, vertices, count, true, vertices[count - 1], vertices[0]);
 }
 
-void b2CreateChain(b2Body* b, const b2Vec2* vertices, int32 count) {
+void b2CreateChain(b2Body* b, const b2Vec2* vertices, int32 count, const b2Vec2& prevVertex, const b2Vec2& nextVertex) {
 	b2FixtureDef fd;
-	CreateLinks(b, &fd, vertices, count, false);
+	CreateLinks(b, &fd, vertices, count, false, prevVertex, nextVertex);
 }

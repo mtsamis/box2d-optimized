@@ -68,7 +68,7 @@ public:
 			vs[1].Set(6.0f, 8.0f);
 			vs[2].Set(7.0f, 8.0f);
 			vs[3].Set(8.0f, 7.0f);
-			b2CreateChain(ground, vs, 4);
+			b2CreateLoop(ground, vs, 4);
 		}
 
 		// Square tiles. This shows that adjacency shapes may

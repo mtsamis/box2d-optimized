@@ -50,14 +50,12 @@ public:
 			b2Vec2 v4(v3.x + SlopeLength * cosf(Slope2Incline), v3.y - SlopeLength * sinf(Slope2Incline));
 			b2Vec2 v5(v4.x, v4.y - 1.0f);
 
-			b2Vec2 vertices[5] = { v5, v4, v3, v2, v1 };
-
-			b2ChainShape shape;
-			shape.CreateLoop(vertices, 5);
 			b2FixtureDef fd;
-			fd.shape = &shape;
 			fd.density = 0.0f;
 			fd.friction = SurfaceFriction;
+
+			b2Vec2 vertices[5] = { v5, v4, v3, v2, v1 };
+			b2CreateLoop(ground, &fd, vertices, 5);
 
 			ground->CreateFixture(&fd);
 		}
