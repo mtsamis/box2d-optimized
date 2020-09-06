@@ -389,12 +389,6 @@ b2ParticleSystem::b2ParticleSystem(const b2ParticleSystemDef* def,
 	m_hasForce = false;
 	m_iterationIndex = 0;
 
-	SetStrictContactCheck(def->strictContactCheck);
-	SetDensity(def->density);
-	SetGravityScale(def->gravityScale);
-	SetRadius(def->radius);
-	SetMaxParticleCount(def->maxCount);
-
 	m_count = 0;
 	m_internalAllocatedCapacity = 0;
 	m_forceBuffer = NULL;
@@ -404,6 +398,12 @@ b2ParticleSystem::b2ParticleSystem(const b2ParticleSystemDef* def,
 	m_accumulation2Buffer = NULL;
 	m_depthBuffer = NULL;
 	m_groupBuffer = NULL;
+
+	SetStrictContactCheck(def->strictContactCheck);
+	SetDensity(def->density);
+	SetGravityScale(def->gravityScale);
+	SetRadius(def->radius);
+	SetMaxParticleCount(def->maxCount);
 
 	m_groupCount = 0;
 	m_groupList = NULL;

@@ -59,7 +59,8 @@ Test::Test()
 	m_world->SetContactListener(this);
 	m_world->SetDebugDraw(&g_debugDraw);
 	
-	m_bombSpawning = false;
+	m_mouseTracing = false;
+  m_bombSpawning = false;
 
 	m_stepCount = 0;
 
