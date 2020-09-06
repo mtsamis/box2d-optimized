@@ -33,7 +33,6 @@ set(BOX2D_SOURCE_FILES
 	dynamics/b2_prismatic_joint.cpp
 	dynamics/b2_pulley_joint.cpp
 	dynamics/b2_revolute_joint.cpp
-	dynamics/b2_rope_joint.cpp
 	dynamics/b2_weld_joint.cpp
 	dynamics/b2_wheel_joint.cpp
 	dynamics/b2_world.cpp
@@ -73,7 +72,6 @@ set(BOX2D_HEADER_FILES
 	../include/box2d/b2_pulley_joint.h
 	../include/box2d/b2_revolute_joint.h
 	../include/box2d/b2_rope.h
-	../include/box2d/b2_rope_joint.h
 	../include/box2d/b2_settings.h
 	../include/box2d/b2_geometry.h
 	../include/box2d/b2_shape.h

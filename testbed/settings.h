@@ -39,7 +39,7 @@ struct Settings
 		m_positionIterations = 3;
 		m_particleIterations = 3;
 		m_drawShapes = true;
-		m_drawJoints = false;
+		m_drawJoints = true;
 		m_drawParticles = true;
 		m_drawAABBs = false;
 		m_drawContactPoints = false;
