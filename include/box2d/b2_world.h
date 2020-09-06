@@ -290,6 +290,7 @@ private:
 	float m_inv_dt0;
 
 	bool m_newContacts;
+	bool m_removedBodies;
 	bool m_locked;
 	bool m_clearForces;
 

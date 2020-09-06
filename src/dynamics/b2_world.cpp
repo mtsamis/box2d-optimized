@@ -61,6 +61,7 @@ b2World::b2World(const b2Vec2& gravity)
 	m_allowSleep = true;
 	m_gravity = gravity;
 
+  m_removedBodies = false;
 	m_newContacts = false;
 	m_locked = false;
 	m_clearForces = true;
@@ -183,6 +184,8 @@ void b2World::DestroyBody(b2Body* b)
 		return;
 	}
 
+  m_removedBodies = true;
+
 	// Delete the attached joints.
 	b2JointEdge* je = b->m_jointList;
 	while (je)
@@ -203,7 +206,9 @@ void b2World::DestroyBody(b2Body* b)
 
 	// Delete the attached contacts.
 	for (int32 i = 0; i < b->GetContactCount(); ++i) {
-		m_contactManager.Destroy(b->GetContact(i));
+		b2Contact* c = b->GetContact(i);
+		c->m_flags &= ~b2Contact::e_persistFlag;
+		m_contactManager.Destroy(c);
 	}
 	
 	b2Free(b->m_contactList);
@@ -523,9 +528,12 @@ void b2World::Solve(const b2TimeStep& step)
 			continue;
 		}
 
+    if (seed->IsEnabled() == false) {
+      continue;
+    }
 
 #ifdef ENABLE_SLEEPING
-		if (seed->IsAwake() == false || seed->IsEnabled() == false) {
+		if (seed->IsAwake() == false) {
 			continue;
 		}
 #endif // ENABLE_SLEEPING
@@ -1105,9 +1113,13 @@ void b2World::Step(float dt, int32 velocityIterations, int32 positionIterations,
 	// If new fixtures were added, we need to find the new contacts.
 	if (m_newContacts) {
 		m_contactManager.FindNewContacts();
-		RemoveDeadContacts();
-		m_newContacts = false;
 	}
+
+  if (m_newContacts || m_removedBodies) {
+    RemoveDeadContacts();
+		m_newContacts = false;
+    m_removedBodies = false;
+  }
 
 	b2TimeStep step;
 	step.dt = dt;
