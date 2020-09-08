@@ -1,15 +1,26 @@
-![Box2D Logo](https://box2d.org/images/logo.svg)
+# Box2D-optimized 
 
-# Build Status
-[![Build Status](https://travis-ci.org/erincatto/box2d.svg?branch=master)](https://travis-ci.org/erincatto/box2d)
+*This project is currently in alpha, work in progress*
 
-# Box2D 
+[Box2D](https://github.com/erincatto/box2d) is a 2D physics engine for games, developed and maintained by Erin Catto.
+Box2D-optimized is a Box2D fork that aims to offer much improved perfromance and scalability, while maintining a similar API and feature set.
+This library merges commits from upstream Box2D regularly in order to be up to date.
 
-Box2D is a 2D physics engine for games.
+There are a lot of under-the-hood changes in order to achieve this stated speedup, which are described in this document: *TBA*
+A collection of various benchmarks and graphs showcasing the performance improvement can be found in the [box2d-benchmarks](https://github.com/mtsamis/box2d-benchmarks) repository.
 
 ## Contributing
 
-Please do not submit pull requests with new features or core library changes. Instead, please file an issue first for discussion. For bugs, I prefer detailed bug reports over pull requests.
+Feel free to open issues for bugs and discussions or make pull requests.
+
+## License
+
+Box2D is developed by Erin Catto, and uses the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
+Box2D-optimized is developed by Manolis Tsamis and also uses the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
+
+# Box2D
+
+The rest of the Box2D README is copied here for convinience
 
 ## Features
 
@@ -107,9 +118,6 @@ cmake --build . --target INSTALL
 - [Manual](https://box2d.org/documentation/)
 - [reddit](https://www.reddit.com/r/box2d/)
 - [Discord](https://discord.gg/NKYgCBP)
-
-## License
-Box2D is developed by Erin Catto, and uses the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
 
 ## Sponsorship
 Support development of Box2D through [Github Sponsors](https://github.com/sponsors/erincatto)
