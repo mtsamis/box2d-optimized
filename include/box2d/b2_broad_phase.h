@@ -301,7 +301,7 @@ void b2BroadPhase::UpdateAndQuery(T* callback) {
   m_treeAllocator = m_nodes + m_capacity + staticGroup;
 	m_rootDynamic = BuildAndQuery(callback, staticGroup, m_count, temp, 0);
 
-  while (m_bufferStack->prev != nullptr) {
+  while (m_bufferStack != nullptr) {
     // A consistency guarantee that the stack was used correctly.
     b2Assert(m_bufferStack->index <= 0);
 
