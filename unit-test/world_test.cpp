@@ -61,13 +61,13 @@ DOCTEST_TEST_CASE("begin contact")
 
 	world.Step(timeStep, velocityIterations, positionIterations);
 
-	CHECK(world.GetContactList() == nullptr);
+	CHECK(world.GetContactListStart() == world.GetContactListEnd());
 	CHECK(begin_contact == false);
 	
 	bodyB->SetTransform(b2Vec2(1.f, 0.f), 0.f);
 
 	world.Step(timeStep, velocityIterations, positionIterations);
 
-	CHECK(world.GetContactList() != nullptr);
+	CHECK(world.GetContactListStart() != world.GetContactListEnd());
 	CHECK(begin_contact == true);
 }

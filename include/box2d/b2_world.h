@@ -179,12 +179,16 @@ public:
 	const b2Joint* GetJointList() const;
 
 	/// Get the world contact list. With the returned contact, use b2Contact::GetNext to get
-	/// the next contact in the world list. A nullptr contact indicates the end of the list.
+	/// the next contact in the world list. A special marker contact, returned by GetContactListEnd, indicates the end of the list.
 	/// @return the head of the world contact list.
 	/// @warning contacts are created and destroyed in the middle of a time step.
 	/// Use b2ContactListener to avoid missing contacts.
-	b2Contact* GetContactList();
-	const b2Contact* GetContactList() const;
+	b2Contact* GetContactListStart();
+	const b2Contact* GetContactListStart() const;
+
+  /// @return a special marker contact that marks the end of iteration for the contact list.
+	b2Contact* GetContactListEnd();
+	const b2Contact* GetContactListEnd() const;
 
 	/// Enable/disable sleep.
 	void SetAllowSleeping(bool flag);
@@ -324,14 +328,20 @@ inline const b2Joint* b2World::GetJointList() const
 	return m_jointList;
 }
 
-inline b2Contact* b2World::GetContactList()
-{
-	return m_contactManager.m_contactList;
+inline b2Contact* b2World::GetContactListStart() {
+	return m_contactManager.Start();
 }
 
-inline const b2Contact* b2World::GetContactList() const
-{
-	return m_contactManager.m_contactList;
+inline const b2Contact* b2World::GetContactListStart() const {
+	return m_contactManager.Start();
+}
+
+inline b2Contact* b2World::GetContactListEnd() {
+	return m_contactManager.End();
+}
+
+inline const b2Contact* b2World::GetContactListEnd() const {
+	return m_contactManager.End();
 }
 
 #ifdef ENABLE_LIQUID

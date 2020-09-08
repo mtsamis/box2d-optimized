@@ -65,8 +65,8 @@ void b2ContactManager::Destroy(b2Contact* c) {
 // contact list.
 void b2ContactManager::Collide() {
 	// Update awake contacts.
-	b2Contact* c = start();
-	while (c != end()) {
+	b2Contact* c = Start();
+	while (c != End()) {
 		b2Fixture* fixtureA = c->GetFixtureA();
 		b2Fixture* fixtureB = c->GetFixtureB();
 		b2Body* bodyA = fixtureA->GetBody();
@@ -121,9 +121,9 @@ void b2ContactManager::FindNewContacts() {
 }
 
 void b2ContactManager::RemoveDeadContacts() {
-  b2Contact* c = start();
+  b2Contact* c = Start();
 
-	while (c != end()) {
+	while (c != End()) {
 		b2Contact* cNuke = c;
 		c = c->GetNext();
 
