@@ -4,5 +4,5 @@
 rm -rf build
 mkdir build
 cd build
-cmake -DBOX2D_BUILD_DOCS=OFF ..
-cmake --build .
+cmake -G'Unix Makefiles' -DCMAKE_BUILD_TYPE=Release -DBOX2D_BUILD_DOCS=OFF ..
+make -j
