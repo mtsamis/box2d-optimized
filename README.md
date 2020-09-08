@@ -3,10 +3,12 @@
 *This project is currently in alpha, work in progress*
 
 [Box2D](https://github.com/erincatto/box2d) is a 2D physics engine for games, developed and maintained by Erin Catto.
-Box2D-optimized is a Box2D fork that aims to offer much improved perfromance and scalability, while maintining a similar API and feature set.
+
+*Box2D-optimized* is a Box2D fork that aims to offer much improved perfromance and scalability, while maintining a similar API and feature set.
 This library merges commits from upstream Box2D regularly in order to be up to date.
 
-There are a lot of under-the-hood changes in order to achieve this stated speedup, which are described in this document: *TBA*
+There are a lot of under-the-hood changes in order to achieve this stated speedup, which are described in my document for optimizing Box2D: *TBA*
+
 A collection of various benchmarks and graphs showcasing the performance improvement can be found in the [box2d-benchmarks](https://github.com/mtsamis/box2d-benchmarks) repository.
 
 ## Contributing
@@ -16,6 +18,7 @@ Feel free to open issues for bugs and discussions or make pull requests.
 ## License
 
 Box2D is developed by Erin Catto, and uses the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
+
 Box2D-optimized is developed by Manolis Tsamis and also uses the [MIT license](https://en.wikipedia.org/wiki/MIT_License).
 
 # Box2D
