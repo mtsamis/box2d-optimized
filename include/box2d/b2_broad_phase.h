@@ -27,6 +27,8 @@
 #include "b2_fixture.h"
 #include "b2_growable_stack.h"
 
+/// A node in the BVH tree used in the broad-phase. Used both for internal and leaf nodes
+/// For internal use.
 struct b2TreeNode {
 	b2TreeNode* left;
 	b2TreeNode* right;
@@ -39,6 +41,8 @@ struct b2TreeNode {
 	}
 };
 
+/// A single node in the fixture hash-table
+/// For internal use.
 struct b2MapNode {
 	uint32 key;
 	int32 value;
@@ -46,12 +50,13 @@ struct b2MapNode {
 	b2MapNode* next;
 };
 
+/// A customized hash-table implementation to match fixtures to tree nodes.
+/// For internal use.
 class b2IntHashTable {
 protected:
 	friend class b2BroadPhase;
 
 	b2IntHashTable(int32 initialCapacity);
-	
 	~b2IntHashTable();
 	
 	void Grow();
@@ -61,6 +66,8 @@ protected:
 	int32 m_mapCapacity;
 };
 
+/// A stack of allocated frames used for efficient dynamic memory handling
+/// in the collision detection procedure. For internal use.
 struct b2BufferFrame {
   int32 index;
   int32 capacity;
@@ -68,6 +75,10 @@ struct b2BufferFrame {
   b2BufferFrame* prev;
 };
 
+/// A broad-phase detector built on top of a bounding volume hierarchy tree.
+/// This broad-phase is optimized for batch operations and global collision detection.
+/// For maximal performance structural modifications (insert, dekete, update) should be
+/// groupped together in batches.
 class b2BroadPhase {
 public:
 	b2BroadPhase() : b2BroadPhase(32) {}
@@ -78,20 +89,39 @@ public:
 	/// Destroy the tree, freeing the node pool.
 	~b2BroadPhase();
 
+  /// Add a new fixture to this broad-phase.
+  /// Obtains an AABB for this fixture by calling b2Fixture::GetAABB
+	/// and copies it into the tree node.
 	bool Add(b2Fixture* fixture);
 
+  /// Update the AABB stored in the tree for this specific fixture.
+  /// @warning This will trigger a full rebuild of the tree in the next query operation.
 	bool Update(b2Fixture* fixture);
+	
+  /// Update the AABB stored in the tree for this specific fixture without invalidating the tree.
+  /// Calls b2Fixture::UpdateAABB for this fixture.
+  /// @warning subsequent calls to this function decrease the tree quality with no bound.
 	bool UpdateNoRebuild(b2Fixture* fixture);
 
+  /// Remove a fixture and it's AABB from this broad-phase
+  /// @warning This will trigger a full rebuild of the tree in the next query operation.
+	// TODO removes need not invalidate the tree.
 	bool Remove(b2Fixture* fixture);
 
+  /// Batch update operation; Calls b2Fixture::UpdateAABB for all fixtures in the tree
+  /// and updates all internal stored AABBs.
 	void UpdateAll();
 	
+  /// Batch update operation with a predicate.
+  /// Updates all nodes for which the predicate(b2Fixture* f) is true.
 	template <typename UnaryPredicate>
 	void UpdateAll(UnaryPredicate predicate);
 	
+  /// Removes all fixtures from this tree.
 	void RemoveAll();
 	
+	/// Batch remove operation with a predicate.
+  /// Removes all nodes for which the predicate(b2Fixture* f) is true.
 	template <typename UnaryPredicate>
 	void RemoveAll(UnaryPredicate predicate);
 	
@@ -106,6 +136,8 @@ public:
 	template <typename T, typename UnaryPredicate>
 	void QueryAll(T* callback, UnaryPredicate predicate);
 	
+	/// Update all fixture aabbs, rebuilt the tree and perform global collision detection, all at once.
+	/// This is the main batch operation used in each simulation step.
 	template <typename T>
 	void UpdateAndQuery(T* callback);
 
@@ -119,12 +151,12 @@ public:
 	template <typename T>
 	void RayCast(T* callback, const b2RayCastInput& input);
 	
-	/// Get the height of the embedded tree.
+	/// @return The height of the BVH tree.
+	//// @warning The height is not cached and is computed in each call again.
 	int32 GetTreeHeight() const;
-
+  
+  /// @return The number of fixtures in this broad-phase.
 	int32 GetCount() const;
-
-  void InvalidateStaticBodies();
 
 	/// Shift the world origin. Useful for large worlds.
 	/// The shift formula is: position -= newOrigin
@@ -132,40 +164,69 @@ public:
 	void ShiftOrigin(const b2Vec2& newOrigin);
 
 private:
-  void EnsureBuiltTree();
+  friend class b2Body;
+
+  /// Invalidates the static fixture tree.
+  void InvalidateStaticBodies();
+	
+	/// Recursive function to compute the height of a subtree
 	int32 ComputeHeight(b2TreeNode* node) const;
+	
+	/// Returns let center be the AABB's center, returns 2 * center;
 	b2Vec2 GetCenter2(const b2AABB& aabb);
 
+  /// Builds the BVH tree from scratch if the tree is invalid (m_needsRebuild == true)
+  void EnsureBuiltTree();
+  
+  /// Builds the BVH from scratch.
 	void Build();
+  
+  /// Internal recursive function to build the tree with the nodes [start, end) in the links array.
   b2TreeNode* Build(int32 start, int32 end);
 
+  /// Internal recursive function to build the tree with the nodes [start, end) in the links array
+  /// and at the same time perform collision detection with the nodes found in the collision array and the tree itself.
+  /// This is used to implement b2BroadPhase::UpdateAndQuery
 	template <typename T>
 	b2TreeNode* BuildAndQuery(T* callback, int32 start, int32 end, b2TreeNode** collision, int32 ccount);
 
+  /// Internal recursive function to query a AABB against a subtree. Used for b2BroadPhase::QueryAABB
 	template <typename T>
 	void QueryAABB(T* callback, const b2AABB& aabb, b2TreeNode* root) const;
 
+  /// Internal recursive function to query an array of AABBs against a subtree. Used for b2BroadPhase::QueryAll
   template <typename T>
   void QueryAll(T* callback, const b2TreeNode* root, b2TreeNode** collision, int ccount) const;
 
-	b2TreeNode** m_links;
+  /// The array of b2TreeNodes for this broad-phase
 	b2TreeNode* m_nodes;
+	
+  /// The array of pointers to the nodes used build the tree 
+	b2TreeNode** m_links;
 	b2TreeNode* m_treeAllocator;
 
+	/// The root of the tree
 	b2TreeNode* m_root;
+	/// An auxilary tree node used to merge the static and non-static body subtrees if needed.
 	b2TreeNode m_treeMergeNode;
 
+  /// The root of the subtree with non-static bodies, in it exists
 	b2TreeNode* m_rootDynamic;
+  /// The root of the subtree with static bodies, in it exists
 	b2TreeNode* m_rootStatic;
 
+  /// The buffer stack used for temporarily storing nodes in BuildAndQuery
   b2BufferFrame* m_bufferStack;
   int32 currentBufferSize;
   int32 maxBufferSize;
 
+  /// The hash-table used to map fixtures and nodes
 	b2IntHashTable m_map;
 
 	int32 m_capacity;
 	int32 m_count;
+	
+	/// Marks if the tree is invalid and needs to be rebuilt
 	bool m_needsRebuild;
 };
 
@@ -185,8 +246,7 @@ inline int32 b2BroadPhase::GetCount() const {
 }
 
 inline b2Vec2 b2BroadPhase::GetCenter2(const b2AABB& aabb) {
-	b2Vec2 ret(aabb.lowerBound.x + aabb.upperBound.x, aabb.lowerBound.y + aabb.upperBound.y);
-	return ret;
+	return b2Vec2{aabb.lowerBound.x + aabb.upperBound.x, aabb.lowerBound.y + aabb.upperBound.y};
 }
 
 template <typename T>
