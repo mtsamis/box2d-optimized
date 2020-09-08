@@ -284,11 +284,13 @@ void b2BroadPhase::UpdateAndQuery(T* callback) {
   }
   
   if (maxBufferSize == -1) {
+    // An initial guess that works ok.
     maxBufferSize = m_count * 2;
   }
 
   m_bufferStack = (b2BufferFrame*) b2Alloc(sizeof(b2BufferFrame));
-  m_bufferStack->capacity = maxBufferSize + m_count / 4;
+  // Make a prediction based on the max allocations in the previous call. Useful to avoid excesive allocations 
+  m_bufferStack->capacity = maxBufferSize + m_count / 2;
   m_bufferStack->index = 0;
   m_bufferStack->prev = nullptr;
   m_bufferStack->buffer = (b2TreeNode**) b2Alloc(m_bufferStack->capacity * sizeof(b2TreeNode*));
@@ -299,10 +301,16 @@ void b2BroadPhase::UpdateAndQuery(T* callback) {
   m_treeAllocator = m_nodes + m_capacity + staticGroup;
 	m_rootDynamic = BuildAndQuery(callback, staticGroup, m_count, temp, 0);
 
-  b2Assert(m_bufferStack->prev == nullptr);
-  
-  b2Free(m_bufferStack->buffer);
-  b2Free(m_bufferStack);
+  while (m_bufferStack->prev != nullptr) {
+    // A consistency guarantee that the stack was used correctly.
+    b2Assert(m_bufferStack->index <= 0);
+
+    b2BufferFrame* prev = m_bufferStack->prev;
+    b2Free(m_bufferStack->buffer);
+    b2Free(m_bufferStack);
+
+    m_bufferStack = prev;
+  }
   
   if (m_rootStatic != nullptr) {
     int32 staticCollisionCount = 0;
