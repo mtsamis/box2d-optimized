@@ -7,9 +7,9 @@
 *Box2D-optimized* is a Box2D fork that aims to offer improved perfromance and scalability, while maintining a similar API and feature set.
 This library merges commits from upstream Box2D regularly in order to be up to date.
 
-There are a lot of under-the-hood changes in order to achieve this stated speedup, which are described in my document for optimizing Box2D: *TBA*
-
 A collection of various benchmarks and graphs showcasing the performance improvement can be found in the [box2d-benchmarks](https://github.com/mtsamis/box2d-benchmarks#results) repository.
+
+There are a lot of under-the-hood changes in order to achieve this stated speedup, which are described in my document for optimizing Box2D: *TBA*
 
 ## Contributing
 
