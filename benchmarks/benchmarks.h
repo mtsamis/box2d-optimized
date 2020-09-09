@@ -569,7 +569,7 @@ public:
     
     class b11 : public b2Benchmark {
       virtual void InitBenchmark() override {
-        name = "Mixed static/dynamic";
+        name = "Mixed static-dynamic";
         simulationSteps = 400;
         defaultSize = 6000;
         startSize = 100;
