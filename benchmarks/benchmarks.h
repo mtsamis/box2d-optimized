@@ -141,7 +141,7 @@ public:
     benchmarks.insert(benchmarks.begin(), new b2());
 
     class b3 : public b2Benchmark {
-      int32 m_count = 0;
+      int32 m_count;
       int32 e_count;
       
       virtual void InitBenchmark() override {
@@ -154,6 +154,7 @@ public:
       }
 
       virtual void InitWorld(b2World* world, int32 size) override {
+        m_count = 0;
         e_count = size;
         b2Body* ground = NULL;
 		    
@@ -193,7 +194,7 @@ public:
       
       virtual void StepWorld(b2World* world) override {
         b2Benchmark::StepWorld(world);
-        
+
         if (m_count < e_count) {
 			    b2BodyDef bd;
 			    bd.type = b2_dynamicBody;
