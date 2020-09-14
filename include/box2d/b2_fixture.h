@@ -64,10 +64,6 @@ struct b2FixtureDef
 	{
 		shape = nullptr;
 
-#ifdef ENABLE_USER_DATA
-		userData = nullptr;
-#endif // ENABLE_USER_DATA
-
 #ifdef ENABLE_FRICTION
 		friction = 0.2f;
 #endif // ENABLE_FRICTION
@@ -86,7 +82,7 @@ struct b2FixtureDef
 	
 #ifdef ENABLE_USER_DATA
 	/// Use this to store application specific fixture data.
-	void* userData;
+	b2FixtureUserData userData;
 #endif // ENABLE_USER_DATA
 
 #ifdef ENABLE_FRICTION
@@ -159,10 +155,7 @@ public:
 #ifdef ENABLE_USER_DATA
 	/// Get the user data that was assigned in the fixture definition. Use this to
 	/// store your application specific data.
-	void* GetUserData() const;
-
-	/// Set the user data. Use this to store your application specific data.
-	void SetUserData(void* data);
+	b2FixtureUserData& GetUserData();
 #endif // ENABLE_USER_DATA
 	
 	uint32 GetId();
@@ -255,7 +248,7 @@ protected:
 	bool m_isSensor;
 
 #ifdef ENABLE_USER_DATA
-	void* m_userData;
+	b2FixtureUserData m_userData;
 #endif // ENABLE_USER_DATA
 	
 	uint32 m_id;
@@ -287,14 +280,9 @@ inline const b2Filter& b2Fixture::GetFilterData() const
 }
 
 #ifdef ENABLE_USER_DATA
-inline void* b2Fixture::GetUserData() const
+inline b2FixtureUserData& b2Fixture::GetUserData()
 {
 	return m_userData;
-}
-
-inline void b2Fixture::SetUserData(void* data)
-{
-	m_userData = data;
 }
 #endif // ENABLE_USER_DATA
 

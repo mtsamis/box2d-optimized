@@ -46,9 +46,6 @@ enum b2BodyType
 	b2_staticBody = 0,
 	b2_kinematicBody,
 	b2_dynamicBody
-
-	// TODO_ERIN
-	//b2_bulletBody,
 };
 
 /// A body definition holds all the data needed to construct a rigid body.
@@ -58,10 +55,6 @@ struct b2BodyDef
 	/// This constructor sets the body definition default values.
 	b2BodyDef()
 	{
-#ifdef ENABLE_USER_DATA
-		userData = nullptr;
-#endif // ENABLE_USER_DATA
-
 		position.Set(0.0f, 0.0f);
 		angle = 0.0f;
 		linearVelocity.Set(0.0f, 0.0f);
@@ -141,7 +134,7 @@ struct b2BodyDef
 
 #ifdef ENABLE_USER_DATA
 	/// Use this to store application specific body data.
-	void* userData;
+	b2BodyUserData userData;
 #endif // ENABLE_USER_DATA
 
 #ifdef ENABLE_GRAVITY_SCALE
@@ -442,7 +435,7 @@ public:
 
 #ifdef ENABLE_USER_DATA
 	/// Get the user data pointer that was provided in the body definition.
-	void* GetUserData() const;
+	b2BodyUserData& GetUserData();
 
 	/// Set the user data. Use this to store your application specific data.
 	void SetUserData(void* data);
@@ -552,7 +545,7 @@ private:
 #endif // ENABLE_SLEEPING
 
 #ifdef ENABLE_USER_DATA
-	void* m_userData;
+	b2BodyUserData m_userData;
 #endif // ENABLE_USER_DATA
 };
 
@@ -825,13 +818,9 @@ inline const b2Body* b2Body::GetNext() const
 	return m_next;
 }
 
+<<<<<<< HEAD
 #ifdef ENABLE_USER_DATA
-inline void b2Body::SetUserData(void* data)
-{
-	m_userData = data;
-}
-
-inline void* b2Body::GetUserData() const
+inline b2BodyUserData& b2Body::GetUserData()
 {
 	return m_userData;
 }

@@ -32,10 +32,6 @@
 
 b2Fixture::b2Fixture()
 {
-#ifdef ENABLE_USER_DATA
-	m_userData = nullptr;
-#endif // ENABLE_USER_DATA
-
 	m_body = nullptr;
 	m_next = nullptr;
 	m_shape = nullptr;
