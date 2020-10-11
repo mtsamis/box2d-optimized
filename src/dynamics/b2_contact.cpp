@@ -113,6 +113,7 @@ b2Contact::b2Contact(b2Fixture* fA, b2Fixture* fB, b2EvaluateFunction* evaluateF
 
 #ifdef ENABLE_RESTITUTION
 	m_restitution = b2MixRestitution(m_fixtureA->m_restitution, m_fixtureB->m_restitution);
+	m_restitutionThreshold = b2MixRestitutionThreshold(m_fixtureA->m_restitutionThreshold, m_fixtureB->m_restitutionThreshold);
 #endif // ENABLE_RESTITUTION
 
 #ifdef ENABLE_TANGENT_SPEED

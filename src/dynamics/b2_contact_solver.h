@@ -64,6 +64,7 @@ struct b2ContactVelocityConstraint {
 
 #ifdef ENABLE_RESTITUTION
 	float restitution;
+	float threshold;
 #endif // ENABLE_RESTITUTION
 
 #ifdef ENABLE_TANGENT_SPEED

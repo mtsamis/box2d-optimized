@@ -52,6 +52,12 @@ typedef void b2EvaluateFunction(b2Manifold* manifold,
 															const b2Shape* shapeA, const b2Transform& xfA,
 															const b2Shape* shapeB, const b2Transform& xfB);
 
+/// Restitution mixing law. This picks the lowest value.
+inline float b2MixRestitutionThreshold(float threshold1, float threshold2)
+{
+	return threshold1 < threshold2 ? threshold1 : threshold2;
+}
+
 /// The class manages contact between two shapes. A contact exists for each overlapping
 /// AABB in the broad-phase (except if filtered). Therefore a contact object may exist
 /// that has no contact points.
@@ -111,6 +117,16 @@ public:
 
 	/// Reset the restitution to the default value.
 	void ResetRestitution();
+
+	/// Override the default restitution velocity threshold mixture. You can call this in b2ContactListener::PreSolve.
+	/// The value persists until you set or reset.
+	void SetRestitutionThreshold(float threshold);
+
+	/// Get the restitution threshold.
+	float GetRestitutionThreshold() const;
+
+	/// Reset the restitution threshold to the default value.
+	void ResetRestitutionThreshold();
 #endif // ENABLE_RESTITUTION
 
 #ifdef ENABLE_TANGENT_SPEED
@@ -190,6 +206,7 @@ protected:
 
 #ifdef ENABLE_RESTITUTION
 	float m_restitution;
+	float m_restitutionThreshold;
 #endif // ENABLE_RESTITUTION
 
 #ifdef ENABLE_TANGENT_SPEED
@@ -283,6 +300,21 @@ inline float b2Contact::GetRestitution() const {
 
 inline void b2Contact::ResetRestitution() {
 	m_restitution = b2MixRestitution(m_fixtureA->m_restitution, m_fixtureB->m_restitution);
+}
+
+inline void b2Contact::SetRestitutionThreshold(float threshold)
+{
+	m_restitutionThreshold = threshold;
+}
+
+inline float b2Contact::GetRestitutionThreshold() const
+{
+	return m_restitutionThreshold;
+}
+
+inline void b2Contact::ResetRestitutionThreshold()
+{
+	m_restitutionThreshold = b2MixRestitutionThreshold(m_fixtureA->m_restitutionThreshold, m_fixtureB->m_restitutionThreshold);
 }
 #endif // ENABLE_RESTITUTION
 

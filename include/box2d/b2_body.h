@@ -818,7 +818,6 @@ inline const b2Body* b2Body::GetNext() const
 	return m_next;
 }
 
-<<<<<<< HEAD
 #ifdef ENABLE_USER_DATA
 inline b2BodyUserData& b2Body::GetUserData()
 {

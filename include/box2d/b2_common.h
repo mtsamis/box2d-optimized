@@ -145,10 +145,6 @@ typedef unsigned long long uint64;
 /// Maximum number of contacts to be handled to solve a TOI impact.
 #define b2_maxTOIContacts			32
 
-/// A velocity threshold for elastic collisions. Any collision with a relative linear
-/// velocity below this threshold will be treated as inelastic. Meters per second.
-#define b2_velocityThreshold		(1.0f * b2_lengthUnitsPerMeter)
-
 /// The maximum linear position correction used when solving constraints. This helps to
 /// prevent overshoot. Meters.
 #define b2_maxLinearCorrection		(0.2f * b2_lengthUnitsPerMeter)

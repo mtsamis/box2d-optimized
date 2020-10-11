@@ -70,6 +70,7 @@ struct b2FixtureDef
 
 #ifdef ENABLE_RESTITUTION
 		restitution = 0.0f;
+		restitutionThreshold = 1.0f * b2_lengthUnitsPerMeter;
 #endif // ENABLE_RESTITUTION
 
 		density = 0.0f;
@@ -94,6 +95,10 @@ struct b2FixtureDef
 	/// The restitution (elasticity) usually in the range [0,1].
 	float restitution;
 #endif // ENABLE_RESTITUTION
+
+	/// Restitution velocity threshold, usually in m/s. Collisions above this
+	/// speed have restitution applied (will bounce).
+	float restitutionThreshold;
 
 	/// The density, usually in kg/m^2.
 	float density;
@@ -201,6 +206,13 @@ public:
 	/// Set the coefficient of restitution. This will _not_ change the restitution of
 	/// existing contacts.
 	void SetRestitution(float restitution);
+
+	/// Get the restitution velocity threshold.
+	float GetRestitutionThreshold() const;
+
+	/// Set the restitution threshold. This will _not_ change the restitution threshold of
+	/// existing contacts.
+	void SetRestitutionThreshold(float threshold);
 #endif // ENABLE_RESTITUTION
 	
 	void UpdateAABB();
@@ -241,6 +253,7 @@ protected:
 
 #ifdef ENABLE_RESTITUTION
 	float m_restitution;
+	float m_restitutionThreshold;
 #endif // ENABLE_RESTITUTION
 	
 	b2Filter m_filter;
@@ -345,6 +358,16 @@ inline void b2Fixture::SetRestitution(float restitution)
 	m_restitution = restitution;
 }
 #endif // ENABLE_RESTITUTION
+
+inline float b2Fixture::GetRestitutionThreshold() const
+{
+	return m_restitutionThreshold;
+}
+
+inline void b2Fixture::SetRestitutionThreshold(float threshold)
+{
+	m_restitutionThreshold = threshold;
+}
 
 inline bool b2Fixture::TestPoint(const b2Vec2& p) const
 {
