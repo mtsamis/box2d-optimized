@@ -23,6 +23,7 @@
 #ifndef B2_CONTACT_H
 #define B2_CONTACT_H
 
+#include "b2_api.h"
 #include "b2_collision.h"
 #include "b2_fixture.h"
 #include "b2_math.h"
@@ -61,7 +62,8 @@ inline float b2MixRestitutionThreshold(float threshold1, float threshold2)
 /// The class manages contact between two shapes. A contact exists for each overlapping
 /// AABB in the broad-phase (except if filtered). Therefore a contact object may exist
 /// that has no contact points.
-class b2Contact {
+class B2_API b2Contact
+{
 public:
 
 	/// Get the contact manifold. Do not modify the manifold unless you understand the

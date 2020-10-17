@@ -23,6 +23,7 @@
 #ifndef B2_CONTACT_MANAGER_H
 #define B2_CONTACT_MANAGER_H
 
+#include "b2_api.h"
 #include "b2_broad_phase.h"
 #include "b2_fixture.h"
 #include "b2_contact.h"
@@ -32,7 +33,7 @@ class b2ContactListener;
 class b2BlockAllocator;
 
 // Delegate of b2World.
-class b2ContactManager
+class B2_API b2ContactManager
 {
 public:
 	b2ContactManager();

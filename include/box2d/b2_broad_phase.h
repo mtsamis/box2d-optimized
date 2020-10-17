@@ -79,7 +79,7 @@ struct b2BufferFrame {
 /// This broad-phase is optimized for batch operations and global collision detection.
 /// For maximal performance structural modifications (insert, dekete, update) should be
 /// groupped together in batches.
-class b2BroadPhase {
+class B2_API b2BroadPhase {
 public:
 	b2BroadPhase() : b2BroadPhase(32) {}
 	
