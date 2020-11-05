@@ -9,7 +9,7 @@ This library merges commits from upstream Box2D regularly in order to be up to d
 
 A collection of various benchmarks and graphs showcasing the performance improvement can be found in the [box2d-benchmarks](https://github.com/mtsamis/box2d-benchmarks#results) repository.
 
-There are a lot of under-the-hood changes in order to achieve this stated speedup, which are described in my document for optimizing Box2D: *TBA*
+There are a lot of under-the-hood changes in order to achieve this stated speedup, which are described in my dissertation for optimizing Box2D: [optimizing-box2d](https://github.com/mtsamis/optimizing-box2d-dissertation/blob/main/optimizing-box2d.pdf)
 
 ## Contributing
 
