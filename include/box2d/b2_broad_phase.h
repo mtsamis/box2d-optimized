@@ -297,7 +297,7 @@ void b2BroadPhase::UpdateAndQuery(T* callback) {
   currentBufferSize = 0;
   maxBufferSize = 0;
   
-	b2TreeNode* temp[m_count];
+	b2TreeNode** temp = (b2TreeNode**) b2Alloc(m_count * sizeof(b2TreeNode*));
   m_treeAllocator = m_nodes + m_capacity + staticGroup;
 	m_rootDynamic = BuildAndQuery(callback, staticGroup, m_count, temp, 0);
 
@@ -323,6 +323,8 @@ void b2BroadPhase::UpdateAndQuery(T* callback) {
 
     QueryAll(callback, m_rootStatic, temp, staticCollisionCount);
   }
+
+  b2Free(temp);
 
   if (m_rootDynamic == nullptr) {
     m_root = m_rootStatic;
@@ -556,7 +558,7 @@ inline void b2BroadPhase::QueryAll(T* callback, UnaryPredicate predicate) {
 
 	EnsureBuiltTree();
 
-	b2TreeNode* temp[m_count];
+	b2TreeNode** temp = (b2TreeNode**) b2Alloc(m_count * sizeof(b2TreeNode*));
 	int ccount = 0;
 	
 	for (int32 i = 0; i < m_count; i++) {
@@ -569,6 +571,8 @@ inline void b2BroadPhase::QueryAll(T* callback, UnaryPredicate predicate) {
 	}
 	
 	QueryAll(callback, m_root, temp, ccount);
+
+	b2Free(temp);
 }
 
 template <typename T>
