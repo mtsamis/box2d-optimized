@@ -29,6 +29,7 @@
 class b2Benchmark {
 public:
   b2Benchmark() : gravity(0.0f, -10.0f) {};
+  virtual ~b2Benchmark() {};
   
   virtual void InitBenchmark() {};
   virtual void InitWorld(b2World* world) { InitWorld(world, defaultSize); };

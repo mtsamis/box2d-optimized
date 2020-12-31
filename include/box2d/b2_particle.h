@@ -120,13 +120,6 @@ public:
 	///
 	void Set(const b2Color& color);
 
-	/// Assign a b2ParticleColor to this instance.
-	b2ParticleColor& operator = (const b2ParticleColor &color)
-	{
-		Set(color.r, color.g, color.b, color.a);
-		return *this;
-	}
-
 	/// Multiplies r, g, b, a members by s where s is a value between 0.0
 	/// and 1.0.
 	b2ParticleColor& operator *= (float32 s)

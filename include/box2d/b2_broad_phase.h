@@ -511,7 +511,10 @@ b2TreeNode* b2BroadPhase::BuildAndQuery(T* callback, int32 start, int32 end, b2T
 }
 
 inline void b2BroadPhase::RemoveAll() {
-	RemoveAll([](b2Fixture* fixture) { return true; });
+	RemoveAll([](b2Fixture* fixture) {
+	  B2_NOT_USED(fixture);
+	  return true;
+	});
 }
 
 template <typename UnaryPredicate>
@@ -528,7 +531,10 @@ void b2BroadPhase::RemoveAll(UnaryPredicate predicate) {
 }
 
 inline void b2BroadPhase::UpdateAll() {
-	UpdateAll([](b2Fixture* fixture) { return true; });
+	UpdateAll([](b2Fixture* fixture) {
+	  B2_NOT_USED(fixture);
+	  return true;
+	});
 }
 
 template <typename UnaryPredicate>
@@ -547,7 +553,10 @@ inline void b2BroadPhase::UpdateAll(UnaryPredicate predicate) {
 
 template <typename T>
 inline void b2BroadPhase::QueryAll(T* callback) {
-	QueryAll(callback, [](b2Fixture* fixture) { return true; });
+	QueryAll(callback, [](b2Fixture* fixture) {
+	  B2_NOT_USED(fixture);
+	  return true;
+	});
 }
 
 template <typename T, typename UnaryPredicate>
