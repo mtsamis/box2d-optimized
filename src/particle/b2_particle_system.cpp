@@ -2590,9 +2590,9 @@ void b2ParticleSystem::SolveCollision(const b2TimeStep& step)
 				input.maxFraction = 1;
 				if (fixture->RayCast(&output, input))
 				{
-					float32 f = output.fraction;
+					float32 frac = output.fraction;
 					b2Vec2 n = output.normal;
-					b2Vec2 p = (1 - f) * input.p1 + f * input.p2 + b2_linearSlop * n;
+					b2Vec2 p = (1 - frac) * input.p1 + frac * input.p2 + b2_linearSlop * n;
 					b2Vec2 v = m_step.inv_dt * (p - ap);
 					m_system->m_velocityBuffer.data[a] = v;
 					b2Vec2 f = m_step.inv_dt * m_system->GetParticleMass() * (av - v);
