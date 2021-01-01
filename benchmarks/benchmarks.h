@@ -90,8 +90,8 @@ public:
 			    for (int32 j = i; j < size; ++j) {
 				    b2BodyDef bd;
 				    bd.type = b2_dynamicBody;
-				    bd.position.x = i * 7 - 30;
-				    bd.position.y = 2 * a * (size - j);
+				    bd.position.x = i * 7.0f - 30.0f;
+				    bd.position.y = 2.0f * a * (size - j);
 				    
 				    b2Body* body = world->CreateBody(&bd);
 			      body->CreateFixture(&shape, 5.0f);
@@ -554,8 +554,8 @@ public:
 			    for (int32 i = 0; i < 3000; ++i) {
 				    b2BodyDef bd;
 				    b2Vec2 pos;
-				    pos.x = (i / 15) * 2 - 75;
-				    pos.y = (i % 15) * 2 + 50;
+				    pos.x = (i / 15) * 2.0f - 75.0f;
+				    pos.y = (i % 15) * 2.0f + 50.0f;
 			      bd.position = pos;
 				    bd.type = b2_dynamicBody;
 				    b2Body* body = world->CreateBody(&bd);
@@ -591,9 +591,7 @@ public:
 
 			    for (int32 j = 0; j < M; ++j) {
 				    for (int32 i = 0; i < N; ++i) {
-				      b2Vec2 pos;
-				      pos.x = i;
-				      pos.y = j;
+				      b2Vec2 pos(i, j);
 				      
 				      if (b2Dot(pos - cntr, pos - cntr) > 67 * 67) {
 				        b2CircleShape shape;
