@@ -101,7 +101,7 @@ public:
 				return false;
 			}
 			++(*m_discarded);
-			
+
 			return true;
 		}
 
@@ -2420,7 +2420,7 @@ void b2ParticleSystem::UpdateBodyContacts()
 			float32 d;
 			b2Vec2 n;
 			fixture->ComputeDistance(ap, &d, &n);
-			
+
 			if (d < m_system->m_particleDiameter && ShouldCollide(fixture, a))
 			{
 				b2Body* b = fixture->GetBody();
@@ -2495,7 +2495,7 @@ void b2ParticleSystem::RemoveSpuriousBodyContacts()
 				b2ParticleSystem::BodyContactCompare);
 
 	int32 discarded = 0;
-	std::remove_if(m_bodyContactBuffer.Begin(),
+	(void) std::remove_if(m_bodyContactBuffer.Begin(),
 					m_bodyContactBuffer.End(),
 					b2ParticleBodyContactRemovePredicate(this, &discarded));
 
@@ -2562,18 +2562,18 @@ void b2ParticleSystem::SolveCollision(const b2TimeStep& step)
 				if (m_system->m_iterationIndex == 0)
 				{
 					// Put 'ap' in the local space of the previous frame
-					
+
 					b2Vec2 p1 = b2MulT(body->m_xf0, ap);
-					
+
 					if (fixture->GetShape()->GetType() == b2Shape::e_circle)
 					{
 						// Make relative to the center of the circle
 						p1 -= body->GetLocalCenter();
 						// Re-apply rotation about the center of the
 						// circle
-						
+
 						p1 = b2Mul(body->m_xf0.q, p1);
-						
+
 						// Subtract rotation of the current frame
 						p1 = b2MulT(body->m_xf.q, p1);
 						// Return to local space
