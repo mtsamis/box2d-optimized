@@ -736,5 +736,103 @@ public:
       }
     };
     benchmarks.insert(benchmarks.begin(), new b13());
+        
+    class b14 : public b2Benchmark {
+      virtual void InitBenchmark() override {
+        name = "Partial sleep";
+        simulationSteps = 1000;
+        defaultSize = 500;
+        startSize = 200;
+        endSize = 1000;
+        sizeInc = 50;
+      }
+      
+      virtual void InitWorld(b2World* world, int32 size) override {
+		    {
+					b2BodyDef bd;
+					b2Body* ground = world->CreateBody(&bd);
+			
+					const int N = size, M = 3;
+					const float w = 1.0f, h = 1.0f;
+
+					b2Vec2 position;
+					position.x = 0.0f;
+
+					for (int32 i = 0; i < N; ++i) {
+						position.y = 0.0f;
+
+						for (int32 j = 0; j < M; ++j) {
+							b2PolygonShape box;
+							box.SetAsBox(w, h, position, 0.0f);
+
+							ground->CreateFixture(&box, 0.0f);
+							position.y -= 2.0f * h;
+						}
+						
+						position.x += 2.0f * w;
+					}
+				}
+
+				{
+					b2BodyDef bd;
+					bd.type = b2_dynamicBody;
+
+					const int N = size / 2, M = 15;
+
+					b2Vec2 position;
+					position.x = 0.0f;
+
+					for (int32 i = 0; i < N; ++i) {
+						float w = 1.5f, h = 1.5f;
+						position.y = 0.0f;
+
+						for (int32 j = 0; j < M + (i % 4); ++j) {
+							position.y += 2 * h;
+							b2PolygonShape shape;
+							shape.SetAsBox(w, h);
+
+							bd.awake = false;
+							bd.position = position;
+							b2Body* dynamic = world->CreateBody(&bd);
+							dynamic->CreateFixture(&shape, 1.0f);
+
+							w -= 0.07f;
+							h -= 0.07f;
+						}
+						
+						position.x += 4.0f;
+					}
+				}
+
+				{
+					b2BodyDef bd;
+					bd.type = b2_dynamicBody;
+
+					const int N = size / 2, M = 2;
+					const float w = 1.0f, h = 1.0f;
+
+					b2Vec2 position;
+					position.x = 0.0f;
+
+					for (int32 i = 0; i < N; ++i) {
+						position.y = 50.0f;
+
+						for (int32 j = 0; j < M + (i % 4); ++j) {
+							position.y += 2 * h;
+							b2PolygonShape shape;
+							shape.SetAsBox(w, h);
+
+							bd.position = position;
+							bd.linearVelocity = {0, 50};
+							b2Body* dynamic = world->CreateBody(&bd);
+							dynamic->CreateFixture(&shape, 1.0f);
+						}
+						
+						position.x += 4.0f;
+					}
+				}
+      }
+    };
+    benchmarks.insert(benchmarks.begin(), new b14());
   }
 };

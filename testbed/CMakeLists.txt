@@ -12,6 +12,7 @@ set (TESTBED_SOURCE_FILES
 	test.h
 	tests/add_pair.cpp
 	tests/apply_force.cpp
+	tests/benchmark_suite.cpp
 	tests/body_types.cpp
 	tests/box_stack.cpp
 	tests/breakable.cpp
@@ -72,10 +73,17 @@ set (TESTBED_SOURCE_FILES
 )
 
 add_executable(testbed ${TESTBED_SOURCE_FILES})
+
+add_executable(benchmark_single benchmarks/single.cpp benchmarks/benchmarks.h)
+add_executable(benchmark_full benchmarks/full.cpp benchmarks/benchmarks.h)
+
+target_link_libraries(benchmark_single PUBLIC box2d)
+target_link_libraries(benchmark_full PUBLIC box2d)
+
 target_include_directories(testbed PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(testbed PUBLIC box2d glfw imgui sajson glad)
 set_target_properties(testbed PROPERTIES
-	CXX_STANDARD 11
+    CXX_STANDARD 11
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
@@ -90,4 +98,4 @@ add_custom_command(
                 ${CMAKE_CURRENT_SOURCE_DIR}/data/
                 ${CMAKE_CURRENT_BINARY_DIR}/data/)
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${TESTBED_SOURCE_FILES})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${TESTBED_SOURCE_FILES} benchmarks/benchmarks.h)
