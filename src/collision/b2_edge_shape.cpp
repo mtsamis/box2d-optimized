@@ -26,59 +26,59 @@
 
 void b2EdgeShape::SetOneSided(const b2Vec2& v0, const b2Vec2& v1, const b2Vec2& v2, const b2Vec2& v3)
 {
-	m_vertex0 = v0;
-	m_vertex1 = v1;
-	m_vertex2 = v2;
-	m_vertex3 = v3;
-	m_oneSided = true;
+  m_vertex0 = v0;
+  m_vertex1 = v1;
+  m_vertex2 = v2;
+  m_vertex3 = v3;
+  m_oneSided = true;
 }
 
 void b2EdgeShape::SetTwoSided(const b2Vec2& v1, const b2Vec2& v2)
 {
-	m_vertex1 = v1;
-	m_vertex2 = v2;
-	m_oneSided = false;
+  m_vertex1 = v1;
+  m_vertex2 = v2;
+  m_oneSided = false;
 }
 
 b2Shape* b2EdgeShape::Clone(b2BlockAllocator* allocator) const
 {
-	void* mem = allocator->Allocate(sizeof(b2EdgeShape));
-	b2EdgeShape* clone = new (mem) b2EdgeShape;
-	*clone = *this;
-	return clone;
+  void* mem = allocator->Allocate(sizeof(b2EdgeShape));
+  b2EdgeShape* clone = new (mem) b2EdgeShape;
+  *clone = *this;
+  return clone;
 }
 
 bool b2EdgeShape::TestPoint(const b2Transform& xf, const b2Vec2& p) const
 {
-	B2_NOT_USED(xf);
-	B2_NOT_USED(p);
-	return false;
+  B2_NOT_USED(xf);
+  B2_NOT_USED(p);
+  return false;
 }
 
 void b2EdgeShape::ComputeDistance(const b2Transform& xf, const b2Vec2& p, float32* distance, b2Vec2* normal) const
 {
-	b2Vec2 v1 = b2Mul(xf, m_vertex1);
-	b2Vec2 v2 = b2Mul(xf, m_vertex2);
+  b2Vec2 v1 = b2Mul(xf, m_vertex1);
+  b2Vec2 v2 = b2Mul(xf, m_vertex2);
 
-	b2Vec2 d = p - v1;
-	b2Vec2 s = v2 - v1;
-	float32 ds = b2Dot(d, s);
-	if (ds > 0)
-	{
-		float32 s2 = b2Dot(s, s);
-		if (ds > s2)
-		{
-			d = p - v2;
-		}
-		else
-		{
-			d -= ds / s2 * s;
-		}
-	}
+  b2Vec2 d = p - v1;
+  b2Vec2 s = v2 - v1;
+  float32 ds = b2Dot(d, s);
+  if (ds > 0)
+  {
+    float32 s2 = b2Dot(s, s);
+    if (ds > s2)
+    {
+      d = p - v2;
+    }
+    else
+    {
+      d -= ds / s2 * s;
+    }
+  }
 
-	float32 d1 = d.Length();
-	*distance = d1;
-	*normal = d1 > 0 ? 1 / d1 * d : b2Vec2_zero;
+  float32 d1 = d.Length();
+  *distance = d1;
+  *normal = d1 > 0 ? 1 / d1 * d : b2Vec2_zero;
 
 }
 
@@ -87,90 +87,90 @@ void b2EdgeShape::ComputeDistance(const b2Transform& xf, const b2Vec2& p, float3
 // p1 + t * d = v1 + s * e
 // s * e - t * d = p1 - v1
 bool b2EdgeShape::RayCast(b2RayCastOutput* output, const b2RayCastInput& input,
-							const b2Transform& xf) const
+              const b2Transform& xf) const
 {
-	// Put the ray into the edge's frame of reference.
-	b2Vec2 p1 = b2MulT(xf.q, input.p1 - xf.p);
-	b2Vec2 p2 = b2MulT(xf.q, input.p2 - xf.p);
-	b2Vec2 d = p2 - p1;
+  // Put the ray into the edge's frame of reference.
+  b2Vec2 p1 = b2MulT(xf.q, input.p1 - xf.p);
+  b2Vec2 p2 = b2MulT(xf.q, input.p2 - xf.p);
+  b2Vec2 d = p2 - p1;
 
-	b2Vec2 v1 = m_vertex1;
-	b2Vec2 v2 = m_vertex2;
-	b2Vec2 e = v2 - v1;
+  b2Vec2 v1 = m_vertex1;
+  b2Vec2 v2 = m_vertex2;
+  b2Vec2 e = v2 - v1;
 
-	// Normal points to the right, looking from v1 at v2
-	b2Vec2 normal(e.y, -e.x);
-	normal.Normalize();
+  // Normal points to the right, looking from v1 at v2
+  b2Vec2 normal(e.y, -e.x);
+  normal.Normalize();
 
-	// q = p1 + t * d
-	// dot(normal, q - v1) = 0
-	// dot(normal, p1 - v1) + t * dot(normal, d) = 0
-	float numerator = b2Dot(normal, v1 - p1);
-	if (m_oneSided && numerator > 0.0f)
-	{
-		return false;
-	}
+  // q = p1 + t * d
+  // dot(normal, q - v1) = 0
+  // dot(normal, p1 - v1) + t * dot(normal, d) = 0
+  float numerator = b2Dot(normal, v1 - p1);
+  if (m_oneSided && numerator > 0.0f)
+  {
+    return false;
+  }
 
-	float denominator = b2Dot(normal, d);
+  float denominator = b2Dot(normal, d);
 
-	if (denominator == 0.0f)
-	{
-		return false;
-	}
+  if (denominator == 0.0f)
+  {
+    return false;
+  }
 
-	float t = numerator / denominator;
-	if (t < 0.0f || input.maxFraction < t)
-	{
-		return false;
-	}
+  float t = numerator / denominator;
+  if (t < 0.0f || input.maxFraction < t)
+  {
+    return false;
+  }
 
-	b2Vec2 q = p1 + t * d;
+  b2Vec2 q = p1 + t * d;
 
-	// q = v1 + s * r
-	// s = dot(q - v1, r) / dot(r, r)
-	b2Vec2 r = v2 - v1;
-	float rr = b2Dot(r, r);
-	if (rr == 0.0f)
-	{
-		return false;
-	}
+  // q = v1 + s * r
+  // s = dot(q - v1, r) / dot(r, r)
+  b2Vec2 r = v2 - v1;
+  float rr = b2Dot(r, r);
+  if (rr == 0.0f)
+  {
+    return false;
+  }
 
-	float s = b2Dot(q - v1, r) / rr;
-	if (s < 0.0f || 1.0f < s)
-	{
-		return false;
-	}
+  float s = b2Dot(q - v1, r) / rr;
+  if (s < 0.0f || 1.0f < s)
+  {
+    return false;
+  }
 
-	output->fraction = t;
-	if (numerator > 0.0f)
-	{
-		output->normal = -b2Mul(xf.q, normal);
-	}
-	else
-	{
-		output->normal = b2Mul(xf.q, normal);
-	}
-	return true;
+  output->fraction = t;
+  if (numerator > 0.0f)
+  {
+    output->normal = -b2Mul(xf.q, normal);
+  }
+  else
+  {
+    output->normal = b2Mul(xf.q, normal);
+  }
+  return true;
 }
 
 void b2EdgeShape::ComputeAABB(b2AABB* aabb, const b2Transform& xf) const
 {
-	b2Vec2 v1 = b2Mul(xf, m_vertex1);
-	b2Vec2 v2 = b2Mul(xf, m_vertex2);
+  b2Vec2 v1 = b2Mul(xf, m_vertex1);
+  b2Vec2 v2 = b2Mul(xf, m_vertex2);
 
-	b2Vec2 lower = b2Min(v1, v2);
-	b2Vec2 upper = b2Max(v1, v2);
+  b2Vec2 lower = b2Min(v1, v2);
+  b2Vec2 upper = b2Max(v1, v2);
 
-	b2Vec2 r(m_radius, m_radius);
-	aabb->lowerBound = lower - r;
-	aabb->upperBound = upper + r;
+  b2Vec2 r(m_radius, m_radius);
+  aabb->lowerBound = lower - r;
+  aabb->upperBound = upper + r;
 }
 
 void b2EdgeShape::ComputeMass(b2MassData* massData, float density) const
 {
-	B2_NOT_USED(density);
+  B2_NOT_USED(density);
 
-	massData->mass = 0.0f;
-	massData->center = 0.5f * (m_vertex1 + m_vertex2);
-	massData->I = 0.0f;
+  massData->mass = 0.0f;
+  massData->center = 0.5f * (m_vertex1 + m_vertex2);
+  massData->I = 0.0f;
 }

@@ -27,26 +27,26 @@ template<int I>
 class b2BenchmarkTest : public Test
 {
 public:
-	b2BenchmarkTest() {
-		auto benchmark = benchmarks[I];
-		
-		m_world->SetGravity(benchmark->gravity);
-		benchmark->InitWorld(m_world);
-	}
+  b2BenchmarkTest() {
+    auto benchmark = benchmarks[I];
+    
+    m_world->SetGravity(benchmark->gravity);
+    benchmark->InitWorld(m_world);
+  }
 
-	void Step(Settings& settings) override {
-		auto benchmark = benchmarks[I];
+  void Step(Settings& settings) override {
+    auto benchmark = benchmarks[I];
 
-		benchmark->BeforeWorldStep(m_world);
-		Test::Step(settings);
-		benchmark->AfterWorldStep(m_world);
-	}
+    benchmark->BeforeWorldStep(m_world);
+    Test::Step(settings);
+    benchmark->AfterWorldStep(m_world);
+  }
 
-	static const char* GetName() {
-		return strdup(benchmarks[I]->name.c_str());
-	}
+  static const char* GetName() {
+    return strdup(benchmarks[I]->name.c_str());
+  }
 
-	static Test* Create() { return new b2BenchmarkTest<I>(); }
+  static Test* Create() { return new b2BenchmarkTest<I>(); }
 };
 
 #define REGISTER_BENCHMARK(IDX) static int testIndex##IDX = RegisterTest("Benchmark Suite", b2BenchmarkTest<IDX>::GetName(), b2BenchmarkTest<IDX>::Create);

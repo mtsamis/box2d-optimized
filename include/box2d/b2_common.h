@@ -30,7 +30,7 @@
 #include <float.h>
 
 #if !defined(NDEBUG)
-	#define b2DEBUG
+  #define b2DEBUG
 #endif
 
 #define B2_NOT_USED(x) ((void)(x))
@@ -190,9 +190,9 @@ void b2CloseDump();
 /// See http://en.wikipedia.org/wiki/Software_versioning
 struct b2Version
 {
-	int32 major;		///< significant changes
-	int32 minor;		///< incremental changes
-	int32 revision;		///< bug fixes
+  int32 major;		///< significant changes
+  int32 minor;		///< incremental changes
+  int32 revision;		///< bug fixes
 };
 
 /// Current version.

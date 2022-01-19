@@ -22,36 +22,36 @@
 /// Allocate an item from the freelist.
 b2IntrusiveListNode* b2FreeList::Allocate()
 {
-	if (m_free.IsEmpty()) return NULL;
-	b2IntrusiveListNode * const node = m_free.GetNext();
-	node->Remove();
-	m_allocated.InsertBefore(node);
-	return node;
+  if (m_free.IsEmpty()) return NULL;
+  b2IntrusiveListNode * const node = m_free.GetNext();
+  node->Remove();
+  m_allocated.InsertBefore(node);
+  return node;
 }
 
 void b2FreeList::Free(b2IntrusiveListNode* node)
 {
-	b2Assert(node);
+  b2Assert(node);
 #if B2_FREE_LIST_CHECK_ALLOCATED_ON_FREE
-	b2Assert(m_allocated.FindNodeInList(node));
+  b2Assert(m_allocated.FindNodeInList(node));
 #endif // B2_FREE_LIST_CHECK_ALLOCATED_ON_FREE
-	node->Remove();
-	m_free.InsertAfter(node);
+  node->Remove();
+  m_free.InsertAfter(node);
 }
 
 void b2FreeList::AddToFreeList(b2IntrusiveListNode* node)
 {
-	b2Assert(node);
-	b2Assert(!node->InList());
-	m_free.InsertBefore(node);
+  b2Assert(node);
+  b2Assert(!node->InList());
+  m_free.InsertBefore(node);
 }
 
 void b2FreeList::RemoveAll()
 {
-	while (!m_allocated.IsEmpty()) {
-		m_allocated.GetNext()->Remove();
-	}
-	while (!m_free.IsEmpty()) {
-		m_free.GetNext()->Remove();
-	}
+  while (!m_allocated.IsEmpty()) {
+    m_allocated.GetNext()->Remove();
+  }
+  while (!m_free.IsEmpty()) {
+    m_free.GetNext()->Remove();
+  }
 }

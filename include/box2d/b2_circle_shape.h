@@ -30,38 +30,38 @@
 class B2_API b2CircleShape : public b2Shape
 {
 public:
-	b2CircleShape();
+  b2CircleShape();
 
-	/// Implement b2Shape.
-	b2Shape* Clone(b2BlockAllocator* allocator) const override;
+  /// Implement b2Shape.
+  b2Shape* Clone(b2BlockAllocator* allocator) const override;
 
-	/// Implement b2Shape.
-	bool TestPoint(const b2Transform& transform, const b2Vec2& p) const override;
+  /// Implement b2Shape.
+  bool TestPoint(const b2Transform& transform, const b2Vec2& p) const override;
 
-	// @see b2Shape::ComputeDistance
-	void ComputeDistance(const b2Transform& xf, const b2Vec2& p, float32* distance, b2Vec2* normal) const override;
+  // @see b2Shape::ComputeDistance
+  void ComputeDistance(const b2Transform& xf, const b2Vec2& p, float32* distance, b2Vec2* normal) const override;
 
-	/// Implement b2Shape.
-	/// @note because the circle is solid, rays that start inside do not hit because the normal is
-	/// not defined.
-	bool RayCast(b2RayCastOutput* output, const b2RayCastInput& input,
-				const b2Transform& transform) const override;
+  /// Implement b2Shape.
+  /// @note because the circle is solid, rays that start inside do not hit because the normal is
+  /// not defined.
+  bool RayCast(b2RayCastOutput* output, const b2RayCastInput& input,
+        const b2Transform& transform) const override;
 
-	/// @see b2Shape::ComputeAABB
-	void ComputeAABB(b2AABB* aabb, const b2Transform& transform) const override;
+  /// @see b2Shape::ComputeAABB
+  void ComputeAABB(b2AABB* aabb, const b2Transform& transform) const override;
 
-	/// @see b2Shape::ComputeMass
-	void ComputeMass(b2MassData* massData, float density) const override;
+  /// @see b2Shape::ComputeMass
+  void ComputeMass(b2MassData* massData, float density) const override;
 
-	/// Position
-	b2Vec2 m_p;
+  /// Position
+  b2Vec2 m_p;
 };
 
 inline b2CircleShape::b2CircleShape()
 {
-	m_type = e_circle;
-	m_radius = 0.0f;
-	m_p.SetZero();
+  m_type = e_circle;
+  m_radius = 0.0f;
+  m_p.SetZero();
 }
 
 #endif

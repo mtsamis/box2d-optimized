@@ -37,24 +37,24 @@ struct b2Chunk;
 class B2_API b2BlockAllocator
 {
 public:
-	b2BlockAllocator();
-	~b2BlockAllocator();
+  b2BlockAllocator();
+  ~b2BlockAllocator();
 
-	/// Allocate memory. This will use b2Alloc if the size is larger than b2_maxBlockSize.
-	void* Allocate(int32 size);
+  /// Allocate memory. This will use b2Alloc if the size is larger than b2_maxBlockSize.
+  void* Allocate(int32 size);
 
-	/// Free memory. This will use b2Free if the size is larger than b2_maxBlockSize.
-	void Free(void* p, int32 size);
+  /// Free memory. This will use b2Free if the size is larger than b2_maxBlockSize.
+  void Free(void* p, int32 size);
 
-	void Clear();
+  void Clear();
 
 private:
 
-	b2Chunk* m_chunks;
-	int32 m_chunkCount;
-	int32 m_chunkSpace;
+  b2Chunk* m_chunks;
+  int32 m_chunkCount;
+  int32 m_chunkSpace;
 
-	b2Block* m_freeLists[b2_blockSizeCount];
+  b2Block* m_freeLists[b2_blockSizeCount];
 };
 
 #endif

@@ -75,5 +75,5 @@ int main() {
     outfile.close();
   }
 
-	return 0;
+  return 0;
 }

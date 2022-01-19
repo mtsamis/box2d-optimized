@@ -38,264 +38,264 @@
 #include <new>
 
 void b2LinearStiffness(float& stiffness, float& damping,
-	float frequencyHertz, float dampingRatio,
-	const b2Body* bodyA, const b2Body* bodyB)
+  float frequencyHertz, float dampingRatio,
+  const b2Body* bodyA, const b2Body* bodyB)
 {
-	float massA = bodyA->GetMass();
-	float massB = bodyB->GetMass();
-	float mass;
-	if (massA > 0.0f && massB > 0.0f)
-	{
-		mass = massA * massB / (massA + massB);
-	}
-	else if (massA > 0.0f)
-	{
-		mass = massA;
-	}
-	else
-	{
-		mass = massB;
-	}
+  float massA = bodyA->GetMass();
+  float massB = bodyB->GetMass();
+  float mass;
+  if (massA > 0.0f && massB > 0.0f)
+  {
+    mass = massA * massB / (massA + massB);
+  }
+  else if (massA > 0.0f)
+  {
+    mass = massA;
+  }
+  else
+  {
+    mass = massB;
+  }
 
-	float omega = 2.0f * b2_pi * frequencyHertz;
-	stiffness = mass * omega * omega;
-	damping = 2.0f * mass * dampingRatio * omega;
+  float omega = 2.0f * b2_pi * frequencyHertz;
+  stiffness = mass * omega * omega;
+  damping = 2.0f * mass * dampingRatio * omega;
 }
 
 void b2AngularStiffness(float& stiffness, float& damping,
-	float frequencyHertz, float dampingRatio,
-	const b2Body* bodyA, const b2Body* bodyB)
+  float frequencyHertz, float dampingRatio,
+  const b2Body* bodyA, const b2Body* bodyB)
 {
-	float IA = bodyA->GetInertia();
-	float IB = bodyB->GetInertia();
-	float I;
-	if (IA > 0.0f && IB > 0.0f)
-	{
-		I = IA * IB / (IA + IB);
-	}
-	else if (IA > 0.0f)
-	{
-		I = IA;
-	}
-	else
-	{
-		I = IB;
-	}
+  float IA = bodyA->GetInertia();
+  float IB = bodyB->GetInertia();
+  float I;
+  if (IA > 0.0f && IB > 0.0f)
+  {
+    I = IA * IB / (IA + IB);
+  }
+  else if (IA > 0.0f)
+  {
+    I = IA;
+  }
+  else
+  {
+    I = IB;
+  }
 
-	float omega = 2.0f * b2_pi * frequencyHertz;
-	stiffness = I * omega * omega;
-	damping = 2.0f * I * dampingRatio * omega;
+  float omega = 2.0f * b2_pi * frequencyHertz;
+  stiffness = I * omega * omega;
+  damping = 2.0f * I * dampingRatio * omega;
 }
 
 b2Joint* b2Joint::Create(const b2JointDef* def, b2BlockAllocator* allocator)
 {
-	b2Joint* joint = nullptr;
+  b2Joint* joint = nullptr;
 
-	switch (def->type)
-	{
-	case e_distanceJoint:
-		{
-			void* mem = allocator->Allocate(sizeof(b2DistanceJoint));
-			joint = new (mem) b2DistanceJoint(static_cast<const b2DistanceJointDef*>(def));
-		}
-		break;
+  switch (def->type)
+  {
+  case e_distanceJoint:
+    {
+      void* mem = allocator->Allocate(sizeof(b2DistanceJoint));
+      joint = new (mem) b2DistanceJoint(static_cast<const b2DistanceJointDef*>(def));
+    }
+    break;
 
-	case e_mouseJoint:
-		{
-			void* mem = allocator->Allocate(sizeof(b2MouseJoint));
-			joint = new (mem) b2MouseJoint(static_cast<const b2MouseJointDef*>(def));
-		}
-		break;
+  case e_mouseJoint:
+    {
+      void* mem = allocator->Allocate(sizeof(b2MouseJoint));
+      joint = new (mem) b2MouseJoint(static_cast<const b2MouseJointDef*>(def));
+    }
+    break;
 
-	case e_prismaticJoint:
-		{
-			void* mem = allocator->Allocate(sizeof(b2PrismaticJoint));
-			joint = new (mem) b2PrismaticJoint(static_cast<const b2PrismaticJointDef*>(def));
-		}
-		break;
+  case e_prismaticJoint:
+    {
+      void* mem = allocator->Allocate(sizeof(b2PrismaticJoint));
+      joint = new (mem) b2PrismaticJoint(static_cast<const b2PrismaticJointDef*>(def));
+    }
+    break;
 
-	case e_revoluteJoint:
-		{
-			void* mem = allocator->Allocate(sizeof(b2RevoluteJoint));
-			joint = new (mem) b2RevoluteJoint(static_cast<const b2RevoluteJointDef*>(def));
-		}
-		break;
+  case e_revoluteJoint:
+    {
+      void* mem = allocator->Allocate(sizeof(b2RevoluteJoint));
+      joint = new (mem) b2RevoluteJoint(static_cast<const b2RevoluteJointDef*>(def));
+    }
+    break;
 
-	case e_pulleyJoint:
-		{
-			void* mem = allocator->Allocate(sizeof(b2PulleyJoint));
-			joint = new (mem) b2PulleyJoint(static_cast<const b2PulleyJointDef*>(def));
-		}
-		break;
+  case e_pulleyJoint:
+    {
+      void* mem = allocator->Allocate(sizeof(b2PulleyJoint));
+      joint = new (mem) b2PulleyJoint(static_cast<const b2PulleyJointDef*>(def));
+    }
+    break;
 
-	case e_gearJoint:
-		{
-			void* mem = allocator->Allocate(sizeof(b2GearJoint));
-			joint = new (mem) b2GearJoint(static_cast<const b2GearJointDef*>(def));
-		}
-		break;
+  case e_gearJoint:
+    {
+      void* mem = allocator->Allocate(sizeof(b2GearJoint));
+      joint = new (mem) b2GearJoint(static_cast<const b2GearJointDef*>(def));
+    }
+    break;
 
-	case e_wheelJoint:
-		{
-			void* mem = allocator->Allocate(sizeof(b2WheelJoint));
-			joint = new (mem) b2WheelJoint(static_cast<const b2WheelJointDef*>(def));
-		}
-		break;
+  case e_wheelJoint:
+    {
+      void* mem = allocator->Allocate(sizeof(b2WheelJoint));
+      joint = new (mem) b2WheelJoint(static_cast<const b2WheelJointDef*>(def));
+    }
+    break;
 
-	case e_weldJoint:
-		{
-			void* mem = allocator->Allocate(sizeof(b2WeldJoint));
-			joint = new (mem) b2WeldJoint(static_cast<const b2WeldJointDef*>(def));
-		}
-		break;
+  case e_weldJoint:
+    {
+      void* mem = allocator->Allocate(sizeof(b2WeldJoint));
+      joint = new (mem) b2WeldJoint(static_cast<const b2WeldJointDef*>(def));
+    }
+    break;
         
-	case e_frictionJoint:
-		{
-			void* mem = allocator->Allocate(sizeof(b2FrictionJoint));
-			joint = new (mem) b2FrictionJoint(static_cast<const b2FrictionJointDef*>(def));
-		}
-		break;
+  case e_frictionJoint:
+    {
+      void* mem = allocator->Allocate(sizeof(b2FrictionJoint));
+      joint = new (mem) b2FrictionJoint(static_cast<const b2FrictionJointDef*>(def));
+    }
+    break;
 
-	case e_motorJoint:
-		{
-			void* mem = allocator->Allocate(sizeof(b2MotorJoint));
-			joint = new (mem) b2MotorJoint(static_cast<const b2MotorJointDef*>(def));
-		}
-		break;
+  case e_motorJoint:
+    {
+      void* mem = allocator->Allocate(sizeof(b2MotorJoint));
+      joint = new (mem) b2MotorJoint(static_cast<const b2MotorJointDef*>(def));
+    }
+    break;
 
-	default:
-		b2Assert(false);
-		break;
-	}
+  default:
+    b2Assert(false);
+    break;
+  }
 
-	return joint;
+  return joint;
 }
 
 void b2Joint::Destroy(b2Joint* joint, b2BlockAllocator* allocator)
 {
-	joint->~b2Joint();
-	switch (joint->m_type)
-	{
-	case e_distanceJoint:
-		allocator->Free(joint, sizeof(b2DistanceJoint));
-		break;
+  joint->~b2Joint();
+  switch (joint->m_type)
+  {
+  case e_distanceJoint:
+    allocator->Free(joint, sizeof(b2DistanceJoint));
+    break;
 
-	case e_mouseJoint:
-		allocator->Free(joint, sizeof(b2MouseJoint));
-		break;
+  case e_mouseJoint:
+    allocator->Free(joint, sizeof(b2MouseJoint));
+    break;
 
-	case e_prismaticJoint:
-		allocator->Free(joint, sizeof(b2PrismaticJoint));
-		break;
+  case e_prismaticJoint:
+    allocator->Free(joint, sizeof(b2PrismaticJoint));
+    break;
 
-	case e_revoluteJoint:
-		allocator->Free(joint, sizeof(b2RevoluteJoint));
-		break;
+  case e_revoluteJoint:
+    allocator->Free(joint, sizeof(b2RevoluteJoint));
+    break;
 
-	case e_pulleyJoint:
-		allocator->Free(joint, sizeof(b2PulleyJoint));
-		break;
+  case e_pulleyJoint:
+    allocator->Free(joint, sizeof(b2PulleyJoint));
+    break;
 
-	case e_gearJoint:
-		allocator->Free(joint, sizeof(b2GearJoint));
-		break;
+  case e_gearJoint:
+    allocator->Free(joint, sizeof(b2GearJoint));
+    break;
 
-	case e_wheelJoint:
-		allocator->Free(joint, sizeof(b2WheelJoint));
-		break;
+  case e_wheelJoint:
+    allocator->Free(joint, sizeof(b2WheelJoint));
+    break;
     
-	case e_weldJoint:
-		allocator->Free(joint, sizeof(b2WeldJoint));
-		break;
+  case e_weldJoint:
+    allocator->Free(joint, sizeof(b2WeldJoint));
+    break;
 
-	case e_frictionJoint:
-		allocator->Free(joint, sizeof(b2FrictionJoint));
-		break;
+  case e_frictionJoint:
+    allocator->Free(joint, sizeof(b2FrictionJoint));
+    break;
 
-	case e_motorJoint:
-		allocator->Free(joint, sizeof(b2MotorJoint));
-		break;
+  case e_motorJoint:
+    allocator->Free(joint, sizeof(b2MotorJoint));
+    break;
 
-	default:
-		b2Assert(false);
-		break;
-	}
+  default:
+    b2Assert(false);
+    break;
+  }
 }
 
 b2Joint::b2Joint(const b2JointDef* def)
 {
-	b2Assert(def->bodyA != def->bodyB);
+  b2Assert(def->bodyA != def->bodyB);
 
-	m_type = def->type;
-	m_prev = nullptr;
-	m_next = nullptr;
-	m_bodyA = def->bodyA;
-	m_bodyB = def->bodyB;
-	m_index = 0;
-	m_collideConnected = def->collideConnected;
-	m_islandFlag = false;
-	m_userData = def->userData;
+  m_type = def->type;
+  m_prev = nullptr;
+  m_next = nullptr;
+  m_bodyA = def->bodyA;
+  m_bodyB = def->bodyB;
+  m_index = 0;
+  m_collideConnected = def->collideConnected;
+  m_islandFlag = false;
+  m_userData = def->userData;
 
-	m_edgeA.joint = nullptr;
-	m_edgeA.other = nullptr;
-	m_edgeA.prev = nullptr;
-	m_edgeA.next = nullptr;
+  m_edgeA.joint = nullptr;
+  m_edgeA.other = nullptr;
+  m_edgeA.prev = nullptr;
+  m_edgeA.next = nullptr;
 
-	m_edgeB.joint = nullptr;
-	m_edgeB.other = nullptr;
-	m_edgeB.prev = nullptr;
-	m_edgeB.next = nullptr;
+  m_edgeB.joint = nullptr;
+  m_edgeB.other = nullptr;
+  m_edgeB.prev = nullptr;
+  m_edgeB.next = nullptr;
 }
 
 bool b2Joint::IsEnabled() const
 {
-	return m_bodyA->IsEnabled() && m_bodyB->IsEnabled();
+  return m_bodyA->IsEnabled() && m_bodyB->IsEnabled();
 }
 
 void b2Joint::Draw(b2Draw* draw) const
 {
-	const b2Transform& xf1 = m_bodyA->GetTransform();
-	const b2Transform& xf2 = m_bodyB->GetTransform();
-	b2Vec2 x1 = xf1.p;
-	b2Vec2 x2 = xf2.p;
-	b2Vec2 p1 = GetAnchorA();
-	b2Vec2 p2 = GetAnchorB();
+  const b2Transform& xf1 = m_bodyA->GetTransform();
+  const b2Transform& xf2 = m_bodyB->GetTransform();
+  b2Vec2 x1 = xf1.p;
+  b2Vec2 x2 = xf2.p;
+  b2Vec2 p1 = GetAnchorA();
+  b2Vec2 p2 = GetAnchorB();
 
-	b2Color color(0.5f, 0.8f, 0.8f);
+  b2Color color(0.5f, 0.8f, 0.8f);
 
-	switch (m_type)
-	{
-	case e_distanceJoint:
-		draw->DrawSegment(p1, p2, color);
-		break;
+  switch (m_type)
+  {
+  case e_distanceJoint:
+    draw->DrawSegment(p1, p2, color);
+    break;
 
-	case e_pulleyJoint:
-	{
-		b2PulleyJoint* pulley = (b2PulleyJoint*)this;
-		b2Vec2 s1 = pulley->GetGroundAnchorA();
-		b2Vec2 s2 = pulley->GetGroundAnchorB();
-		draw->DrawSegment(s1, p1, color);
-		draw->DrawSegment(s2, p2, color);
-		draw->DrawSegment(s1, s2, color);
-	}
-	break;
+  case e_pulleyJoint:
+  {
+    b2PulleyJoint* pulley = (b2PulleyJoint*)this;
+    b2Vec2 s1 = pulley->GetGroundAnchorA();
+    b2Vec2 s2 = pulley->GetGroundAnchorB();
+    draw->DrawSegment(s1, p1, color);
+    draw->DrawSegment(s2, p2, color);
+    draw->DrawSegment(s1, s2, color);
+  }
+  break;
 
-	case e_mouseJoint:
-	{
-		b2Color c;
-		c.Set(0.0f, 1.0f, 0.0f);
-		draw->DrawPoint(p1, 4.0f, c);
-		draw->DrawPoint(p2, 4.0f, c);
+  case e_mouseJoint:
+  {
+    b2Color c;
+    c.Set(0.0f, 1.0f, 0.0f);
+    draw->DrawPoint(p1, 4.0f, c);
+    draw->DrawPoint(p2, 4.0f, c);
 
-		c.Set(0.8f, 0.8f, 0.8f);
-		draw->DrawSegment(p1, p2, c);
+    c.Set(0.8f, 0.8f, 0.8f);
+    draw->DrawSegment(p1, p2, c);
 
-	}
-	break;
+  }
+  break;
 
-	default:
-		draw->DrawSegment(x1, p1, color);
-		draw->DrawSegment(p1, p2, color);
-		draw->DrawSegment(x2, p2, color);
-	}
+  default:
+    draw->DrawSegment(x1, p1, color);
+    draw->DrawSegment(p1, p2, color);
+    draw->DrawSegment(x2, p2, color);
+  }
 }

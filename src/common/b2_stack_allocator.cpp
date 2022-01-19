@@ -25,99 +25,99 @@
 
 b2StackAllocator::b2StackAllocator()
 {
-	m_index = 0;
-	m_allocation = 0;
-	m_maxAllocation = 0;
-	m_entryCount = 0;
+  m_index = 0;
+  m_allocation = 0;
+  m_maxAllocation = 0;
+  m_entryCount = 0;
 }
 
 b2StackAllocator::~b2StackAllocator()
 {
-	b2Assert(m_index == 0);
-	b2Assert(m_entryCount == 0);
+  b2Assert(m_index == 0);
+  b2Assert(m_entryCount == 0);
 }
 
 void* b2StackAllocator::Allocate(int32 size)
 {
-	b2Assert(m_entryCount < b2_maxStackEntries);
-	const int32 roundedSize = (size + ALIGN_MASK) & ~ALIGN_MASK;
-	b2StackEntry* entry = m_entries + m_entryCount;
-	entry->size = roundedSize;
-	if (m_index + roundedSize > b2_stackSize)
-	{
-		entry->data = (char*)b2Alloc(roundedSize);
-		entry->usedMalloc = true;
-	}
-	else
-	{
-		entry->data = m_data + m_index;
-		entry->usedMalloc = false;
-		m_index += roundedSize;
-	}
+  b2Assert(m_entryCount < b2_maxStackEntries);
+  const int32 roundedSize = (size + ALIGN_MASK) & ~ALIGN_MASK;
+  b2StackEntry* entry = m_entries + m_entryCount;
+  entry->size = roundedSize;
+  if (m_index + roundedSize > b2_stackSize)
+  {
+    entry->data = (char*)b2Alloc(roundedSize);
+    entry->usedMalloc = true;
+  }
+  else
+  {
+    entry->data = m_data + m_index;
+    entry->usedMalloc = false;
+    m_index += roundedSize;
+  }
 
-	m_allocation += roundedSize;
-	m_maxAllocation = b2Max(m_maxAllocation, m_allocation);
-	++m_entryCount;
+  m_allocation += roundedSize;
+  m_maxAllocation = b2Max(m_maxAllocation, m_allocation);
+  ++m_entryCount;
 
-	return entry->data;
+  return entry->data;
 }
 
 void* b2StackAllocator::Reallocate(void* p, int32 size)
 {
-	b2Assert(m_entryCount > 0);
-	b2StackEntry* entry = m_entries + m_entryCount - 1;
-	b2Assert(p == entry->data);
+  b2Assert(m_entryCount > 0);
+  b2StackEntry* entry = m_entries + m_entryCount - 1;
+  b2Assert(p == entry->data);
 
-	int32 incrementSize = size - entry->size;
-	if (incrementSize > 0)
-	{
-		if (entry->usedMalloc)
-		{
-			void* data = b2Alloc(size);
-			memcpy(data, entry->data, entry->size);
-			b2Free(entry->data);
-			entry->data = (char*)data;
-		}
-		else if (m_index + incrementSize > b2_stackSize)
-		{
-			void* data = b2Alloc(size);
-			memcpy(data, entry->data, entry->size);
-			m_index -= entry->size;
-			entry->data = (char*)data;
-			entry->usedMalloc = true;
-		}
-		else
-		{
-			m_index += incrementSize;
-			m_allocation += incrementSize;
-			m_maxAllocation = b2Max(m_maxAllocation, m_allocation);
-		}
-		entry->size = size;
-	}
+  int32 incrementSize = size - entry->size;
+  if (incrementSize > 0)
+  {
+    if (entry->usedMalloc)
+    {
+      void* data = b2Alloc(size);
+      memcpy(data, entry->data, entry->size);
+      b2Free(entry->data);
+      entry->data = (char*)data;
+    }
+    else if (m_index + incrementSize > b2_stackSize)
+    {
+      void* data = b2Alloc(size);
+      memcpy(data, entry->data, entry->size);
+      m_index -= entry->size;
+      entry->data = (char*)data;
+      entry->usedMalloc = true;
+    }
+    else
+    {
+      m_index += incrementSize;
+      m_allocation += incrementSize;
+      m_maxAllocation = b2Max(m_maxAllocation, m_allocation);
+    }
+    entry->size = size;
+  }
 
-	return entry->data;
+  return entry->data;
 }
 
 void b2StackAllocator::Free(void* p)
 {
-	b2Assert(m_entryCount > 0);
-	b2StackEntry* entry = m_entries + m_entryCount - 1;
-	b2Assert(p == entry->data);
-	if (entry->usedMalloc)
-	{
-		b2Free(p);
-	}
-	else
-	{
-		m_index -= entry->size;
-	}
-	m_allocation -= entry->size;
-	--m_entryCount;
+  b2Assert(m_entryCount > 0);
+  b2StackEntry* entry = m_entries + m_entryCount - 1;
+  b2Assert(p == entry->data);
+  if (entry->usedMalloc)
+  {
+    b2Free(p);
+  }
+  else
+  {
+    m_index -= entry->size;
+  }
+  m_allocation -= entry->size;
+  --m_entryCount;
 
-	p = nullptr;
+  p = nullptr;
 }
 
 int32 b2StackAllocator::GetMaxAllocation() const
 {
-	return m_maxAllocation;
+  return m_maxAllocation;
 }

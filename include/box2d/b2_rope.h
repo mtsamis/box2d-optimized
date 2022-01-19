@@ -32,122 +32,122 @@ struct b2RopeBend;
 
 enum b2StretchingModel
 {
-	b2_pbdStretchingModel,
-	b2_xpbdStretchingModel
+  b2_pbdStretchingModel,
+  b2_xpbdStretchingModel
 };
 
 enum b2BendingModel
 {
-	b2_springAngleBendingModel = 0,
-	b2_pbdAngleBendingModel,
-	b2_xpbdAngleBendingModel,
-	b2_pbdDistanceBendingModel,
-	b2_pbdHeightBendingModel,
-	b2_pbdTriangleBendingModel
+  b2_springAngleBendingModel = 0,
+  b2_pbdAngleBendingModel,
+  b2_xpbdAngleBendingModel,
+  b2_pbdDistanceBendingModel,
+  b2_pbdHeightBendingModel,
+  b2_pbdTriangleBendingModel
 };
 
 ///
 struct B2_API b2RopeTuning
 {
-	b2RopeTuning()
-	{
-		stretchingModel = b2_pbdStretchingModel;
-		bendingModel = b2_pbdAngleBendingModel;
-		damping = 0.0f;
-		stretchStiffness = 1.0f;
-		bendStiffness = 0.5f;
-		bendHertz = 1.0f;
-		bendDamping = 0.0f;
-		isometric = false;
-		fixedEffectiveMass = false;
-		warmStart = false;
-	}
+  b2RopeTuning()
+  {
+    stretchingModel = b2_pbdStretchingModel;
+    bendingModel = b2_pbdAngleBendingModel;
+    damping = 0.0f;
+    stretchStiffness = 1.0f;
+    bendStiffness = 0.5f;
+    bendHertz = 1.0f;
+    bendDamping = 0.0f;
+    isometric = false;
+    fixedEffectiveMass = false;
+    warmStart = false;
+  }
 
-	b2StretchingModel stretchingModel;
-	b2BendingModel bendingModel;
-	float damping;
-	float stretchStiffness;
-	float stretchHertz;
-	float stretchDamping;
-	float bendStiffness;
-	float bendHertz;
-	float bendDamping;
-	bool isometric;
-	bool fixedEffectiveMass;
-	bool warmStart;
+  b2StretchingModel stretchingModel;
+  b2BendingModel bendingModel;
+  float damping;
+  float stretchStiffness;
+  float stretchHertz;
+  float stretchDamping;
+  float bendStiffness;
+  float bendHertz;
+  float bendDamping;
+  bool isometric;
+  bool fixedEffectiveMass;
+  bool warmStart;
 };
 
 ///
 struct B2_API b2RopeDef
 {
-	b2RopeDef()
-	{
-		position.SetZero();
-		vertices = nullptr;
-		count = 0;
-		masses = nullptr;
-		gravity.SetZero();
-	}
+  b2RopeDef()
+  {
+    position.SetZero();
+    vertices = nullptr;
+    count = 0;
+    masses = nullptr;
+    gravity.SetZero();
+  }
 
-	b2Vec2 position;
-	b2Vec2* vertices;
-	int32 count;
-	float* masses;
-	b2Vec2 gravity;
-	b2RopeTuning tuning;
+  b2Vec2 position;
+  b2Vec2* vertices;
+  int32 count;
+  float* masses;
+  b2Vec2 gravity;
+  b2RopeTuning tuning;
 };
 
 ///
 class B2_API b2Rope
 {
 public:
-	b2Rope();
-	~b2Rope();
+  b2Rope();
+  ~b2Rope();
 
-	///
-	void Create(const b2RopeDef& def);
+  ///
+  void Create(const b2RopeDef& def);
 
-	///
-	void SetTuning(const b2RopeTuning& tuning);
+  ///
+  void SetTuning(const b2RopeTuning& tuning);
 
-	///
-	void Step(float timeStep, int32 iterations, const b2Vec2& position);
+  ///
+  void Step(float timeStep, int32 iterations, const b2Vec2& position);
 
-	///
-	void Reset(const b2Vec2& position);
+  ///
+  void Reset(const b2Vec2& position);
 
-	///
-	void Draw(b2Draw* draw) const;
+  ///
+  void Draw(b2Draw* draw) const;
 
 private:
 
-	void SolveStretch_PBD();
-	void SolveStretch_XPBD(float dt);
-	void SolveBend_PBD_Angle();
-	void SolveBend_XPBD_Angle(float dt);
-	void SolveBend_PBD_Distance();
-	void SolveBend_PBD_Height();
-	void SolveBend_PBD_Triangle();
-	void ApplyBendForces(float dt);
+  void SolveStretch_PBD();
+  void SolveStretch_XPBD(float dt);
+  void SolveBend_PBD_Angle();
+  void SolveBend_XPBD_Angle(float dt);
+  void SolveBend_PBD_Distance();
+  void SolveBend_PBD_Height();
+  void SolveBend_PBD_Triangle();
+  void ApplyBendForces(float dt);
 
-	b2Vec2 m_position;
+  b2Vec2 m_position;
 
-	int32 m_count;
-	int32 m_stretchCount;
-	int32 m_bendCount;
+  int32 m_count;
+  int32 m_stretchCount;
+  int32 m_bendCount;
 
-	b2RopeStretch* m_stretchConstraints;
-	b2RopeBend* m_bendConstraints;
+  b2RopeStretch* m_stretchConstraints;
+  b2RopeBend* m_bendConstraints;
 
-	b2Vec2* m_bindPositions;
-	b2Vec2* m_ps;
-	b2Vec2* m_p0s;
-	b2Vec2* m_vs;
+  b2Vec2* m_bindPositions;
+  b2Vec2* m_ps;
+  b2Vec2* m_p0s;
+  b2Vec2* m_vs;
 
-	float* m_invMasses;
-	b2Vec2 m_gravity;
+  float* m_invMasses;
+  b2Vec2 m_gravity;
 
-	b2RopeTuning m_tuning;
+  b2RopeTuning m_tuning;
 };
 
 #endif

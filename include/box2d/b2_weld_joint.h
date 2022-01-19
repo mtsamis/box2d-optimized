@@ -31,37 +31,37 @@
 /// of the anchor points is important for computing the reaction torque.
 struct B2_API b2WeldJointDef : public b2JointDef
 {
-	b2WeldJointDef()
-	{
-		type = e_weldJoint;
-		localAnchorA.Set(0.0f, 0.0f);
-		localAnchorB.Set(0.0f, 0.0f);
-		referenceAngle = 0.0f;
-		stiffness = 0.0f;
-		damping = 0.0f;
-	}
+  b2WeldJointDef()
+  {
+    type = e_weldJoint;
+    localAnchorA.Set(0.0f, 0.0f);
+    localAnchorB.Set(0.0f, 0.0f);
+    referenceAngle = 0.0f;
+    stiffness = 0.0f;
+    damping = 0.0f;
+  }
 
-	/// Initialize the bodies, anchors, reference angle, stiffness, and damping.
-	/// @param bodyA the first body connected by this joint
-	/// @param bodyB the second body connected by this joint
-	/// @param anchor the point of connection in world coordinates
-	void Initialize(b2Body* bodyA, b2Body* bodyB, const b2Vec2& anchor);
+  /// Initialize the bodies, anchors, reference angle, stiffness, and damping.
+  /// @param bodyA the first body connected by this joint
+  /// @param bodyB the second body connected by this joint
+  /// @param anchor the point of connection in world coordinates
+  void Initialize(b2Body* bodyA, b2Body* bodyB, const b2Vec2& anchor);
 
-	/// The local anchor point relative to bodyA's origin.
-	b2Vec2 localAnchorA;
+  /// The local anchor point relative to bodyA's origin.
+  b2Vec2 localAnchorA;
 
-	/// The local anchor point relative to bodyB's origin.
-	b2Vec2 localAnchorB;
+  /// The local anchor point relative to bodyB's origin.
+  b2Vec2 localAnchorB;
 
-	/// The bodyB angle minus bodyA angle in the reference state (radians).
-	float referenceAngle;
+  /// The bodyB angle minus bodyA angle in the reference state (radians).
+  float referenceAngle;
 
-	/// The rotational stiffness in N*m
-	/// Disable softness with a value of 0
-	float stiffness;
+  /// The rotational stiffness in N*m
+  /// Disable softness with a value of 0
+  float stiffness;
 
-	/// The rotational damping in N*m*s
-	float damping;
+  /// The rotational damping in N*m*s
+  float damping;
 };
 
 /// A weld joint essentially glues two bodies together. A weld joint may
@@ -69,65 +69,65 @@ struct B2_API b2WeldJointDef : public b2JointDef
 class B2_API b2WeldJoint : public b2Joint
 {
 public:
-	b2Vec2 GetAnchorA() const override;
-	b2Vec2 GetAnchorB() const override;
+  b2Vec2 GetAnchorA() const override;
+  b2Vec2 GetAnchorB() const override;
 
-	b2Vec2 GetReactionForce(float inv_dt) const override;
-	float GetReactionTorque(float inv_dt) const override;
+  b2Vec2 GetReactionForce(float inv_dt) const override;
+  float GetReactionTorque(float inv_dt) const override;
 
-	/// The local anchor point relative to bodyA's origin.
-	const b2Vec2& GetLocalAnchorA() const { return m_localAnchorA; }
+  /// The local anchor point relative to bodyA's origin.
+  const b2Vec2& GetLocalAnchorA() const { return m_localAnchorA; }
 
-	/// The local anchor point relative to bodyB's origin.
-	const b2Vec2& GetLocalAnchorB() const  { return m_localAnchorB; }
+  /// The local anchor point relative to bodyB's origin.
+  const b2Vec2& GetLocalAnchorB() const  { return m_localAnchorB; }
 
-	/// Get the reference angle.
-	float GetReferenceAngle() const { return m_referenceAngle; }
+  /// Get the reference angle.
+  float GetReferenceAngle() const { return m_referenceAngle; }
 
-	/// Set/get stiffness in N*m
-	void SetStiffness(float hz) { m_stiffness = hz; }
-	float GetStiffness() const { return m_stiffness; }
+  /// Set/get stiffness in N*m
+  void SetStiffness(float hz) { m_stiffness = hz; }
+  float GetStiffness() const { return m_stiffness; }
 
-	/// Set/get damping in N*m*s
-	void SetDamping(float damping) { m_damping = damping; }
-	float GetDamping() const { return m_damping; }
+  /// Set/get damping in N*m*s
+  void SetDamping(float damping) { m_damping = damping; }
+  float GetDamping() const { return m_damping; }
 
-	/// Dump to b2Log
-	void Dump() override;
+  /// Dump to b2Log
+  void Dump() override;
 
 protected:
 
-	friend class b2Joint;
+  friend class b2Joint;
 
-	b2WeldJoint(const b2WeldJointDef* def);
+  b2WeldJoint(const b2WeldJointDef* def);
 
-	void InitVelocityConstraints(const b2SolverData& data) override;
-	void SolveVelocityConstraints(const b2SolverData& data) override;
-	bool SolvePositionConstraints(const b2SolverData& data) override;
+  void InitVelocityConstraints(const b2SolverData& data) override;
+  void SolveVelocityConstraints(const b2SolverData& data) override;
+  bool SolvePositionConstraints(const b2SolverData& data) override;
 
-	float m_stiffness;
-	float m_damping;
-	float m_bias;
+  float m_stiffness;
+  float m_damping;
+  float m_bias;
 
-	// Solver shared
-	b2Vec2 m_localAnchorA;
-	b2Vec2 m_localAnchorB;
-	float m_referenceAngle;
-	float m_gamma;
-	b2Vec3 m_impulse;
+  // Solver shared
+  b2Vec2 m_localAnchorA;
+  b2Vec2 m_localAnchorB;
+  float m_referenceAngle;
+  float m_gamma;
+  b2Vec3 m_impulse;
 
-	// Solver temp
-	int32 m_indexA;
-	int32 m_indexB;
-	b2Vec2 m_rA;
-	b2Vec2 m_rB;
-	b2Vec2 m_localCenterA;
-	b2Vec2 m_localCenterB;
-	float m_invMassA;
-	float m_invMassB;
-	float m_invIA;
-	float m_invIB;
-	b2Mat33 m_mass;
+  // Solver temp
+  int32 m_indexA;
+  int32 m_indexB;
+  b2Vec2 m_rA;
+  b2Vec2 m_rB;
+  b2Vec2 m_localCenterA;
+  b2Vec2 m_localCenterB;
+  float m_invMassA;
+  float m_invMassB;
+  float m_invIA;
+  float m_invIB;
+  b2Mat33 m_mass;
 };
 
 #endif

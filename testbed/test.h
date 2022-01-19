@@ -36,19 +36,19 @@ class Test;
 /// Random number in range [-1,1]
 inline float RandomFloat()
 {
-	float r = (float)(rand() & (RAND_LIMIT));
-	r /= RAND_LIMIT;
-	r = 2.0f * r - 1.0f;
-	return r;
+  float r = (float)(rand() & (RAND_LIMIT));
+  r /= RAND_LIMIT;
+  r = 2.0f * r - 1.0f;
+  return r;
 }
 
 /// Random floating point number in range [lo, hi]
 inline float RandomFloat(float lo, float hi)
 {
-	float r = (float)(rand() & (RAND_LIMIT));
-	r /= RAND_LIMIT;
-	r = (hi - lo) * r + lo;
-	return r;
+  float r = (float)(rand() & (RAND_LIMIT));
+  r /= RAND_LIMIT;
+  r = (hi - lo) * r + lo;
+  return r;
 }
 
 // This is called when a joint in the world is implicitly destroyed
@@ -57,88 +57,88 @@ inline float RandomFloat(float lo, float hi)
 class DestructionListener : public b2DestructionListener
 {
 public:
-	void SayGoodbye(b2Fixture* fixture) override { B2_NOT_USED(fixture); }
-	void SayGoodbye(b2Joint* joint) override;
+  void SayGoodbye(b2Fixture* fixture) override { B2_NOT_USED(fixture); }
+  void SayGoodbye(b2Joint* joint) override;
 
-	Test* test;
+  Test* test;
 };
 
 const int32 k_maxContactPoints = 2048;
 
 struct ContactPoint
 {
-	b2Fixture* fixtureA;
-	b2Fixture* fixtureB;
-	b2Vec2 normal;
-	b2Vec2 position;
-	b2PointState state;
-	float normalImpulse;
-	float tangentImpulse;
-	float separation;
+  b2Fixture* fixtureA;
+  b2Fixture* fixtureB;
+  b2Vec2 normal;
+  b2Vec2 position;
+  b2PointState state;
+  float normalImpulse;
+  float tangentImpulse;
+  float separation;
 };
 
 class Test : public b2ContactListener
 {
 public:
 
-	Test();
-	virtual ~Test();
+  Test();
+  virtual ~Test();
 
-	void DrawTitle(const char* string);
-	virtual void Step(Settings& settings);
-	virtual void UpdateUI() {}
-	virtual void Keyboard(int key) { B2_NOT_USED(key); }
-	virtual void KeyboardUp(int key) { B2_NOT_USED(key); }
-	void ShiftMouseDown(const b2Vec2& p);
-	virtual void MouseDown(const b2Vec2& p);
-	virtual void MouseUp(const b2Vec2& p);
-	virtual void MouseMove(const b2Vec2& p);
-	void LaunchBomb();
-	void LaunchBomb(const b2Vec2& position, const b2Vec2& velocity);
-	
-	void SpawnBomb(const b2Vec2& worldPt);
-	void CompleteBombSpawn(const b2Vec2& p);
+  void DrawTitle(const char* string);
+  virtual void Step(Settings& settings);
+  virtual void UpdateUI() {}
+  virtual void Keyboard(int key) { B2_NOT_USED(key); }
+  virtual void KeyboardUp(int key) { B2_NOT_USED(key); }
+  void ShiftMouseDown(const b2Vec2& p);
+  virtual void MouseDown(const b2Vec2& p);
+  virtual void MouseUp(const b2Vec2& p);
+  virtual void MouseMove(const b2Vec2& p);
+  void LaunchBomb();
+  void LaunchBomb(const b2Vec2& position, const b2Vec2& velocity);
+  
+  void SpawnBomb(const b2Vec2& worldPt);
+  void CompleteBombSpawn(const b2Vec2& p);
 
-	// Let derived tests know that a joint was destroyed.
-	virtual void JointDestroyed(b2Joint* joint) { B2_NOT_USED(joint); }
+  // Let derived tests know that a joint was destroyed.
+  virtual void JointDestroyed(b2Joint* joint) { B2_NOT_USED(joint); }
 
-	// Callbacks for derived classes.
-	virtual void BeginContact(b2Contact* contact)  override { B2_NOT_USED(contact); }
-	virtual void EndContact(b2Contact* contact)  override { B2_NOT_USED(contact); }
-	virtual void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) override;
-	virtual void PostSolve(b2Contact* contact, const b2ContactImpulse* impulse) override
-	{
-		B2_NOT_USED(contact);
-		B2_NOT_USED(impulse);
-	}
+  // Callbacks for derived classes.
+  virtual void BeginContact(b2Contact* contact)  override { B2_NOT_USED(contact); }
+  virtual void EndContact(b2Contact* contact)  override { B2_NOT_USED(contact); }
+  virtual void PreSolve(b2Contact* contact, const b2Manifold* oldManifold) override;
+  virtual void PostSolve(b2Contact* contact, const b2ContactImpulse* impulse) override
+  {
+    B2_NOT_USED(contact);
+    B2_NOT_USED(impulse);
+  }
 
-	void ShiftOrigin(const b2Vec2& newOrigin);
+  void ShiftOrigin(const b2Vec2& newOrigin);
 
 protected:
-	friend class DestructionListener;
-	friend class BoundaryListener;
-	friend class ContactListener;
+  friend class DestructionListener;
+  friend class BoundaryListener;
+  friend class ContactListener;
 
-	b2Body* m_groundBody;
-	b2AABB m_worldAABB;
-	ContactPoint m_points[k_maxContactPoints];
-	int32 m_pointCount;
-	DestructionListener m_destructionListener;
-	int32 m_textLine;
-	b2World* m_world;
-	b2ParticleSystem* m_particleSystem;
-	b2Body* m_bomb;
-	b2MouseJoint* m_mouseJoint;
-	bool m_mouseTracing;
-	b2Vec2 m_mouseTracerPosition;
-	b2Vec2 m_mouseTracerVelocity;
-	b2Vec2 m_bombSpawnPoint;
-	bool m_bombSpawning;
-	b2Vec2 m_mouseWorld;
-	int32 m_stepCount;
-	int32 m_textIncrement;
-	b2Profile m_maxProfile;
-	b2Profile m_totalProfile;
+  b2Body* m_groundBody;
+  b2AABB m_worldAABB;
+  ContactPoint m_points[k_maxContactPoints];
+  int32 m_pointCount;
+  DestructionListener m_destructionListener;
+  int32 m_textLine;
+  b2World* m_world;
+  b2ParticleSystem* m_particleSystem;
+  b2Body* m_bomb;
+  b2MouseJoint* m_mouseJoint;
+  bool m_mouseTracing;
+  b2Vec2 m_mouseTracerPosition;
+  b2Vec2 m_mouseTracerVelocity;
+  b2Vec2 m_bombSpawnPoint;
+  bool m_bombSpawning;
+  b2Vec2 m_mouseWorld;
+  int32 m_stepCount;
+  int32 m_textIncrement;
+  b2Profile m_maxProfile;
+  b2Profile m_totalProfile;
 };
 
 typedef Test* TestCreateFcn();
@@ -148,9 +148,9 @@ int RegisterTest(const char* category, const char* name, TestCreateFcn* fcn);
 //
 struct TestEntry
 {
-	const char* category;
-	const char* name;
-	TestCreateFcn* createFcn;
+  const char* category;
+  const char* name;
+  TestCreateFcn* createFcn;
 };
 
 #define MAX_TESTS 256

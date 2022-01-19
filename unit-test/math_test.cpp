@@ -26,29 +26,29 @@
 
 DOCTEST_TEST_CASE("math test")
 {
-	SUBCASE("sweep")
-	{
-		// From issue #447
-		b2Sweep sweep;
-		sweep.localCenter.SetZero();
-		sweep.c0.Set(-2.0f, 4.0f);
-		sweep.c.Set(3.0f, 8.0f);
-		sweep.a0 = 0.5f;
-		sweep.a = 5.0f;
-		sweep.alpha0 = 0.0f;
+  SUBCASE("sweep")
+  {
+    // From issue #447
+    b2Sweep sweep;
+    sweep.localCenter.SetZero();
+    sweep.c0.Set(-2.0f, 4.0f);
+    sweep.c.Set(3.0f, 8.0f);
+    sweep.a0 = 0.5f;
+    sweep.a = 5.0f;
+    sweep.alpha0 = 0.0f;
 
-		b2Transform transform;
+    b2Transform transform;
 
-		sweep.GetTransform(&transform, 0.0f);
-		DOCTEST_REQUIRE_EQ(transform.p.x, sweep.c0.x);
-		DOCTEST_REQUIRE_EQ(transform.p.y, sweep.c0.y);
-		DOCTEST_REQUIRE_EQ(transform.q.c, cosf(sweep.a0));
-		DOCTEST_REQUIRE_EQ(transform.q.s, sinf(sweep.a0));
+    sweep.GetTransform(&transform, 0.0f);
+    DOCTEST_REQUIRE_EQ(transform.p.x, sweep.c0.x);
+    DOCTEST_REQUIRE_EQ(transform.p.y, sweep.c0.y);
+    DOCTEST_REQUIRE_EQ(transform.q.c, cosf(sweep.a0));
+    DOCTEST_REQUIRE_EQ(transform.q.s, sinf(sweep.a0));
 
-		sweep.GetTransform(&transform, 1.0f);
-		DOCTEST_REQUIRE_EQ(transform.p.x, sweep.c.x);
-		DOCTEST_REQUIRE_EQ(transform.p.y, sweep.c.y);
-		DOCTEST_REQUIRE_EQ(transform.q.c, cosf(sweep.a));
-		DOCTEST_REQUIRE_EQ(transform.q.s, sinf(sweep.a));
-	}
+    sweep.GetTransform(&transform, 1.0f);
+    DOCTEST_REQUIRE_EQ(transform.p.x, sweep.c.x);
+    DOCTEST_REQUIRE_EQ(transform.p.y, sweep.c.y);
+    DOCTEST_REQUIRE_EQ(transform.q.c, cosf(sweep.a));
+    DOCTEST_REQUIRE_EQ(transform.q.s, sinf(sweep.a));
+  }
 }

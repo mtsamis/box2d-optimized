@@ -33,40 +33,40 @@
 class b2FreeList
 {
 public:
-	/// Construct the free list.
-	b2FreeList() { }
+  /// Construct the free list.
+  b2FreeList() { }
 
-	/// Destroy the free list.
-	~b2FreeList() { }
+  /// Destroy the free list.
+  ~b2FreeList() { }
 
-	/// Allocate an item from the freelist.
-	b2IntrusiveListNode* Allocate();
+  /// Allocate an item from the freelist.
+  b2IntrusiveListNode* Allocate();
 
-	/// Free an item from the freelist.
-	void Free(b2IntrusiveListNode* node);
+  /// Free an item from the freelist.
+  void Free(b2IntrusiveListNode* node);
 
-	/// Add an item to the freelist so that it can be allocated using
-	/// b2FreeList::Allocate().
-	void AddToFreeList(b2IntrusiveListNode* node);
+  /// Add an item to the freelist so that it can be allocated using
+  /// b2FreeList::Allocate().
+  void AddToFreeList(b2IntrusiveListNode* node);
 
-	/// Remove all items (allocated and free) from the freelist.
-	void RemoveAll();
+  /// Remove all items (allocated and free) from the freelist.
+  void RemoveAll();
 
-	/// Get the list which tracks allocated items.
-	const b2IntrusiveListNode& GetAllocatedList() const {
-		return m_allocated;
-	}
+  /// Get the list which tracks allocated items.
+  const b2IntrusiveListNode& GetAllocatedList() const {
+    return m_allocated;
+  }
 
-	/// Get the list which tracks free items.
-	const b2IntrusiveListNode& GetFreeList() const {
-		return m_free;
-	}
+  /// Get the list which tracks free items.
+  const b2IntrusiveListNode& GetFreeList() const {
+    return m_free;
+  }
 
 protected:
-	/// List of allocated items.
-	b2IntrusiveListNode m_allocated;
-	/// List of free items.
-	b2IntrusiveListNode m_free;
+  /// List of allocated items.
+  b2IntrusiveListNode m_allocated;
+  /// List of free items.
+  b2IntrusiveListNode m_free;
 };
 
 
@@ -75,39 +75,39 @@ protected:
 template<typename T>
 class b2TypedFreeList {
 public:
-	/// Construct the free list.
-	b2TypedFreeList() { }
+  /// Construct the free list.
+  b2TypedFreeList() { }
 
-	/// Destroy the free list.
-	~b2TypedFreeList() { }
+  /// Destroy the free list.
+  ~b2TypedFreeList() { }
 
-	/// Allocate an item from the free list.
-	T* Allocate() {
-		b2IntrusiveListNode* const node = m_freeList.Allocate();
-		if (!node) return NULL;
-		return T::GetInstanceFromListNode(node);
-	}
+  /// Allocate an item from the free list.
+  T* Allocate() {
+    b2IntrusiveListNode* const node = m_freeList.Allocate();
+    if (!node) return NULL;
+    return T::GetInstanceFromListNode(node);
+  }
 
-	/// Free an item.
-	void Free(T* instance) {
-		b2Assert(instance);
-		m_freeList.Free(instance->GetListNode());
-	}
+  /// Free an item.
+  void Free(T* instance) {
+    b2Assert(instance);
+    m_freeList.Free(instance->GetListNode());
+  }
 
-	/// Add an item to the freelist so that it can be allocated with
-	/// b2TypedFreeList::Allocate().
-	void AddToFreeList(T* instance)
-	{
-		b2Assert(instance);
-		m_freeList.AddToFreeList(instance->GetListNode());
-	}
+  /// Add an item to the freelist so that it can be allocated with
+  /// b2TypedFreeList::Allocate().
+  void AddToFreeList(T* instance)
+  {
+    b2Assert(instance);
+    m_freeList.AddToFreeList(instance->GetListNode());
+  }
 
-	// Get the underlying b2FreeList.
-	b2FreeList* GetFreeList() { return &m_freeList; }
-	const b2FreeList* GetFreeList() const { return &m_freeList; }
+  // Get the underlying b2FreeList.
+  b2FreeList* GetFreeList() { return &m_freeList; }
+  const b2FreeList* GetFreeList() const { return &m_freeList; }
 
 protected:
-	b2FreeList m_freeList;
+  b2FreeList m_freeList;
 };
 
 #endif  // B2_FREE_LIST_H

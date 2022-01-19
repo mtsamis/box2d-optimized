@@ -32,9 +32,9 @@ const int32 b2_maxStackEntries = 32;
 
 struct B2_API b2StackEntry
 {
-	char* data;
-	int32 size;
-	bool usedMalloc;
+  char* data;
+  int32 size;
+  bool usedMalloc;
 };
 
 // This is a stack allocator used for fast per step allocations.
@@ -43,28 +43,28 @@ struct B2_API b2StackEntry
 class B2_API b2StackAllocator
 {
 public:
-	// sizeof(void*) must be a power of 2
-	enum { ALIGN_MASK = sizeof(void*) - 1 };
+  // sizeof(void*) must be a power of 2
+  enum { ALIGN_MASK = sizeof(void*) - 1 };
 
-	b2StackAllocator();
-	~b2StackAllocator();
+  b2StackAllocator();
+  ~b2StackAllocator();
 
-	void* Allocate(int32 size);
-	void* Reallocate(void* p, int32 size);
-	void Free(void* p);
+  void* Allocate(int32 size);
+  void* Reallocate(void* p, int32 size);
+  void Free(void* p);
 
-	int32 GetMaxAllocation() const;
+  int32 GetMaxAllocation() const;
 
 private:
 
-	char m_data[b2_stackSize];
-	int32 m_index;
+  char m_data[b2_stackSize];
+  int32 m_index;
 
-	int32 m_allocation;
-	int32 m_maxAllocation;
+  int32 m_allocation;
+  int32 m_maxAllocation;
 
-	b2StackEntry m_entries[b2_maxStackEntries];
-	int32 m_entryCount;
+  b2StackEntry m_entries[b2_maxStackEntries];
+  int32 m_entryCount;
 };
 
 #endif

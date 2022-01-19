@@ -26,65 +26,65 @@ class b2StackQueue
 
 public:
 
-	b2StackQueue(b2StackAllocator *allocator, int32 capacity)
-	{ 
-	  capacity = b2Max(capacity, 32);
-		m_allocator = allocator;
-		m_buffer = (T*) m_allocator->Allocate(sizeof(T) * capacity);
-		m_front = 0;
-		m_back = 0;
-		m_capacity = capacity;
-	}
+  b2StackQueue(b2StackAllocator *allocator, int32 capacity)
+  { 
+    capacity = b2Max(capacity, 32);
+    m_allocator = allocator;
+    m_buffer = (T*) m_allocator->Allocate(sizeof(T) * capacity);
+    m_front = 0;
+    m_back = 0;
+    m_capacity = capacity;
+  }
 
-	~b2StackQueue()
-	{
-		m_allocator->Free(m_buffer);
-	}
+  ~b2StackQueue()
+  {
+    m_allocator->Free(m_buffer);
+  }
 
-	void Push(const T &item)
-	{
-		if (m_back >= m_capacity) {
-			if (m_front > m_capacity / 4) {
-			  for (int32 i = m_front; i < m_back; i++) {
-				  m_buffer[i - m_front] = m_buffer[i];
-			  }
+  void Push(const T &item)
+  {
+    if (m_back >= m_capacity) {
+      if (m_front > m_capacity / 4) {
+        for (int32 i = m_front; i < m_back; i++) {
+          m_buffer[i - m_front] = m_buffer[i];
+        }
 
-			  m_back -= m_front;
-			  m_front = 0;
-			} else {
-			  m_capacity *= 2;
-				m_buffer = (T*) m_allocator->Reallocate(m_buffer, sizeof(T) * m_capacity);
-			}
-		}
+        m_back -= m_front;
+        m_front = 0;
+      } else {
+        m_capacity *= 2;
+        m_buffer = (T*) m_allocator->Reallocate(m_buffer, sizeof(T) * m_capacity);
+      }
+    }
 
-		m_buffer[m_back] = item;
-		m_back++;
-	}
+    m_buffer[m_back] = item;
+    m_back++;
+  }
 
-	void Pop()
-	{
-		b2Assert(m_front < m_back);
-		m_front++;
-	}
+  void Pop()
+  {
+    b2Assert(m_front < m_back);
+    m_front++;
+  }
 
-	bool Empty() const
-	{
-		b2Assert(m_front <= m_back);
-		return m_front == m_back;
-	}
+  bool Empty() const
+  {
+    b2Assert(m_front <= m_back);
+    return m_front == m_back;
+  }
 
-	const T &Front() const
-	{
-		return m_buffer[m_front];
-	}
+  const T &Front() const
+  {
+    return m_buffer[m_front];
+  }
 
 private:
 
-	b2StackAllocator *m_allocator;
-	T* m_buffer;
-	int32 m_front;
-	int32 m_back;
-	int32 m_capacity;
+  b2StackAllocator *m_allocator;
+  T* m_buffer;
+  int32 m_front;
+  int32 m_back;
+  int32 m_capacity;
 
 };
 
